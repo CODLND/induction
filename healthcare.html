@@ -297,8 +297,8 @@
   .t-state .emoji { font-size: 44px; display: block; margin-bottom: 8px; }
   .t-state h2 { margin: 0 0 6px; font-size: 22px; color: var(--ink); letter-spacing: -.01em; }
   .t-state p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
-  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; transform: translateY(110%); transition: transform .35s var(--spring); }
-  .sheet.show { transform: none; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; transform: translateY(110%); visibility: hidden; transition: transform .35s var(--spring), visibility 0s linear .35s; }
+  .sheet.show { transform: none; visibility: visible; transition: transform .35s var(--spring); }
   .sheet-inner { max-width: 520px; margin: 0 auto; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -10px 40px rgba(15, 23, 42, .15); }
   .sheet.ok .sheet-inner { background: var(--ok-50); }
   .sheet.wrong .sheet-inner { background: var(--warn-50); }
@@ -455,6 +455,43 @@
   .add-q { height: 46px; border: 2px dashed var(--line-2); border-radius: var(--r); background: none; color: var(--muted); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
   .add-q:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-50); }
   .help { font-size: 12px; color: var(--subtle); font-weight: 500; }
+  /* medical bill (receipt) */
+  .bill { background: #fff; border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-1); overflow: hidden; font-size: 13px; color: var(--text);
+    background-image: linear-gradient(180deg, transparent calc(100% - 10px), rgba(15, 23, 42, .02) 100%); }
+  .bill-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 2px solid var(--ink); }
+  .bill-logo { width: 38px; height: 38px; border-radius: 10px; background: #c0392b; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 11px; letter-spacing: -.02em; flex: 0 0 auto; text-align: center; line-height: 1; padding: 2px; }
+  .bill-hosp { min-width: 0; flex: 1; }
+  .bill-hosp b { display: block; font-size: 14px; color: var(--ink); line-height: 1.2; }
+  .bill-hosp small { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-top: 2px; }
+  .bill-meta { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 4px 10px; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px dashed var(--line-2); font-size: 12px; }
+  .bill-meta dt { color: var(--muted); font-weight: 600; margin: 0; }
+  .bill-meta dd { margin: 0; font-weight: 700; color: var(--ink); }
+  .bill-lines { padding: 6px 14px 10px; }
+  .bl { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 0; border-bottom: 1px dotted var(--line-2); }
+  .bl:last-child { border-bottom: none; }
+  .bl .lbl { min-width: 0; }
+  .bl .lbl small { display: block; color: var(--muted); font-size: 11px; font-weight: 500; margin-top: 1px; }
+  .bl .amt { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .bl-deduct .amt { color: var(--ok-600); }
+  .bl-total { border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); margin: 4px 0; font-weight: 800; }
+  .bl-total .lbl { font-weight: 800; color: var(--ink); }
+  .bl-note .lbl { color: var(--muted); font-style: italic; }
+  .bl .amt.unknown { color: var(--warn-600); background: var(--warn-50); border: 1px dashed var(--warn); border-radius: 6px; padding: 0 8px; }
+  .bill-foot { padding: 8px 14px 12px; font-size: 10px; color: var(--subtle); text-align: center; border-top: 1px dashed var(--line-2); }
+  .t-bill { margin-top: 18px; }
+  .t-bill summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 800; color: var(--ink); font-size: 16px; padding: 4px 2px 10px; }
+  .t-bill summary::-webkit-details-marker { display: none; }
+  .t-bill summary .i { color: var(--muted); transition: transform .2s; }
+  .t-bill[open] summary .chev { transform: rotate(180deg); }
+  /* bill editor */
+  .bill-ed { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .bill-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+  .bill-row { display: grid; grid-template-columns: 1fr 120px 118px auto; gap: 6px; align-items: center; }
+  .bill-row .input, .bill-row .select { height: 38px; padding: 0 10px; }
+  .bill-row .btns { display: flex; gap: 2px; }
+  .bill-head-row { display: grid; grid-template-columns: 1fr 120px 118px auto; gap: 6px; font-size: 11px; font-weight: 800; color: var(--subtle); text-transform: uppercase; letter-spacing: .06em; padding: 0 2px; }
+  .bill-preview { margin-top: 14px; max-width: 420px; }
+  @media (max-width: 640px) { .bill-ed { grid-template-columns: 1fr; } .bill-row, .bill-head-row { grid-template-columns: 1fr 90px; } .bill-row .select, .bill-row .btns { grid-column: span 1; } .bill-head-row span:nth-child(n+3) { display: none; } }
   .pin { max-width: 360px; margin: 14vh auto; background: var(--surface); padding: 28px; border-radius: var(--r-xl); box-shadow: var(--sh-2); display: flex; flex-direction: column; gap: 12px; text-align: center; }
   .pin h1 { margin: 0; font-size: 22px; color: var(--ink); }
   @media (max-width: 640px) {
@@ -673,6 +710,56 @@ const openingLine = ch => (String(ch?.intro || "").trim() || DEFAULT_INTRO).repl
 /* Thank-you line shown once the team has answered every question. Same rules as the opening line. */
 const DEFAULT_OUTRO = "Thank you! I finally understand my bill 😊";
 const closingLine = ch => (String(ch?.outro || "").trim() || DEFAULT_OUTRO).replaceAll("{name}", ch?.name || "");
+/* ---------- sample medical bill ----------
+   Parody hospital names (training use only). Each character can carry a bill that teams see on their phones. */
+const HOSPITALS = [
+  ["SGH", "Singapore Generous Hospital", "#c0392b"],
+  ["TTSH", "Tan Took Sing Hospital", "#1d6fb8"],
+  ["CGH", "Changi Generous Hospital", "#7b3fa0"],
+  ["NUH", "National Unity Hospital", "#0e7c86"],
+  ["KTPH", "Khoo Teck Phew Hospital", "#2f8f4e"],
+  ["NTPGH", "Ng Teng Pong General Hospital", "#d35400"],
+  ["SKGH", "Sengkang Generally Hospital", "#b03a6e"],
+  ["KKWKH", "KK Women's & Kiddos' Hospital", "#e67e9a"],
+  ["AH", "Alexandria Hospital", "#5d6d7e"],
+  ["BPC", "Bedok-ish Polyclinic", "#16a085"],
+];
+const BILL_KINDS = [["item", "Item"], ["deduct", "Deduction"], ["total", "Total"], ["note", "Note"]];
+const hospitalOf = name => HOSPITALS.find(h => h[1] === name) || null;
+const hospInitials = name => (hospitalOf(name)?.[0]) || String(name || "H").split(/\s+/).filter(w => /^[A-Z]/.test(w)).map(w => w[0]).join("").slice(0, 4) || "H";
+const defaultBill = (over = {}) => ({
+  show: true, hospital: HOSPITALS[0][1], billNo: "", ward: "", admitted: "", discharged: "",
+  lines: [
+    { label: "Total bill amount (before subsidy)", amount: "", kind: "item", note: "" },
+    { label: "Less: Government subsidy", amount: "", kind: "deduct", note: "" },
+    { label: "Amount after subsidy", amount: "", kind: "total", note: "" },
+    { label: "Less: MediShield Life claim", amount: "", kind: "deduct", note: "" },
+    { label: "MediSave claim limit", amount: "?", kind: "item", note: "" },
+    { label: "Amount payable by patient", amount: "?", kind: "total", note: "" },
+  ], ...over,
+});
+const cleanBill = b => b ? ({
+  show: b.show !== false, hospital: String(b.hospital || ""), billNo: String(b.billNo || ""), ward: String(b.ward || ""),
+  admitted: String(b.admitted || ""), discharged: String(b.discharged || ""),
+  lines: (b.lines || []).map(l => ({ label: String(l.label || ""), amount: String(l.amount ?? ""), kind: BILL_KINDS.some(k => k[0] === l.kind) ? l.kind : "item", note: String(l.note || "") })),
+}) : null;
+function billHTML(ch) {
+  const b = ch?.bill; if (!b) return "";
+  const h = hospitalOf(b.hospital);
+  const meta = [["Patient", ch.name], ["Bill no.", b.billNo], ["Ward / class", b.ward], ["Admitted", b.admitted], ["Discharged", b.discharged]].filter(m => String(m[1] || "").trim());
+  return `<div class="bill">
+    <div class="bill-top"><div class="bill-logo" style="background:${h ? h[2] : "#1b6082"}">${esc(hospInitials(b.hospital))}</div>
+      <div class="bill-hosp"><b>${esc(b.hospital || "Hospital")}</b><small>Final hospital bill</small></div></div>
+    ${meta.length ? `<dl class="bill-meta">${meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` : ""}
+    <div class="bill-lines">${(b.lines || []).filter(l => l.label || l.amount).map(l => {
+      const amt = String(l.amount ?? "").trim();
+      const unknown = amt === "?" || amt === "";
+      return `<div class="bl bl-${esc(l.kind || "item")}"><div class="lbl">${esc(l.label)}${l.note ? `<small>${esc(l.note)}</small>` : ""}</div>${l.kind === "note" && !amt ? "" : `<div class="amt ${unknown ? "unknown" : ""}">${esc(unknown ? "?" : amt)}</div>`}</div>`;
+    }).join("")}</div>
+    <div class="bill-foot">Sample bill for training purposes only. Hospital names are fictional.</div>
+  </div>`;
+}
+
 /* Main-screen heading (editable in admin, stored on the game). */
 const DEFAULT_TITLE = "Healthcare Bill Challenge";
 const DEFAULT_SUB = "Help each patient make sense of their hospital bill";
@@ -701,28 +788,37 @@ const DEFAULT_QUESTIONS = () => [
     hint: "Out of pocket (cash) = bill after subsidy − MediShield Life − MediSave (− any other payments).",
     explain: "" },
 ];
+function billFor(hospital, ward, admitted, discharged, amts) {
+  const b = defaultBill({ hospital, ward, admitted, discharged, billNo: "B" + Math.floor(100000 + Math.random() * 899999) });
+  amts.forEach((a, i) => b.lines[i].amount = a);
+  return b;
+}
 function sampleCharacters() {
-  const mk = (name, age, gender, situation, answers, explains, skin = DEFAULT_SKIN, bg = "hospital") => ({
-    name, age, gender, skin, bg, situation,
+  const mk = (name, age, gender, situation, answers, explains, skin = DEFAULT_SKIN, bg = "hospital", bill = null) => ({
+    name, age, gender, skin, bg, situation, bill,
     questions: DEFAULT_QUESTIONS().map((q, i) => ({ ...q, answer: answers[i], explain: explains[i] || "" })),
   });
   return [
     mk("Mr Tan", 68, "male",
       "Singapore Citizen, retired. Admitted for 4 days in a B2 ward at a public hospital for pneumonia.",
       ["Yes|Y", "1200", "650", "150"],
-      ["Citizen in a B2 ward → subsidised. Bill before subsidy $5,000; subsidy $3,000; $2,000 payable.", "MediShield Life pays $1,200 after deductible & co-insurance.", "MediSave pays $650 of the remaining $800.", "$2,000 − $1,200 − $650 = $150 cash."], 2, "void-deck"),
+      ["Citizen in a B2 ward → subsidised. Bill before subsidy $5,000; subsidy $3,000; $2,000 payable.", "MediShield Life pays $1,200 after deductible & co-insurance.", "MediSave pays $650 of the remaining $800.", "$2,000 − $1,200 − $650 = $150 cash."], 2, "void-deck",
+      billFor("Singapore Generous Hospital", "B2", "03/03/2025", "07/03/2025", ["$5,000.00", "-$3,000.00", "$2,000.00", "-$1,200.00", "$650.00"])),
     mk("Mdm Siti", 45, "female",
       "Singapore Citizen, working full-time. Day surgery at a public hospital to remove her gallbladder (subsidised class).",
       ["Yes|Y", "1500", "1300", "400"],
-      ["Subsidised day surgery. Bill $8,000; subsidy $4,800; $3,200 payable.", "MediShield Life pays $1,500.", "MediSave pays $1,300.", "$3,200 − $1,500 − $1,300 = $400 cash."], 3, "hawker"),
+      ["Subsidised day surgery. Bill $8,000; subsidy $4,800; $3,200 payable.", "MediShield Life pays $1,500.", "MediSave pays $1,300.", "$3,200 − $1,500 − $1,300 = $400 cash."], 3, "hawker",
+      billFor("Sengkang Generally Hospital", "Day surgery (subsidised)", "12/05/2025", "12/05/2025", ["$8,000.00", "-$4,800.00", "$3,200.00", "-$1,500.00", "$1,300.00"])),
     mk("Mr Kumar", 52, "male",
       "Permanent Resident. Hospitalised 7 days in an A-class ward after a heart attack.",
       ["No|N", "6000", "3500", "8500"],
-      ["A-class wards are not subsidised. Full bill $18,000.", "MediShield Life pays $6,000 (pro-rated, as claims are pegged to subsidised-ward bills).", "MediSave pays $3,500.", "$18,000 − $6,000 − $3,500 = $8,500 cash."], 4, "hospital"),
+      ["A-class wards are not subsidised. Full bill $18,000.", "MediShield Life pays $6,000 (pro-rated, as claims are pegged to subsidised-ward bills).", "MediSave pays $3,500.", "$18,000 − $6,000 − $3,500 = $8,500 cash."], 4, "hospital",
+      billFor("Tan Took Sing Hospital", "A", "20/06/2025", "27/06/2025", ["$18,000.00", "$0.00", "$18,000.00", "-$6,000.00", "$3,500.00"])),
     mk("Mdm Lim", 75, "female",
       "Singapore Citizen, lives alone. Admitted 10 days in a C-class ward for hip fracture surgery.",
       ["Yes|Y", "3200", "600", "200"],
-      ["C-class ward → highest subsidy tier. Bill $20,000; subsidy $16,000; $4,000 payable.", "MediShield Life pays $3,200.", "MediSave pays $600.", "$4,000 − $3,200 − $600 = $200 cash."], 1, "hdb-home"),
+      ["C-class ward → highest subsidy tier. Bill $20,000; subsidy $16,000; $4,000 payable.", "MediShield Life pays $3,200.", "MediSave pays $600.", "$4,000 − $3,200 − $600 = $200 cash."], 1, "hdb-home",
+      billFor("Changi Generous Hospital", "C", "02/08/2025", "12/08/2025", ["$20,000.00", "-$16,000.00", "$4,000.00", "-$3,200.00", "$600.00"])),
   ];
 }
 
@@ -1207,7 +1303,7 @@ function viewDisplay() {
    ===================================================================== */
 function viewTeam() {
   const slot = parseInt(params.get("slot"), 10) - 1;
-  let game = null, p = null, key = "", busy = false, sitOpen = false, sheetTimer = null;
+  let game = null, p = null, key = "", busy = false, sitOpen = false, sheetTimer = null, billOpen = true;
   document.body.classList.add("team-page");
 
   if (!(slot >= 0 && slot < SLOTS)) {
@@ -1249,7 +1345,7 @@ function viewTeam() {
     }
     const status = game.status || "waiting";
     const confused = p?.hintStep === step && !done;
-    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName].join("|");
+    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null)].join("|");
     if (k === key) return;
     const wasDone = key && key.split("|")[3] === "true";
     key = k;
@@ -1277,7 +1373,9 @@ function viewTeam() {
          <form class="answer" id="ansForm" autocomplete="off">
            <div class="field">${numeric ? `<span class="prefix">$</span>` : ""}<input id="ans" ${numeric ? 'inputmode="decimal" placeholder="0.00"' : 'placeholder="Type your answer"'} enterkeyhint="send" aria-label="Your answer" required></div>
            <button class="btn-3d" id="sendBtn">Check answer</button>
-         </form>`}`;
+         </form>`}
+      ${ch.bill && ch.bill.show !== false ? `<details class="t-bill" id="billBox" ${billOpen ? "open" : ""}><summary><span>📄 ${esc(ch.name)}'s bill</span><span class="chev">${icon("chev")}</span></summary>${billHTML(ch)}</details>` : ""}`;
+    $("#billBox")?.addEventListener("toggle", e => { billOpen = e.target.open; });
     $("#sitBtn").onclick = () => { sitOpen = !sitOpen; $("#sit").hidden = !sitOpen; $("#sitBtn").setAttribute("aria-expanded", sitOpen); };
     const form = $("#ansForm");
     if (form) form.onsubmit = e => { e.preventDefault(); submit($("#ans").value); };
@@ -1439,7 +1537,7 @@ function viewAdmin() {
     });
 
     const snapshot = ch => ({
-      name: ch.name || "", age: ch.age ?? "", gender: ch.gender || "male", skin: +ch.skin || DEFAULT_SKIN, situation: ch.situation || "", intro: ch.intro || "", outro: ch.outro || "", bg: SCENES[ch.bg] ? ch.bg : "",
+      name: ch.name || "", age: ch.age ?? "", gender: ch.gender || "male", skin: +ch.skin || DEFAULT_SKIN, situation: ch.situation || "", intro: ch.intro || "", outro: ch.outro || "", bg: SCENES[ch.bg] ? ch.bg : "", bill: cleanBill(ch.bill),
       questions: (ch.questions || []).map(q => ({ q: q.q || "", answer: q.answer || "", hint: q.hint || "", explain: q.explain || "", tolerance: +q.tolerance || 0 })),
       updatedAt: Date.now(),
     });
@@ -1561,6 +1659,7 @@ function viewAdmin() {
               <span class="chip">${c.gender === "female" ? "Female" : "Male"}</span>
               <span class="chip"><span class="sw" style="background:${skinHex(c.skin)}"></span>Skin</span>
               ${SCENES[c.bg] ? `<span class="chip">${esc(SCENES[c.bg].label)}</span>` : ""}
+              ${c.bill ? `<span class="chip">📄 ${esc(hospInitials(c.bill.hospital))} bill</span>` : ""}
               <span class="chip brand">${plural((c.questions || []).length, "question")}</span>
               ${used(c.id).map(n => `<span class="chip ok">Team ${n}</span>`).join("")}
             </div>
@@ -1618,7 +1717,7 @@ function viewAdmin() {
     /* ----- character editor (slide-over) ----- */
     const drawer = $("#drawer"), scrim = $("#scrim");
     function openEditor(ch) {
-      draft = ch ? structuredClone(ch) : { name: "", age: "", gender: "male", skin: DEFAULT_SKIN, bg: "hospital", situation: "", questions: DEFAULT_QUESTIONS() };
+      draft = ch ? structuredClone(ch) : { name: "", age: "", gender: "male", skin: DEFAULT_SKIN, bg: "hospital", situation: "", questions: DEFAULT_QUESTIONS(), bill: defaultBill() };
       if (!Array.isArray(draft.questions)) draft.questions = [];
       draft.questions.forEach((q, i) => q._k = q._k || Math.random().toString(36).slice(2));
       openQs = new Set(ch ? [] : draft.questions.filter(q => !q.answer).map(q => q._k));
@@ -1663,6 +1762,7 @@ function viewAdmin() {
             <textarea class="textarea" data-f="situation" rows="3" placeholder="e.g. Singapore Citizen, admitted 4 days in a B2 ward for pneumonia.">${esc(draft.situation)}</textarea>
             <p class="help" style="margin:6px 0 0">Shown on the main screen under the character.</p>
           </div>
+          <div class="sec" id="billSec"></div>
           <div class="sec">
             <div class="sec-title"><span>Questions</span><span class="help" style="text-transform:none;letter-spacing:0">Drag ${icon("grip")} to reorder</span></div>
             <div class="qlist" id="qlist"></div>
@@ -1670,13 +1770,88 @@ function viewAdmin() {
           </div>
         </div>
         <div class="dr-foot"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="save">${icon("check")}Save character</button></div>`;
-      renderQList(); renderPreview();
+      renderQList(); renderPreview(); renderBillEd();
       drawer.classList.add("show"); scrim.classList.add("show"); drawer.setAttribute("aria-hidden", "false");
       setTimeout(() => drawer.querySelector('[data-f="name"]')?.focus(), 250);
     }
     function closeEditor() { drawer.classList.remove("show"); scrim.classList.remove("show"); drawer.setAttribute("aria-hidden", "true"); draft = null; }
     scrim.onclick = closeEditor;
     document.addEventListener("keydown", e => { if (e.key === "Escape" && draft && !document.querySelector("dialog[open]")) closeEditor(); });
+    /* ----- medical bill editor ----- */
+    function renderBillEd() {
+      const el = $("#billSec"); if (!el) return;
+      const b = draft.bill;
+      if (!b) {
+        el.innerHTML = `<div class="sec-title">Medical bill</div>
+          <div class="empty-state" style="padding:22px"><p style="margin:0 0 12px">No bill yet. Teams will see the bill on their phones, under the answer box.</p>
+          <button type="button" class="btn primary" data-bact="create">${icon("plus")}Create bill from template</button></div>`;
+        return;
+      }
+      const custom = !hospitalOf(b.hospital);
+      el.innerHTML = `
+        <div class="sec-title"><span>Medical bill</span>
+          <label class="switch" style="text-transform:none;letter-spacing:0;color:var(--text)"><input type="checkbox" data-bf="show" ${b.show !== false ? "checked" : ""}><span class="track"></span>Show to teams</label></div>
+        <div class="bill-ed">
+          <label class="flabel">Issuing hospital
+            <select class="select" data-bf="hospSel">
+              ${HOSPITALS.map(h => `<option value="${esc(h[1])}" ${b.hospital === h[1] ? "selected" : ""}>${esc(h[1])}</option>`).join("")}
+              <option value="__custom" ${custom ? "selected" : ""}>Custom name…</option>
+            </select></label>
+          <label class="flabel" ${custom ? "" : "hidden"} id="hospCustomWrap">Custom hospital name<input class="input" data-bf="hospital" value="${esc(custom ? b.hospital : "")}" placeholder="e.g. Punggol Pretend Hospital"></label>
+          <label class="flabel">Bill no.<input class="input" data-bf="billNo" value="${esc(b.billNo)}" placeholder="e.g. B123456"></label>
+          <label class="flabel">Ward / class<input class="input" data-bf="ward" value="${esc(b.ward)}" placeholder="e.g. B2"></label>
+          <label class="flabel">Admitted<input class="input" data-bf="admitted" value="${esc(b.admitted)}" placeholder="e.g. 03/03/2025"></label>
+          <label class="flabel">Discharged<input class="input" data-bf="discharged" value="${esc(b.discharged)}" placeholder="e.g. 07/03/2025"></label>
+        </div>
+        <div class="sec-title" style="margin-top:16px"><span>Line items</span><span class="help" style="text-transform:none;letter-spacing:0">Type <b>?</b> as the amount for figures teams must work out</span></div>
+        <div class="bill-head-row"><span>Description</span><span>Amount</span><span>Style</span><span></span></div>
+        <div class="bill-rows">${b.lines.map((l, i) => `
+          <div class="bill-row">
+            <input class="input" data-bl="${i}" data-bk="label" value="${esc(l.label)}" placeholder="e.g. Less: MediShield Life claim" aria-label="Line ${i + 1} description">
+            <input class="input" data-bl="${i}" data-bk="amount" value="${esc(l.amount)}" placeholder="-$1,200.00" aria-label="Line ${i + 1} amount" style="font-family:ui-monospace,Menlo,Consolas,monospace">
+            <select class="select" data-bl="${i}" data-bk="kind" aria-label="Line ${i + 1} style">${BILL_KINDS.map(k => `<option value="${k[0]}" ${l.kind === k[0] ? "selected" : ""}>${k[1]}</option>`).join("")}</select>
+            <div class="btns">
+              <button type="button" class="btn sm ghost icon" data-bact="up" data-i="${i}" ${i === 0 ? "disabled" : ""} aria-label="Move line up">${icon("up")}</button>
+              <button type="button" class="btn sm ghost icon" data-bact="down" data-i="${i}" ${i === b.lines.length - 1 ? "disabled" : ""} aria-label="Move line down">${icon("down")}</button>
+              <button type="button" class="btn sm ghost icon danger" data-bact="del" data-i="${i}" aria-label="Remove line">${icon("trash")}</button>
+            </div>
+          </div>`).join("")}</div>
+        <div class="row" style="margin-top:10px">
+          <button type="button" class="btn sm" data-bact="add">${icon("plus")}Add line</button>
+          <div class="spacer"></div>
+          <button type="button" class="btn sm ghost" data-bact="template">${icon("rotate")}Reset to template</button>
+          <button type="button" class="btn sm ghost danger" data-bact="remove">${icon("trash")}Remove bill</button>
+        </div>
+        <div class="sec-title" style="margin-top:16px">Preview (what teams see)</div>
+        <div class="bill-preview" id="billPrev">${billHTML(draft)}</div>`;
+    }
+    const refreshBillPreview = () => { const el = $("#billPrev"); if (el) el.innerHTML = billHTML(draft); };
+    drawer.addEventListener("input", e => {
+      const t = e.target; if (!draft?.bill) return;
+      const b = draft.bill;
+      if (t.dataset.bf === "show") b.show = t.checked;
+      else if (t.dataset.bf === "hospSel") {
+        const custom = t.value === "__custom";
+        $("#hospCustomWrap").hidden = !custom;
+        if (!custom) b.hospital = t.value; else { b.hospital = $('[data-bf="hospital"]').value.trim() || "My Hospital"; $('[data-bf="hospital"]').focus(); }
+      } else if (t.dataset.bf) b[t.dataset.bf] = t.value;
+      else if (t.dataset.bl != null) b.lines[+t.dataset.bl][t.dataset.bk] = t.value;
+      else return;
+      refreshBillPreview();
+    });
+    drawer.addEventListener("click", async e => {
+      const btn = e.target.closest("[data-bact]"); if (!btn || !draft) return;
+      const act = btn.dataset.bact, i = +btn.dataset.i, L = draft.bill?.lines;
+      if (act === "create") draft.bill = defaultBill();
+      if (act === "add") L.push({ label: "", amount: "", kind: "item", note: "" });
+      if (act === "up") [L[i - 1], L[i]] = [L[i], L[i - 1]];
+      if (act === "down") [L[i + 1], L[i]] = [L[i], L[i + 1]];
+      if (act === "del") L.splice(i, 1);
+      if (act === "template") { if (!await ask("Reset the bill to the template?", "Your line items will be replaced with the standard template.", { ok: "Reset", danger: true })) return; draft.bill = defaultBill({ hospital: draft.bill.hospital, billNo: draft.bill.billNo, ward: draft.bill.ward, admitted: draft.bill.admitted, discharged: draft.bill.discharged }); }
+      if (act === "remove") { if (!await ask("Remove this bill?", "Teams won't see a bill for this character.", { ok: "Remove", danger: true })) return; draft.bill = null; }
+      renderBillEd();
+      if (act === "add") $(".bill-rows")?.lastElementChild?.querySelector("input")?.focus();
+    });
     function renderPreview() {
       const el = $("#edPreview"); if (el) el.innerHTML = charFigure(draft, "talk");
       const sc = $("#edScene"); if (sc) sc.innerHTML = sceneSVG(draft.bg);
@@ -1716,6 +1891,7 @@ function viewAdmin() {
       const t = e.target; if (!draft) return;
       if (t.dataset.f) draft[t.dataset.f] = t.dataset.f === "age" ? (t.value === "" ? "" : +t.value) : t.dataset.f === "skin" ? +t.value : t.value;
       if (["skin", "gender", "age", "bg"].includes(t.dataset.f)) renderPreview();
+      if (t.dataset.f === "name") refreshBillPreview?.();
       if (t.dataset.qf) {
         const i = +t.dataset.qi;
         draft.questions[i][t.dataset.qf] = t.dataset.qf === "tolerance" ? (+t.value || 0) : t.value;
