@@ -6,7 +6,7 @@
 |---|---|---|
 | Main screen | `healthcare.html` | Projected for the room: the 4 characters, live progress, the debrief |
 | Team page | `healthcare.html?view=team&slot=1` to `slot=4` | Team phones, opened by scanning the QR code on the main screen |
-| Admin | `healthcare.html?view=admin` | Facilitator: character library, slot setup, start/pause, reveal answers |
+| Admin | `healthcare.html?view=admin`, or triple-click the 🏥 icon on the main screen, or press Shift+A | Facilitator: character library, slot setup, start/pause, reveal answers |
 
 Until you paste a Firebase config, the page runs in **demo mode**. Demo mode stores everything in the current
 browser, so you can try it on one computer using several tabs. Phones only work once Firebase is connected.
@@ -18,20 +18,14 @@ browser, so you can try it on one computer using several tabs. Phones only work 
 2. **Firestore:** open **Build → Firestore Database → Create database**.
    - Location: `asia-southeast1 (Singapore)`.
    - Start in **production mode**. You'll replace the rules in step 4.
-3. **Authentication** (for the admin login):
-   - Open **Build → Authentication → Get started → Sign-in method** and enable **Email/Password**.
-   - Open the **Users** tab, click **Add user**, and enter the facilitator email and a password.
-     Anyone who needs to run the game can use this login.
-4. **Security rules:** open **Firestore Database → Rules**, paste the contents of [`firestore.rules`](firestore.rules),
-   and replace `facilitator@example.gov.sg` with the admin email from step 3. You can list several emails.
-   Click **Publish**.
-5. **Web app config:** open **Project settings (⚙) → General → Your apps → Web (`</>`)**. Register an app
+3. **Security rules:** open **Firestore Database → Rules**, paste in the contents of [`firestore.rules`](firestore.rules),
+   and click **Publish**. No login is used, so the rules open only this game's three collections.
+4. **Web app config:** open **Project settings (⚙) → General → Your apps → Web (`</>`)**. Register an app
    (no hosting checkbox needed) and copy the `firebaseConfig` object.
-6. Open `healthcare.html`, find `const firebaseConfig = {` near the top of the `<script>`, and replace the
+5. Open `healthcare.html`, find `const firebaseConfig = {` near the top of the `<script>`, and replace the
    placeholder values with your config.
 
-   > The web `apiKey` is not a secret. It only identifies the project. Access is controlled by the
-   > security rules and the admin login.
+   > The web `apiKey` is not a secret. It only identifies the project.
 
 ## 2. Host the page
 
@@ -58,7 +52,7 @@ firebase deploy
 
 Run these from this folder. `firebase use --add` asks you to pick the project you created. `firebase deploy`
 publishes the page and the rules (see `firebase.json`). The site is then at
-`https://<project-id>.web.app/` (main screen) and `https://<project-id>.web.app/healthcare.html?view=admin` (admin).
+`https://<project-id>.web.app/` (main screen). Open admin from the main screen (triple-click 🏥) or at `https://<project-id>.web.app/healthcare.html?view=admin`.
 
 **Option B: GitHub Pages.** Enable Pages for this repo under **Settings → Pages**, using the default branch and
 the root folder. Then open `https://<org>.github.io/induction/healthcare.html`. Only do this if the repo can be
@@ -68,7 +62,8 @@ The QR codes are generated automatically from whatever URL the main screen was o
 
 ## 3. Running a session
 
-1. Open **Admin** (`?view=admin`) and sign in.
+1. Open **Admin**: triple-click the 🏥 icon on the main screen, press **Shift+A**, or go to `?view=admin`.
+   To keep casual visitors out, set `ADMIN_PIN` near the top of `healthcare.html`.
 2. **Character library:** click **+ New character**, or **Add 4 sample characters** to start from examples.
    For each character, set the name, age, gender, medical situation, and the questions. Each question has:
    - **Correct answer(s):** for example `1200`. `$1,200` and `1200.00` are also accepted. Separate alternatives
@@ -105,6 +100,7 @@ hc_progress/{0..3}   step, wrong, attempts, hintStep, lastAnswer, lastResult, la
 When you assign a character, it is copied into `hc_game/state`. Library edits therefore don't change a game
 that's already running unless you re-sync.
 
-**Note:** answers are checked in the team's browser, so the current game's answers are readable by anyone who
-opens the browser developer tools. That's acceptable for an induction activity. Don't put sensitive data in
-the characters.
+**Note:** there is no login. Anyone who has the page address could open the admin screen or change game data,
+and anyone who opens the browser developer tools could see the answers. That's fine for an induction
+activity, but don't put sensitive or personal data in the characters. `ADMIN_PIN` hides the admin screen
+from casual visitors, but it is not real security.

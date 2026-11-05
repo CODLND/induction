@@ -285,6 +285,10 @@ const firebaseConfig = {
   appId: "1:000000000000:web:0000000000000000"
 };
 
+/* Optional: a PIN the admin page asks for (once per browser tab). Leave "" for no PIN.
+   It only keeps casual visitors out of the admin screen; it is not real security. */
+const ADMIN_PIN = "";
+
 const FIREBASE_VERSION = "10.12.2";
 const USE_FIREBASE = !!firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("PASTE");
 const SLOTS = 4;
@@ -297,14 +301,12 @@ const PROG = i => `hc_progress/${i}`;    // live progress per slot (0..3)
    ===================================================================== */
 async function makeFirebaseStore() {
   const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/`;
-  const [{ initializeApp }, fs, au] = await Promise.all([
+  const [{ initializeApp }, fs] = await Promise.all([
     import(base + "firebase-app.js"),
     import(base + "firebase-firestore.js"),
-    import(base + "firebase-auth.js"),
   ]);
   const app = initializeApp(firebaseConfig);
   const db = fs.getFirestore(app);
-  const auth = au.getAuth(app);
   const ref = p => fs.doc(db, p);
   return {
     mode: "firebase",
@@ -322,9 +324,6 @@ async function makeFirebaseStore() {
       if (out.write) t.set(r, out.write);
       return out.result;
     }),
-    onAuth: cb => au.onAuthStateChanged(auth, u => cb(u ? { email: u.email } : null)),
-    signIn: (email, pw) => au.signInWithEmailAndPassword(auth, email, pw),
-    signOut: () => au.signOut(auth),
   };
 }
 
@@ -354,8 +353,6 @@ function makeLocalStore() {
     newId: () => Math.random().toString(36).slice(2, 12),
     now: () => Date.now(),
     tx: async (p, fn) => { const out = fn(get(p)); if (out.write) put(p, out.write); return out.result; },
-    onAuth: cb => { cb({ email: "demo" }); return () => {}; },
-    signIn: async () => {}, signOut: async () => {},
   };
 }
 
@@ -381,7 +378,7 @@ function showError(e) {
   console.error(e);
   const msg = String(e?.message || e);
   toast(/permission|insufficient/i.test(msg)
-    ? "Permission denied by Firestore rules. Are you signed in with an admin email listed in firestore.rules?"
+    ? "Permission denied by Firestore. Check that the rules from firestore.rules have been published in the Firebase console."
     : "Error: " + msg, true, 6000);
 }
 
@@ -537,12 +534,11 @@ function viewDisplay() {
   app.innerHTML = `
     <div class="display" id="display">
       <header class="topbar">
-        <h1>🏥 Healthcare Bill Challenge</h1>
+        <h1><span id="secretAdmin" style="cursor:default;user-select:none">🏥</span> Healthcare Bill Challenge</h1>
         <div class="tools">
           <span class="status-pill" id="statusPill">…</span>
           <button class="btn" id="qrBtn" title="Show/hide QR codes (Q)">QR</button>
           <button class="btn" id="fsBtn" title="Full screen (F)">⛶</button>
-          <a class="btn" href="?view=admin" target="_blank" title="Admin">⚙</a>
         </div>
       </header>
       <main class="stage" id="stage"></main>
@@ -552,11 +548,15 @@ function viewDisplay() {
   const toggleQR = () => { hideQR = !hideQR; $("#display").classList.toggle("hide-qr", hideQR); };
   const toggleFS = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
   $("#qrBtn").onclick = toggleQR;
+  // Hidden admin access: triple-click the 🏥 icon, or press Shift+A
+  const openAdmin = () => window.open("?view=admin", "_blank");
+  $("#secretAdmin").addEventListener("click", e => { if (e.detail === 3) openAdmin(); });
   $("#fsBtn").onclick = toggleFS;
   document.addEventListener("keydown", e => {
     if (e.target.matches("input,textarea")) return;
     if (e.key === "q" || e.key === "Q") toggleQR();
     if (e.key === "f" || e.key === "F") toggleFS();
+    if (e.key === "A" && e.shiftKey) openAdmin();
   });
 
   const info = i => {
@@ -805,28 +805,25 @@ function viewTeam() {
    ===================================================================== */
 function viewAdmin() {
   app.innerHTML = `<div class="admin" id="admin"><p class="muted">Loading…</p></div>`;
-  let started = false;
-  DB.onAuth(user => {
-    if (!user) { started = false; renderLogin(); return; }
-    if (!started) { started = true; startAdmin(user); }
-  });
+  let unlocked = !ADMIN_PIN;
+  try { if (sessionStorage.getItem("hcgame:pin") === ADMIN_PIN) unlocked = true; } catch {}
+  if (unlocked) startAdmin(); else renderPin();
 
-  function renderLogin() {
+  function renderPin() {
     $("#admin").innerHTML = `<form class="login" id="login">
-      <h1>Admin sign-in</h1>
-      <p class="muted" style="margin:0 0 6px">Use the admin account you created in Firebase Authentication.</p>
-      <input type="email" id="em" placeholder="Email" required autocomplete="username">
-      <input type="password" id="pw" placeholder="Password" required autocomplete="current-password">
-      <button class="btn primary">Sign in</button>
+      <h1>Admin</h1>
+      <input type="password" id="pin" placeholder="Enter PIN" inputmode="numeric" required autofocus>
+      <button class="btn primary">Open admin</button>
       <a href="?view=display" class="muted" style="font-size:13px">← Back to main screen</a></form>`;
-    $("#login").onsubmit = async e => {
+    $("#login").onsubmit = e => {
       e.preventDefault();
-      try { await DB.signIn($("#em").value.trim(), $("#pw").value); }
-      catch (err) { toast("Sign-in failed: " + (err.code || err.message), true); }
+      if ($("#pin").value !== ADMIN_PIN) return toast("Wrong PIN.", true);
+      try { sessionStorage.setItem("hcgame:pin", ADMIN_PIN); } catch {}
+      startAdmin();
     };
   }
 
-  function startAdmin(user) {
+  function startAdmin() {
     let game = null, lib = [];
     const prog = Array(SLOTS).fill(null);
     let draft = null;
@@ -834,8 +831,8 @@ function viewAdmin() {
     $("#admin").innerHTML = `
       <header class="adm-top">
         <div><h1>Healthcare Bill Challenge — Admin</h1>
-          <div class="muted" style="font-size:13px">${DB.mode === "local" ? `<span class="badge warn">Demo mode: data is saved in this browser only. Add your Firebase config to play with phones.</span>` : `Signed in as ${esc(user.email)}`}</div></div>
-        <div class="row"><a class="btn primary" href="?view=display" target="_blank">Open main screen ↗</a>${DB.mode === "firebase" ? `<button class="btn" id="signOut">Sign out</button>` : ""}</div>
+          <div class="muted" style="font-size:13px">${DB.mode === "local" ? `<span class="badge warn">Demo mode: data is saved in this browser only. Add your Firebase config to play with phones.</span>` : `Connected to Firebase project <b>${esc(firebaseConfig.projectId)}</b>`}</div></div>
+        <div class="row"><a class="btn primary" href="?view=display" target="_blank">Open main screen ↗</a></div>
       </header>
       <section class="card">
         <div class="sec-head"><h2>Live game</h2><div class="row" id="gameCtl"></div></div>
@@ -853,7 +850,6 @@ function viewAdmin() {
         <div class="lib" id="lib"></div>
       </section>
       <dialog class="editor" id="editor"></dialog>`;
-    if ($("#signOut")) $("#signOut").onclick = () => DB.signOut();
 
     /* ----- game controls ----- */
     function renderCtl() {
