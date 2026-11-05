@@ -143,3 +143,18 @@ character's sprite is picked automatically from its gender and age: under 20 use
 uses the adult sprite, and 60+ uses the elderly sprite. The skin colour is swapped to the tone chosen in
 admin, and the frames are animated: talking while asking a question, impatient when idle, confused after
 a wrong answer, and cheering when finished.
+
+---
+
+## Status and replacing a sprite
+
+All six sheets are in `sprites/`. To replace one, generate a new sheet, then run:
+
+```bash
+python3 tools/build_sprites.py new-sheet.jpg sprites/female-teen.png
+```
+
+Run it from the repo root. It needs Python 3 with Pillow and NumPy. If Gemini cut some frames off or let
+frames overlap, list them under that sprite's name in `SPEC` at the top of the script. Then copy the printed
+`cw`, `ch` and `skin` values into `SPRITES` in `healthcare.html`.
+

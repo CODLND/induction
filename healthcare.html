@@ -3,286 +3,425 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b6082">
 <title>Healthcare Bill Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- QR code generator (classic script, exposes window.QRCode) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
+  /* =================================================================
+     DESIGN TOKENS
+     ================================================================= */
   :root {
-    --teal: #1b6082;
-    --teal-dark: #0e3b53;
-    --teal-soft: #e6f0f5;
-    --ink: #111;
-    --text: #1d2a33;
-    --muted: #5b6b75;
-    --line: #d5dee4;
-    --bg: #ffffff;
-    --card: #f5f8fa;
-    --ok: #1f9d55;
-    --ok-soft: #e7f6ee;
-    --warn: #c77700;
-    --warn-soft: #fff6e0;
-    --bad: #c2410c;
-    --bad-soft: #fdeee7;
-    --radius: 12px;
-    font-family: "Aptos", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
-    color: var(--text);
+    --brand: #1b6082; --brand-600: #164f6b; --brand-700: #0f3a50; --brand-50: #eef6fa; --brand-100: #d6eaf3; --brand-200: #a9d2e4;
+    --ink: #0f172a; --text: #1e293b; --muted: #64748b; --subtle: #94a3b8;
+    --line: #e2e8f0; --line-2: #cbd5e1;
+    --bg: #f4f7fb; --surface: #ffffff; --surface-2: #f8fafc;
+    --ok: #16a34a; --ok-600: #15803d; --ok-50: #ecfdf3; --ok-100: #d1fadf;
+    --warn: #d97706; --warn-600: #b45309; --warn-50: #fffbeb; --warn-100: #fef3c7;
+    --bad: #e11d48; --bad-50: #fff1f2;
+    --gold: #f5b400;
+    --r-xs: 8px; --r-sm: 12px; --r: 16px; --r-lg: 22px; --r-xl: 28px;
+    --sh-1: 0 1px 2px rgba(15, 23, 42, .05), 0 1px 3px rgba(15, 23, 42, .06);
+    --sh-2: 0 2px 6px rgba(15, 23, 42, .05), 0 10px 30px rgba(15, 23, 42, .08);
+    --sh-3: 0 10px 40px rgba(15, 23, 42, .18);
+    --font: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --spring: cubic-bezier(.3, 1.4, .5, 1);
+    color-scheme: light;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--bg); }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); -webkit-font-smoothing: antialiased; }
   button, input, select, textarea { font: inherit; color: inherit; }
-  a { color: var(--teal); }
+  a { color: var(--brand); }
   [hidden] { display: none !important; }
+  svg.i { width: 1.1em; height: 1.1em; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  :focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 45%, transparent); outline-offset: 2px; }
 
-  /* ---------- shared bits ---------- */
+  /* =================================================================
+     SHARED COMPONENTS
+     ================================================================= */
   .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 9px 14px; border-radius: 9px; border: 1px solid var(--line);
-    background: #fff; cursor: pointer; text-decoration: none; color: var(--text);
-    font-weight: 600; font-size: 14px; white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 38px; padding: 0 14px; border-radius: var(--r-sm); border: 1px solid var(--line);
+    background: var(--surface); color: var(--text); font-weight: 600; font-size: 14px;
+    cursor: pointer; text-decoration: none; white-space: nowrap; box-shadow: var(--sh-1);
+    transition: background .15s, border-color .15s, transform .1s, box-shadow .15s;
   }
-  .btn:hover { border-color: var(--teal); }
-  .btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
-  .btn.primary:hover { background: var(--teal-dark); }
+  .btn:hover { border-color: var(--line-2); background: var(--surface-2); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.primary:hover { background: var(--brand-600); }
+  .btn.ghost { background: transparent; border-color: transparent; box-shadow: none; }
+  .btn.ghost:hover { background: rgba(15, 23, 42, .05); }
   .btn.danger { color: var(--bad); }
-  .btn.danger:hover { border-color: var(--bad); }
-  .btn.sm { padding: 6px 10px; font-size: 13px; }
-  .btn.on { background: var(--teal); color: #fff; border-color: var(--teal); }
-  .btn:disabled { opacity: .55; cursor: default; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn.danger:hover { background: var(--bad-50); border-color: #fecdd3; }
+  .btn.danger-solid { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .btn.sm { height: 32px; padding: 0 10px; font-size: 13px; border-radius: 10px; }
+  .btn.icon { width: 38px; padding: 0; }
+  .btn.sm.icon { width: 32px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .chip.brand { background: var(--brand-50); border-color: var(--brand-100); color: var(--brand-700); }
+  .chip.ok { background: var(--ok-50); border-color: var(--ok-100); color: var(--ok-600); }
+  .chip.warn { background: var(--warn-50); border-color: var(--warn-100); color: var(--warn-600); }
+  .chip .sw { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .spacer { flex: 1; }
   .muted { color: var(--muted); }
-  .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 700; background: var(--teal-soft); color: var(--teal-dark); }
-  .badge.warn { background: var(--warn-soft); color: var(--warn); }
-  .badge.ok { background: var(--ok-soft); color: var(--ok); }
-  .toast {
-    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-    background: #222; color: #fff; padding: 10px 16px; border-radius: 10px;
-    z-index: 1000; max-width: min(92vw, 640px); font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.25);
-  }
-  .toast.err { background: var(--bad); }
-  .demo-banner {
-    position: fixed; right: 10px; bottom: 10px; z-index: 50;
-    background: var(--warn-soft); color: var(--warn); border: 1px solid #f0d9a8;
-    font-size: 12px; padding: 6px 10px; border-radius: 8px; max-width: 90vw;
-  }
 
-  /* ---------- figure animations ---------- */
+  /* toasts */
+  .toasts { position: fixed; z-index: 1000; right: 16px; top: 72px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; max-width: calc(100vw - 32px); }
+  .toast { pointer-events: auto; display: flex; gap: 10px; align-items: flex-start; background: var(--ink); color: #fff; padding: 12px 14px; border-radius: var(--r-sm); box-shadow: var(--sh-3); font-size: 14px; max-width: 420px; animation: toastIn .3s var(--spring); }
+  .toast .i { margin-top: 1px; }
+  .toast.ok .i { color: #4ade80; } .toast.err { background: #881337; } .toast.err .i { color: #fda4af; }
+  @keyframes toastIn { from { transform: translateY(12px) scale(.96); opacity: 0; } }
+
+  /* confirm modal */
+  dialog.confirm { border: none; border-radius: var(--r-lg); padding: 0; width: min(420px, calc(100vw - 32px)); box-shadow: var(--sh-3); }
+  dialog.confirm::backdrop { background: rgba(15, 23, 42, .45); backdrop-filter: blur(2px); }
+  .confirm-body { padding: 22px 22px 8px; }
+  .confirm-body h3 { margin: 0 0 6px; font-size: 18px; color: var(--ink); }
+  .confirm-body p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .confirm-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 22px 20px; }
+
+  .demo-banner { position: fixed; left: 12px; bottom: 12px; z-index: 900; background: var(--warn-50); color: var(--warn-600); border: 1px solid var(--warn-100); font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 99px; cursor: pointer; box-shadow: var(--sh-1); }
+
+  /* figures (sprite canvas or drawn SVG) */
   .fig svg { display: block; height: 100%; width: auto; overflow: visible; }
   .fig canvas.sprite { display: block; height: 100%; width: auto; max-width: 100%; object-fit: contain; object-position: 50% 100%; }
   .fig.confused > * { animation: shake .45s ease-in-out 3; }
-  .fig.cheer > * { animation: hop .6s ease-out 2; }
+  .fig.cheer > * { animation: hop .6s var(--ease) 2; }
   .fig.joy > svg { animation: bounce 1.4s ease-in-out infinite; }
-  @keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-6px) rotate(-2deg) } 75% { transform: translateX(6px) rotate(2deg) } }
-  @keyframes hop { 0%,100% { transform: translateY(0) } 40% { transform: translateY(-12%) } }
+  @keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-5px) rotate(-1.5deg) } 75% { transform: translateX(5px) rotate(1.5deg) } }
+  @keyframes hop { 0%,100% { transform: translateY(0) } 40% { transform: translateY(-10%) } }
   @keyframes bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4%) } }
-  @keyframes pop { 0% { transform: scale(.8); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+  @keyframes pop { 0% { transform: scale(.92); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
 
-  /* ---------- DISPLAY (main screen) ---------- */
-  .display { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 1.2vh 2vw 0; min-height: 6vh; }
-  .topbar h1 { margin: 0; font-size: min(3vh, 2vw); color: var(--teal-dark); letter-spacing: .2px; }
-  .topbar .tools { display: flex; gap: 8px; align-items: center; }
-  .topbar .tools .btn { font-size: min(1.6vh, 13px); padding: .6vh .8vw; opacity: .55; }
-  .topbar .tools .btn:hover { opacity: 1; }
-  .status-pill { font-size: min(1.8vh, 15px); font-weight: 700; padding: .5vh 1vw; border-radius: 99px; background: var(--teal-soft); color: var(--teal-dark); }
-  .status-pill.live { background: var(--ok-soft); color: var(--ok); }
-  .status-pill.paused { background: var(--warn-soft); color: var(--warn); }
+  /* confetti */
+  .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+  .confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; animation: fall var(--d, 1.8s) var(--ease) forwards; }
+  @keyframes fall { to { transform: translate(var(--x, 0), var(--y, 420px)) rotate(var(--r, 540deg)); opacity: 0; } }
 
-  .stage { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.2vw; padding: 1vh 2.2vw 2vh; }
-  .col { display: grid; grid-template-rows: 19vh minmax(0, 1fr) auto 22vh auto; min-width: 0; }
-  .col.empty { opacity: .4; }
+  /* =================================================================
+     DISPLAY — main screen (projector)
+     ================================================================= */
+  .display { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+    background: radial-gradient(1200px 600px at 10% -10%, #dff0f7 0%, transparent 60%), radial-gradient(900px 500px at 110% 110%, #e6f4ec 0%, transparent 55%), var(--bg); }
+  .d-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 1.6vh 2vw 1vh; }
+  .d-brand { display: flex; align-items: center; gap: 1vw; }
+  .d-logo { width: 5.2vh; height: 5.2vh; border-radius: 1.4vh; background: var(--brand); display: grid; place-items: center; font-size: 3vh; box-shadow: var(--sh-2); user-select: none; cursor: default; }
+  .d-title { font-size: min(3vh, 1.9vw); font-weight: 800; color: var(--ink); letter-spacing: -.02em; line-height: 1.1; }
+  .d-sub { font-size: min(1.7vh, 1.05vw); color: var(--muted); font-weight: 500; }
+  .d-meta { display: flex; align-items: center; gap: .7vw; }
+  .d-pill { display: inline-flex; align-items: center; gap: .5vw; height: 4.2vh; padding: 0 1.1vw; border-radius: 99px; background: var(--surface); box-shadow: var(--sh-1); font-weight: 700; font-size: min(1.8vh, 1.1vw); color: var(--text); border: 1px solid var(--line); }
+  .d-pill .dot { width: 1vh; height: 1vh; border-radius: 50%; background: var(--subtle); }
+  .d-pill.live { background: var(--ok-50); color: var(--ok-600); border-color: var(--ok-100); }
+  .d-pill.live .dot { background: var(--ok); animation: pulse 1.4s infinite; }
+  .d-pill.paused { background: var(--warn-50); color: var(--warn-600); border-color: var(--warn-100); }
+  .d-pill.paused .dot { background: var(--warn); }
+  .d-tool { width: 4.2vh; height: 4.2vh; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; color: var(--muted); cursor: pointer; opacity: .6; transition: opacity .2s; font-size: 2vh; }
+  .d-tool:hover { opacity: 1; }
 
-  .bubble {
-    position: relative; margin-left: 24%; margin-right: 0;
-    background: var(--teal); color: #fff; border: 3px solid var(--teal-dark);
-    border-radius: 50% / 50%; padding: 1.6vh 2.2vw;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-    font-size: min(2.35vh, 1.35vw); line-height: 1.25; animation: pop .35s ease-out;
-  }
-  .bubble::after {
-    content: ""; position: absolute; left: 7%; bottom: -3.4vh; width: 4.8vw; height: 4.4vh;
-    background: var(--teal); clip-path: polygon(0 100%, 38% 0, 100% 0);
-  }
-  .bubble .qnum { font-size: .7em; opacity: .8; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; margin-bottom: .3vh; }
-  .bubble.confused { background: #b86b00; border-color: #7a4700; }
-  .bubble.confused::after { background: #b86b00; }
-  .bubble.done { background: var(--ok); border-color: #136b39; }
-  .bubble.done::after { background: var(--ok); }
+  .stage { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4vw; padding: .6vh 2vw 2.2vh; }
+  .pcard { position: relative; display: grid; grid-template-rows: auto 15.5vh minmax(0, 1fr) auto 19vh auto; min-width: 0; background: var(--surface);
+    border-radius: var(--r-xl); box-shadow: var(--sh-2); border: 1px solid rgba(15, 23, 42, .06); padding: 1.6vh 1.1vw 1.4vh; overflow: hidden;
+    transition: box-shadow .3s, transform .3s var(--spring); }
+  .pcard.empty { opacity: .45; }
+  .pcard.confused { box-shadow: 0 0 0 3px var(--warn), var(--sh-2); animation: shake .45s ease-in-out 2; }
+  .pcard.done { box-shadow: 0 0 0 3px var(--ok), var(--sh-2); }
+  .pc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 1.1vh; min-width: 0; }
+  .team-chip { display: inline-flex; align-items: center; gap: .5vw; min-width: 0; height: 3.6vh; padding: 0 .9vw; border-radius: 99px; background: var(--brand-50); color: var(--brand-700); font-weight: 800; font-size: min(1.75vh, 1.05vw); }
+  .team-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank { font-size: min(3vh, 1.8vw); line-height: 1; }
 
-  .mid { display: flex; align-items: flex-end; justify-content: space-between; gap: .8vw; min-height: 0; padding-top: 4.2vh; }
-  .mid .fig { height: 100%; min-height: 0; min-width: 0; flex: 0 1 auto; margin-left: 4%; }
-  .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: .5vh; width: 40%; max-width: 15vh; margin-bottom: .5vh; }
-  .qr-box { width: 100%; aspect-ratio: 1; background: #fff; padding: 5%; border: 2px solid var(--teal); border-radius: 8px; }
+  .bubble { position: relative; background: var(--brand); color: #fff; border-radius: var(--r-lg); padding: 1.4vh 1.1vw; display: flex; flex-direction: column; justify-content: center; text-align: center;
+    font-size: min(2.25vh, 1.3vw); line-height: 1.28; font-weight: 600; box-shadow: 0 8px 20px rgba(27, 96, 130, .25); animation: pop .35s var(--spring); margin: 0 .2vw 0 1.4vw; }
+  .bubble::after { content: ""; position: absolute; left: 18%; bottom: -1.6vh; width: 3vh; height: 2vh; background: inherit; clip-path: polygon(0 0, 100% 0, 15% 100%); }
+  .bubble .qnum { font-size: .66em; opacity: .85; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: .5vh; }
+  .bubble.confused { background: var(--warn); box-shadow: 0 8px 20px rgba(217, 119, 6, .3); }
+  .bubble.done { background: var(--ok); box-shadow: 0 8px 20px rgba(22, 163, 74, .3); }
+  .bubble.idle { background: var(--surface-2); color: var(--muted); box-shadow: none; border: 1px dashed var(--line-2); }
+
+  .pc-mid { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: .6vw; min-height: 0; padding-top: 2.6vh; }
+  .spot { position: relative; height: 100%; min-width: 0; flex: 1 1 auto; display: flex; align-items: flex-end; justify-content: center; }
+  .spot::before { content: ""; position: absolute; left: 50%; bottom: 0; width: 80%; height: 2.2vh; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(15, 23, 42, .16), transparent); }
+  .spot .fig { position: relative; height: 100%; min-width: 0; display: flex; align-items: flex-end; justify-content: center; }
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: .5vh; width: 32%; max-width: 13vh; flex: 0 0 auto; margin-bottom: .4vh; }
+  .qr-box { width: 100%; aspect-ratio: 1; background: #fff; padding: 6%; border-radius: var(--r-sm); box-shadow: var(--sh-1); border: 1px solid var(--line); }
   .qr-box img, .qr-box canvas { width: 100% !important; height: auto !important; display: block; }
-  .qr-box .qr-fallback { font-size: 1.1vh; word-break: break-all; }
-  .qr-label { font-size: min(1.5vh, .9vw); text-align: center; color: var(--muted); line-height: 1.2; }
-  .qr-label b { color: var(--teal-dark); display: block; font-size: 1.15em; }
-  .hide-qr .qr-wrap { visibility: hidden; }
+  .qr-box .qr-fallback { font-size: 1vh; word-break: break-all; color: var(--muted); }
+  .qr-label { font-size: min(1.4vh, .85vw); text-align: center; color: var(--muted); font-weight: 600; }
+  .hide-qr .qr-wrap { display: none; }
 
-  .name { text-align: center; font-weight: 800; font-size: min(3.3vh, 2vw); text-transform: uppercase; padding: 1vh 0 1.2vh; letter-spacing: .3px; color: var(--ink); line-height: 1.1; }
-  .name small { display: block; text-transform: none; font-weight: 600; font-size: .55em; color: var(--muted); margin-top: .3vh; }
+  .pc-name { text-align: center; padding: 1.2vh 0 1vh; }
+  .pc-name b { display: block; font-weight: 800; font-size: min(3vh, 1.8vw); color: var(--ink); letter-spacing: -.01em; line-height: 1.1; }
+  .pc-name small { display: block; font-weight: 600; font-size: min(1.6vh, 1vw); color: var(--muted); margin-top: .3vh; }
 
-  .situation {
-    background: var(--teal); color: #fff; border: 3px solid var(--teal-dark);
-    padding: 1.2vh 1vw; overflow: auto; min-height: 0;
-  }
-  .situation h3 { margin: 0 0 .8vh; text-align: center; font-weight: 500; font-size: min(2.6vh, 1.6vw); }
-  .situation .sit-text { font-size: min(1.9vh, 1.1vw); line-height: 1.35; white-space: pre-line; }
-  .situation.hint { background: var(--warn-soft); color: var(--text); border-color: var(--warn); animation: pop .3s ease-out; }
-  .situation.hint h3 { color: var(--warn); font-weight: 800; }
+  .situation { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); padding: 1.2vh .9vw; overflow: auto; min-height: 0; }
+  .situation h3 { display: flex; align-items: center; gap: .5vw; margin: 0 0 .7vh; font-size: min(1.5vh, .95vw); font-weight: 800; color: var(--brand); text-transform: uppercase; letter-spacing: .08em; }
+  .situation .sit-text { font-size: min(1.85vh, 1.12vw); line-height: 1.4; white-space: pre-line; color: var(--text); }
+  .situation.hint { background: var(--warn-50); border-color: var(--warn-100); animation: pop .3s var(--spring); }
+  .situation.hint h3 { color: var(--warn-600); }
 
-  .track { position: relative; height: 6vh; margin: 1.2vh 2% 0; }
-  .track .line { position: absolute; left: 0; right: 0; top: 68%; height: .35vh; background: var(--teal); transform: translateY(-50%); opacity: .35; }
-  .track .fill { position: absolute; left: 0; top: 68%; height: .55vh; background: var(--teal); transform: translateY(-50%); transition: width .9s cubic-bezier(.3,1.3,.5,1); }
-  .track .dot, .track .tick { position: absolute; top: 68%; transform: translate(-50%, -50%); border-radius: 50%; }
-  .track .dot { width: 2.6vh; height: 2.6vh; background: var(--teal); border: 2px solid var(--teal-dark); }
-  .track .tick { width: 1.2vh; height: 1.2vh; background: #fff; border: 2px solid var(--teal); }
-  .track .tick.passed { background: var(--teal); }
-  .track .marker {
-    position: absolute; top: 0; width: 2.6vh; height: 2.6vh; transform: translateX(-50%);
-    background: var(--teal); clip-path: polygon(0 0, 100% 0, 50% 100%);
-    transition: left .9s cubic-bezier(.3,1.3,.5,1);
-  }
-  .track .marker::before { content: ""; position: absolute; inset: 3px 3px 5px; background: var(--teal); }
-  .track-label { text-align: center; font-size: min(1.7vh, 1vw); color: var(--muted); font-weight: 600; }
-  .track-label .medal { font-size: 1.3em; }
+  .pc-foot { padding-top: 1.4vh; }
+  .steps { position: relative; display: flex; gap: .35vw; height: 1.2vh; margin-top: 1.6vh; }
+  .steps .seg { flex: 1; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .steps .seg i { display: block; height: 100%; width: 0; background: var(--brand); border-radius: 99px; transition: width .7s var(--spring); }
+  .steps .seg.on i { width: 100%; }
+  .pcard.done .steps .seg i { background: var(--ok); }
+  .steps .marker { position: absolute; top: -1.9vh; width: 1.6vh; height: 1.2vh; transform: translateX(-50%); background: var(--brand-700); clip-path: polygon(0 0, 100% 0, 50% 100%); transition: left .8s var(--spring); }
+  .pc-stats { display: flex; justify-content: space-between; margin-top: .9vh; font-size: min(1.55vh, .95vw); font-weight: 700; color: var(--muted); }
+  .pc-stats .wrong { color: var(--warn-600); }
 
-  .center-msg { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; color: var(--muted); font-size: 18px; }
+  .center-msg { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; color: var(--muted); font-size: 18px; }
+  .center-msg .big { font-size: 56px; }
 
-  /* debrief overlay */
-  .debrief { position: fixed; inset: 0; background: #fff; z-index: 20; display: flex; flex-direction: column; padding: 2vh 2vw; overflow: auto; }
-  .debrief h2 { margin: 0 0 1.5vh; color: var(--teal-dark); font-size: min(3.4vh, 2.2vw); display: flex; justify-content: space-between; align-items: center; }
-  .debrief-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4vw; flex: 1; min-height: 0; }
-  .db-col { border: 2px solid var(--teal); border-radius: var(--radius); overflow: auto; display: flex; flex-direction: column; }
-  .db-head { background: var(--teal); color: #fff; padding: 1.2vh 1vw; display: flex; gap: .8vw; align-items: center; }
-  .db-head .fig { height: 8vh; flex: 0 0 auto; }
-  .db-head .fig { background: #fff; border-radius: 8px; padding: 4px; }
-  .db-head h3 { margin: 0; font-size: min(2.4vh, 1.4vw); }
-  .db-head .meta { font-size: min(1.5vh, .95vw); opacity: .9; }
-  .db-sit { padding: 1vh 1vw; font-size: min(1.6vh, 1vw); background: var(--teal-soft); color: var(--teal-dark); white-space: pre-line; }
-  .db-q { padding: 1vh 1vw; border-top: 1px solid var(--line); font-size: min(1.7vh, 1.05vw); }
-  .db-q .q { font-weight: 700; }
-  .db-q .a { color: var(--ok); font-weight: 800; font-size: 1.15em; margin-top: .3vh; }
-  .db-q .e { color: var(--muted); margin-top: .3vh; white-space: pre-line; }
-  .db-team { margin-top: auto; padding: 1vh 1vw; background: var(--card); font-size: min(1.6vh, 1vw); border-top: 1px solid var(--line); }
+  /* debrief */
+  .debrief { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; padding: 2.2vh 2vw; overflow: auto;
+    background: radial-gradient(1200px 600px at 0% 0%, #dff0f7 0%, transparent 60%), var(--bg); animation: pop .35s var(--ease); }
+  .debrief-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.8vh; }
+  .debrief-head h2 { margin: 0; font-size: min(3.4vh, 2.2vw); color: var(--ink); letter-spacing: -.02em; }
+  .debrief-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.2vw; flex: 1; min-height: 0; }
+  .db-col { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-2); overflow: auto; display: flex; flex-direction: column; border: 1px solid rgba(15, 23, 42, .06); }
+  .db-head { display: flex; gap: .9vw; align-items: center; padding: 1.4vh 1vw; border-bottom: 1px solid var(--line); }
+  .db-head .fig { height: 9vh; flex: 0 0 auto; }
+  .db-head h3 { margin: 0; font-size: min(2.3vh, 1.4vw); color: var(--ink); }
+  .db-head .meta { font-size: min(1.5vh, .95vw); color: var(--muted); font-weight: 600; }
+  .db-sit { padding: 1.1vh 1vw; font-size: min(1.6vh, 1vw); background: var(--brand-50); color: var(--brand-700); white-space: pre-line; line-height: 1.4; }
+  .db-q { display: grid; grid-template-columns: auto 1fr; gap: .2vh .7vw; padding: 1.2vh 1vw; border-top: 1px solid var(--line); font-size: min(1.7vh, 1.05vw); }
+  .db-q .n { grid-row: span 3; width: 3vh; height: 3vh; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-weight: 800; font-size: .85em; }
+  .db-q .q { font-weight: 700; color: var(--ink); }
+  .db-q .a { justify-self: start; margin-top: .4vh; padding: .3vh .7vw; border-radius: 99px; background: var(--ok-50); color: var(--ok-600); font-weight: 800; font-size: 1.1em; }
+  .db-q .e { color: var(--muted); margin-top: .3vh; white-space: pre-line; line-height: 1.4; }
+  .db-team { margin-top: auto; padding: 1.2vh 1vw; background: var(--surface-2); font-size: min(1.6vh, 1vw); border-top: 1px solid var(--line); font-weight: 600; }
 
-  /* ---------- TEAM (phone) ---------- */
-  .team { max-width: 560px; margin: 0 auto; padding: 16px 16px 90px; }
-  .t-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
-  .t-team { font-weight: 800; font-size: 18px; color: var(--teal-dark); }
-  .t-prog { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--muted); }
-  .t-prog .bar { width: 110px; height: 8px; border-radius: 99px; background: var(--teal-soft); overflow: hidden; }
-  .t-prog .bar i { display: block; height: 100%; background: var(--teal); transition: width .6s; }
-  .t-char { display: flex; gap: 14px; align-items: flex-start; background: var(--card); border-radius: var(--radius); padding: 12px; }
-  .t-char .fig { height: 120px; flex: 0 0 auto; }
-  .t-name { font-weight: 800; font-size: 20px; }
-  .t-char details { margin-top: 6px; font-size: 14px; }
-  .t-char summary { cursor: pointer; color: var(--teal); font-weight: 600; }
-  .t-char details p { margin: 6px 0 0; white-space: pre-line; }
-  .t-bubble { margin-top: 16px; background: var(--teal); color: #fff; border-radius: 22px; padding: 16px 18px; position: relative; animation: pop .3s ease-out; }
-  .t-bubble::before { content: ""; position: absolute; left: 30px; top: -12px; width: 24px; height: 14px; background: var(--teal); clip-path: polygon(0 100%, 30% 0, 100% 100%); }
-  .t-bubble .qlabel { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; opacity: .85; font-weight: 700; }
-  .t-bubble .qtext { font-size: 20px; font-weight: 600; margin-top: 4px; line-height: 1.3; }
-  .t-form { display: flex; gap: 8px; margin-top: 14px; }
-  .t-form input { flex: 1; min-width: 0; font-size: 20px; padding: 12px 14px; border-radius: 10px; border: 2px solid var(--line); }
-  .t-form input:focus { outline: none; border-color: var(--teal); }
-  .t-form .btn { font-size: 17px; padding: 12px 18px; }
-  .t-note { margin-top: 14px; border-radius: var(--radius); padding: 14px 16px; font-size: 16px; line-height: 1.4; animation: pop .3s ease-out; }
-  .t-note.ok { background: var(--ok-soft); color: #145c34; }
-  .t-note.wrong { background: var(--warn-soft); color: #6b4200; border: 1px solid #f0d9a8; }
-  .t-note.info { background: var(--teal-soft); color: var(--teal-dark); }
-  .t-note .hint { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e6c78a; }
-  .t-big { text-align: center; padding: 26px 16px; font-size: 18px; }
-  .t-big .emoji { font-size: 46px; display: block; margin-bottom: 6px; }
-  .chooser { display: grid; gap: 10px; margin-top: 14px; }
-  .chooser a { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--text); }
-  .chooser .fig { height: 60px; }
-
-  /* ---------- ADMIN ---------- */
-  .admin { max-width: 1200px; margin: 0 auto; padding: 18px 16px 80px; }
-  .adm-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
-  .adm-top h1 { margin: 0 0 4px; font-size: 22px; color: var(--teal-dark); }
-  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 18px; }
-  .sec-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-  .sec-head h2 { margin: 0; font-size: 18px; }
-  .note { background: var(--card); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--muted); margin: 0 0 12px; }
-  .slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-  .slot { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--card); }
-  .slot-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .slot label, .ed label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--muted); }
-  .slot input, .slot select, .ed input, .ed select, .ed textarea, .login input {
-    font-size: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); font-weight: 400;
-  }
-  .ed textarea { resize: vertical; min-height: 54px; }
-  .stat { font-size: 12px; font-weight: 700; }
-  .mini-log { font-size: 12px; color: var(--muted); min-height: 16px; }
-  .mini-log .w { color: var(--bad); } .mini-log .c { color: var(--ok); }
-  .switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; cursor: pointer; padding: 6px 10px; border-radius: 9px; border: 1px solid var(--line); }
-  .switch input { width: 18px; height: 18px; accent-color: var(--ok); }
-  .switch.on { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
-  .lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-  .lcard { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; gap: 12px; }
-  .lcard .fig { height: 90px; flex: 0 0 auto; }
-  .lcard h3 { margin: 0; font-size: 16px; }
-  .lcard h3 small { font-weight: 500; color: var(--muted); font-size: 13px; }
-  .lcard p { margin: 4px 0 6px; font-size: 13px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  .lcard .row { margin-top: 6px; }
-  .empty-lib { color: var(--muted); padding: 20px; text-align: center; border: 2px dashed var(--line); border-radius: 12px; grid-column: 1 / -1; }
-
-  dialog.editor { width: min(860px, 96vw); max-height: 92vh; border: none; border-radius: 16px; padding: 0; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
-  dialog.editor::backdrop { background: rgba(10, 30, 40, .45); }
-  .ed { display: flex; flex-direction: column; max-height: 92vh; }
-  .ed-head, .ed-foot { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
-  .ed-foot { border-bottom: none; border-top: 1px solid var(--line); }
-  .ed-head h2 { margin: 0; font-size: 18px; }
-  .ed-body { padding: 16px 18px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
-  .grid3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
-  .grid2 { display: grid; grid-template-columns: 3fr 1fr; gap: 10px; }
-  .skin-row { display: flex; gap: 14px; align-items: center; }
-  .skin-row .fig { height: 84px; flex: 0 0 auto; }
-  .skin-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
-  .skin-pick { display: flex; gap: 8px; }
-  .skin-pick .sw { cursor: pointer; position: relative; }
-  .skin-pick .sw input { position: absolute; opacity: 0; pointer-events: none; }
-  .skin-pick .sw span { display: block; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); box-shadow: inset 0 0 0 2px #fff; }
-  .skin-pick .sw input:checked + span { border: 3px solid var(--teal); transform: scale(1.1); }
-  .skin-pick .sw input:focus-visible + span { outline: 2px solid var(--teal); outline-offset: 2px; }
-  .qrow { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--card); }
-  .qrow-h { display: flex; justify-content: space-between; align-items: center; }
-  .qrow-h b { color: var(--teal-dark); }
-  .login { max-width: 360px; margin: 10vh auto; display: flex; flex-direction: column; gap: 10px; }
-  .login h1 { color: var(--teal-dark); font-size: 22px; margin: 0 0 6px; }
-
-  /* ---------- narrow screens ---------- */
   @media (max-width: 900px) {
     .display { height: auto; overflow: visible; }
-    .stage { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px 16px; padding: 12px 16px 40px; }
-    .col { grid-template-rows: auto 260px auto 180px auto; }
-    .bubble { font-size: 15px; padding: 14px 18px; min-height: 90px; margin-left: 20%; }
-    .bubble::after { width: 40px; height: 26px; bottom: -22px; }
-    .mid { padding-top: 28px; }
-    .qr-wrap { max-width: 110px; }
-    .qr-label, .track-label { font-size: 12px; }
-    .name { font-size: 20px; }
-    .situation h3 { font-size: 16px; } .situation .sit-text { font-size: 14px; }
-    .track { height: 40px; } .track .dot { width: 18px; height: 18px; } .track .tick { width: 10px; height: 10px; } .track .marker { width: 18px; height: 18px; }
-    .topbar h1 { font-size: 18px; } .topbar .tools .btn { font-size: 12px; padding: 5px 8px; }
-    .status-pill { font-size: 12px; padding: 4px 10px; }
-    .debrief-grid { grid-template-columns: 1fr; }
-    .debrief h2 { font-size: 20px; }
-    .db-head h3 { font-size: 17px; } .db-head .meta, .db-sit, .db-q, .db-team { font-size: 14px; } .db-head .fig { height: 60px; }
-    .grid3, .grid2 { grid-template-columns: 1fr; }
+    .stage { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; padding: 8px 16px 40px; }
+    .pcard { grid-template-rows: auto auto 240px auto 170px auto; padding: 16px; }
+    .bubble { font-size: 15px; padding: 14px 16px; min-height: 84px; }
+    .bubble::after { bottom: -12px; width: 22px; height: 14px; }
+    .pc-mid { padding-top: 20px; }
+    .qr-wrap { max-width: 96px; }
+    .team-chip, .qr-label, .pc-stats { font-size: 12px; } .team-chip { height: 28px; padding: 0 10px; }
+    .pc-name b { font-size: 20px; } .pc-name small { font-size: 13px; }
+    .situation h3 { font-size: 11px; } .situation .sit-text { font-size: 14px; }
+    .steps { height: 8px; margin-top: 14px; } .steps .marker { top: -14px; width: 12px; height: 9px; }
+    .d-top { padding: 12px 16px; flex-wrap: wrap; } .d-logo { width: 40px; height: 40px; font-size: 22px; border-radius: 12px; }
+    .d-title { font-size: 18px; } .d-sub { font-size: 12px; } .d-pill { height: 32px; font-size: 13px; padding: 0 12px; } .d-tool { width: 32px; height: 32px; font-size: 15px; }
+    .debrief-grid { grid-template-columns: 1fr; flex: none; } .db-col { overflow: visible; } .debrief-head { flex-wrap: wrap; gap: 8px; } .debrief-head h2 { font-size: 20px; }
+    .db-head h3 { font-size: 17px; } .db-head .meta, .db-sit, .db-q, .db-team { font-size: 14px; } .db-head .fig { height: 64px; } .db-q .n { width: 24px; height: 24px; }
+  }
+
+  /* =================================================================
+     TEAM — phone page
+     ================================================================= */
+  .team-page { min-height: 100vh; min-height: 100dvh; background: linear-gradient(180deg, var(--brand-50) 0, var(--bg) 320px); }
+  .team { max-width: 520px; margin: 0 auto; padding: 14px 16px 140px; }
+  .t-top { display: flex; align-items: center; gap: 12px; padding: 4px 0 14px; }
+  .t-team { font-weight: 800; color: var(--brand-700); font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+  .t-steps { flex: 1; display: flex; gap: 5px; height: 10px; }
+  .t-steps .seg { flex: 1; border-radius: 99px; background: rgba(15, 23, 42, .08); overflow: hidden; }
+  .t-steps .seg i { display: block; height: 100%; width: 0; background: var(--ok); border-radius: 99px; transition: width .6s var(--spring); }
+  .t-steps .seg.on i { width: 100%; }
+  .t-steps .seg.now { box-shadow: inset 0 0 0 2px var(--brand-200); }
+  .t-count { font-weight: 800; color: var(--muted); font-size: 14px; }
+  .t-hero { display: flex; align-items: flex-end; gap: 14px; }
+  .t-hero .fig { height: 150px; flex: 0 0 auto; min-width: 70px; display: flex; align-items: flex-end; }
+  .t-id { padding-bottom: 8px; min-width: 0; }
+  .t-name { font-size: 24px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; line-height: 1.15; }
+  .t-id .row { margin-top: 8px; }
+  .t-sit-btn { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; background: none; border: none; padding: 0; color: var(--brand); font-weight: 700; font-size: 14px; cursor: pointer; }
+  .t-sit { margin-top: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; font-size: 15px; line-height: 1.5; white-space: pre-line; box-shadow: var(--sh-1); animation: pop .25s var(--ease); }
+  .q-card { position: relative; margin-top: 18px; background: var(--surface); border-radius: var(--r-lg); padding: 18px 18px 20px; box-shadow: var(--sh-2); border: 1px solid rgba(15, 23, 42, .05); animation: pop .3s var(--spring); }
+  .q-card::before { content: ""; position: absolute; left: 34px; top: -11px; width: 22px; height: 12px; background: var(--surface); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .q-label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; color: var(--brand); }
+  .q-text { font-size: 21px; font-weight: 700; color: var(--ink); margin-top: 6px; line-height: 1.3; letter-spacing: -.01em; }
+  .answer { margin-top: 16px; }
+  .field { display: flex; align-items: center; background: var(--surface); border: 2px solid var(--line); border-radius: var(--r); padding: 0 16px; transition: border-color .15s, box-shadow .15s; }
+  .field:focus-within { border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-100); }
+  .field .prefix { font-size: 22px; font-weight: 800; color: var(--subtle); margin-right: 6px; }
+  .field input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 22px; font-weight: 700; height: 60px; color: var(--ink); }
+  .field input::placeholder { color: var(--subtle); font-weight: 600; }
+  .btn-3d { width: 100%; height: 56px; margin-top: 12px; border: none; border-radius: var(--r); font-size: 17px; font-weight: 800; letter-spacing: .02em; cursor: pointer; color: #fff; background: var(--brand); box-shadow: 0 4px 0 var(--brand-700); transition: transform .08s, box-shadow .08s, filter .15s; }
+  .btn-3d:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--brand-700); }
+  .btn-3d:disabled { filter: grayscale(.4) opacity(.6); }
+  .btn-3d.ok { background: var(--ok); box-shadow: 0 4px 0 var(--ok-600); }
+  .btn-3d.warn { background: var(--warn); box-shadow: 0 4px 0 var(--warn-600); }
+  .t-state { margin-top: 20px; background: var(--surface); border-radius: var(--r-lg); padding: 26px 20px; text-align: center; box-shadow: var(--sh-2); animation: pop .3s var(--spring); position: relative; overflow: hidden; }
+  .t-state > :not(.confetti) { position: relative; z-index: 6; }
+  .t-state .emoji { font-size: 44px; display: block; margin-bottom: 8px; }
+  .t-state h2 { margin: 0 0 6px; font-size: 22px; color: var(--ink); letter-spacing: -.01em; }
+  .t-state p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; transform: translateY(110%); transition: transform .35s var(--spring); }
+  .sheet.show { transform: none; }
+  .sheet-inner { max-width: 520px; margin: 0 auto; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -10px 40px rgba(15, 23, 42, .15); }
+  .sheet.ok .sheet-inner { background: var(--ok-50); }
+  .sheet.wrong .sheet-inner { background: var(--warn-50); }
+  .sheet.info .sheet-inner { background: var(--brand-50); }
+  .sheet h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 20px; }
+  .sheet.ok h3 { color: var(--ok-600); } .sheet.wrong h3 { color: var(--warn-600); } .sheet.info h3 { color: var(--brand-700); }
+  .sheet .ico { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 18px; }
+  .sheet.ok .ico { background: var(--ok); } .sheet.wrong .ico { background: var(--warn); } .sheet.info .ico { background: var(--brand); }
+  .sheet .msg { margin: 8px 0 0; font-size: 15px; color: var(--text); line-height: 1.5; }
+  .sheet .hint { margin-top: 12px; padding: 12px 14px; background: #fff; border-radius: var(--r-sm); font-size: 15px; line-height: 1.5; border: 1px solid var(--warn-100); }
+  .sheet .hint b { color: var(--warn-600); }
+  .chooser { display: grid; gap: 10px; margin-top: 16px; }
+  .chooser a { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); text-decoration: none; color: var(--text); box-shadow: var(--sh-1); }
+  .chooser .fig { height: 64px; width: 56px; display: flex; justify-content: center; }
+  .chooser b { font-size: 17px; color: var(--ink); }
+
+  /* =================================================================
+     ADMIN
+     ================================================================= */
+  .adm-nav { position: sticky; top: 0; z-index: 30; background: rgba(255, 255, 255, .82); backdrop-filter: saturate(1.6) blur(14px); border-bottom: 1px solid var(--line); }
+  .adm-nav-in { max-width: 1240px; margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .adm-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
+  .adm-brand .logo { width: 32px; height: 32px; border-radius: 10px; background: var(--brand); display: grid; place-items: center; font-size: 17px; }
+  .tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
+  .tabs button { height: 32px; padding: 0 14px; border: none; background: none; border-radius: 9px; font-weight: 700; font-size: 14px; color: var(--muted); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+  .tabs button.on { background: var(--surface); color: var(--ink); box-shadow: var(--sh-1); }
+  .tabs .count { font-size: 11px; background: var(--line); color: var(--muted); border-radius: 99px; padding: 1px 7px; }
+  .conn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .conn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-100); }
+  .conn.local .dot { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-100); }
+  .adm-main { max-width: 1240px; margin: 0 auto; padding: 22px 20px 80px; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .page-head h1 { margin: 0; font-size: 24px; color: var(--ink); letter-spacing: -.02em; }
+  .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 10px; box-shadow: var(--sh-1); margin-bottom: 16px; }
+  .seg-ctl { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; }
+  .seg-ctl button { height: 32px; padding: 0 14px; border: none; border-radius: 9px; background: none; font-weight: 700; font-size: 13px; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .seg-ctl button.on { background: var(--surface); color: var(--ink); box-shadow: var(--sh-1); }
+  .seg-ctl button.on[data-status="live"] { background: var(--ok); color: #fff; }
+  .seg-ctl button.on[data-status="paused"] { background: var(--warn); color: #fff; }
+  .switch { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 13px; cursor: pointer; user-select: none; padding: 0 6px; }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch .track { width: 40px; height: 24px; border-radius: 99px; background: var(--line-2); position: relative; transition: background .2s; }
+  .switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: var(--sh-1); transition: transform .25s var(--spring); }
+  .switch input:checked + .track { background: var(--ok); }
+  .switch input:checked + .track::after { transform: translateX(16px); }
+  .switch input:focus-visible + .track { outline: 3px solid var(--brand-200); outline-offset: 2px; }
+  .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+  .slot { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--sh-1); }
+  .slot-top { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 52px; height: 60px; border-radius: 14px; background: linear-gradient(180deg, var(--brand-50), #fff); border: 1px solid var(--line); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; flex: 0 0 auto; padding-top: 4px; }
+  .avatar.fig > * { height: 100%; }
+  .avatar.empty { align-items: center; color: var(--subtle); padding: 0; }
+  .avatar.empty svg { width: 22px; height: 22px; }
+  .slot-id { min-width: 0; flex: 1; }
+  .slot-n { font-size: 11px; font-weight: 800; color: var(--subtle); text-transform: uppercase; letter-spacing: .08em; }
+  .inline-input { width: 100%; border: 1px solid transparent; background: transparent; border-radius: 8px; padding: 4px 6px; margin-left: -7px; font-weight: 800; font-size: 16px; color: var(--ink); }
+  .inline-input:hover { border-color: var(--line); }
+  .inline-input:focus { outline: none; border-color: var(--brand); background: #fff; box-shadow: 0 0 0 3px var(--brand-100); }
+  .select { width: 100%; height: 40px; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 0 12px; background: var(--surface-2); font-weight: 600; font-size: 14px; cursor: pointer; }
+  .flabel { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .mini { display: flex; align-items: center; gap: 10px; }
+  .mini .bar { flex: 1; height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .mini .bar i { display: block; height: 100%; background: var(--brand); border-radius: 99px; transition: width .5s var(--spring); }
+  .mini .bar.done i { background: var(--ok); }
+  .mini span { font-size: 13px; font-weight: 800; color: var(--text); }
+  .feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-height: 66px; }
+  .feed li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+  .feed .tag { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff; flex: 0 0 auto; }
+  .feed .c .tag { background: var(--ok); } .feed .w .tag { background: var(--warn); }
+  .feed .ans { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .feed .empty { color: var(--subtle); font-size: 13px; }
+  .slot-actions { display: flex; gap: 6px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: auto; }
+  .lib-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .search { position: relative; flex: 1; min-width: 200px; max-width: 360px; }
+  .search .i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--subtle); }
+  .search input { width: 100%; height: 40px; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 0 12px 0 36px; background: var(--surface); box-shadow: var(--sh-1); font-size: 14px; }
+  .search input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-100); }
+  .lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .lcard { position: relative; display: flex; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; box-shadow: var(--sh-1); transition: box-shadow .2s, transform .2s var(--ease), border-color .2s; cursor: pointer; }
+  .lcard:hover { box-shadow: var(--sh-2); transform: translateY(-2px); border-color: var(--line-2); }
+  .lcard .avatar { width: 72px; height: 92px; }
+  .lc-body { min-width: 0; flex: 1; }
+  .lc-title { font-weight: 800; font-size: 16px; color: var(--ink); }
+  .lc-body .row { margin-top: 6px; gap: 6px; }
+  .lc-body p { margin: 8px 0 0; font-size: 13px; color: var(--muted); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .lc-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 2px; opacity: 0; transition: opacity .15s; background: var(--surface); border-radius: 10px; }
+  .lcard:hover .lc-actions, .lcard:focus-within .lc-actions { opacity: 1; }
+  @media (hover: none) { .lc-actions { opacity: 1; } }
+  .empty-state { grid-column: 1 / -1; text-align: center; padding: 48px 20px; border: 2px dashed var(--line-2); border-radius: var(--r-lg); color: var(--muted); background: var(--surface); }
+  .empty-state .big { font-size: 40px; }
+  .empty-state h3 { margin: 8px 0 4px; color: var(--ink); }
+  .note { display: flex; gap: 10px; align-items: flex-start; background: var(--brand-50); border: 1px solid var(--brand-100); color: var(--brand-700); border-radius: var(--r); padding: 12px 14px; font-size: 13px; line-height: 1.5; margin-bottom: 16px; }
+  .note code { background: #fff; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--brand-100); }
+
+  /* slide-over editor */
+  .scrim { position: fixed; inset: 0; background: rgba(15, 23, 42, .35); backdrop-filter: blur(2px); z-index: 60; opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .scrim.show { opacity: 1; pointer-events: auto; }
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(720px, 100vw); background: var(--bg); z-index: 61; box-shadow: var(--sh-3); transform: translateX(105%); transition: transform .35s var(--ease); display: flex; flex-direction: column; }
+  .drawer.show { transform: none; }
+  .dr-head, .dr-foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: var(--surface); }
+  .dr-head { border-bottom: 1px solid var(--line); }
+  .dr-foot { border-top: 1px solid var(--line); justify-content: flex-end; }
+  .dr-head h2 { margin: 0; font-size: 18px; color: var(--ink); flex: 1; }
+  .dr-body { flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--sh-1); }
+  .sec-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; font-size: 13px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .profile { display: grid; grid-template-columns: 1fr 120px; gap: 16px; }
+  .profile .preview { grid-row: span 3; border-radius: var(--r); background: linear-gradient(180deg, var(--brand-50), #fff); border: 1px solid var(--line); display: flex; align-items: flex-end; justify-content: center; padding: 10px 6px 6px; min-height: 160px; }
+  .profile .preview .fig { height: 140px; }
+  .grid2 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
+  .input, .textarea { width: 100%; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; background: var(--surface); font-size: 14px; font-weight: 500; color: var(--ink); transition: border-color .15s, box-shadow .15s; }
+  .input:focus, .textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-100); }
+  .textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+  .pills { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .pills label { cursor: pointer; }
+  .pills input { position: absolute; opacity: 0; pointer-events: none; }
+  .pills span { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 13px; color: var(--muted); }
+  .pills input:checked + span { border-color: var(--brand); background: var(--brand-50); color: var(--brand-700); }
+  .pills input:focus-visible + span { outline: 3px solid var(--brand-200); }
+  .skin-pick { display: flex; gap: 8px; }
+  .skin-pick label { cursor: pointer; position: relative; }
+  .skin-pick input { position: absolute; opacity: 0; pointer-events: none; }
+  .skin-pick span { display: block; width: 34px; height: 34px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); transition: transform .15s var(--spring); }
+  .skin-pick input:checked + span { transform: scale(1.12); box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--brand); }
+  .skin-pick input:focus-visible + span { outline: 3px solid var(--brand-200); outline-offset: 3px; }
+  .qlist { display: flex; flex-direction: column; gap: 10px; }
+  .qitem { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); transition: box-shadow .2s, border-color .2s, opacity .2s; }
+  .qitem.dragging { opacity: .4; }
+  .qitem.drop-before { box-shadow: 0 -3px 0 var(--brand); }
+  .qitem.drop-after { box-shadow: 0 3px 0 var(--brand); }
+  .qitem.invalid { border-color: #fda4af; }
+  .q-head { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 6px; cursor: pointer; }
+  .grip { cursor: grab; color: var(--subtle); padding: 6px; border-radius: 8px; display: grid; place-items: center; }
+  .grip:hover { background: var(--surface-2); color: var(--muted); }
+  .q-no { width: 26px; height: 26px; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-weight: 800; font-size: 12px; flex: 0 0 auto; }
+  .q-sum { min-width: 0; flex: 1; }
+  .q-sum b { display: block; font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q-sum small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .q-chev { color: var(--subtle); transition: transform .2s; }
+  .qitem.open .q-chev { transform: rotate(180deg); }
+  .q-body { display: none; padding: 4px 14px 14px; flex-direction: column; gap: 12px; border-top: 1px solid var(--line); }
+  .qitem.open .q-body { display: flex; padding-top: 14px; }
+  .add-q { height: 46px; border: 2px dashed var(--line-2); border-radius: var(--r); background: none; color: var(--muted); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .add-q:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-50); }
+  .help { font-size: 12px; color: var(--subtle); font-weight: 500; }
+  .pin { max-width: 360px; margin: 14vh auto; background: var(--surface); padding: 28px; border-radius: var(--r-xl); box-shadow: var(--sh-2); display: flex; flex-direction: column; gap: 12px; text-align: center; }
+  .pin h1 { margin: 0; font-size: 22px; color: var(--ink); }
+  @media (max-width: 640px) {
+    .profile { grid-template-columns: 1fr; } .profile .preview { grid-row: auto; min-height: 120px; } .grid2 { grid-template-columns: 1fr; }
+    .adm-nav-in { gap: 10px; } .conn { display: none; }
   }
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script type="module">
 /* =====================================================================
-   1. FIREBASE CONFIG — paste your web app config here (see FIREBASE_SETUP.md).
+   1. FIREBASE CONFIG (see FIREBASE_SETUP.md)
       While apiKey still starts with "PASTE", the game runs in DEMO MODE:
-      everything is stored in this browser only (good for trying it out on
-      one computer with several tabs, but phones will not see the data).
+      everything is stored in this browser only.
    ===================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyARCoY6TQUKDghViUafeNMpxIPD_ZyzekA",
@@ -300,7 +439,7 @@ const ADMIN_PIN = "";
 const FIREBASE_VERSION = "10.12.2";
 const USE_FIREBASE = !!firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("PASTE");
 const SLOTS = 4;
-const COL_CHARS = "hc_characters";       // saved character library (admin only)
+const COL_CHARS = "hc_characters";       // saved character library
 const GAME = "hc_game/state";            // current game: slots, status, reveal
 const PROG = i => `hc_progress/${i}`;    // live progress per slot (0..3)
 
@@ -365,7 +504,7 @@ function makeLocalStore() {
 }
 
 /* =====================================================================
-   3. HELPERS
+   3. HELPERS & SHARED UI
    ===================================================================== */
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -373,21 +512,86 @@ const tsMs = v => v == null ? null : typeof v === "number" ? v : (v.toMillis ? v
 const params = new URLSearchParams(location.search);
 const baseUrl = location.origin + location.pathname;
 const teamUrl = i => `${baseUrl}?view=team&slot=${i + 1}`;
-const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+const plural = (n, w) => `${n} ${n === 1 ? w : w.endsWith("try") ? w.slice(0, -1) + "ies" : w + "s"}`;
 
-function toast(msg, isErr = false, ms = 3500) {
+/* Icons (Lucide-style line icons) */
+const ICONS = {
+  play: '<polygon points="6 4 20 12 6 20 6 4"/>',
+  pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',
+  rotate: '<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/>',
+  trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  grip: '<circle cx="9" cy="6" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="18" r="1"/>',
+  chev: '<path d="M6 9l6 6 6-6"/>',
+  up: '<path d="M18 15l-6-6-6 6"/>',
+  down: '<path d="M6 9l6 6 6-6"/>',
+  x: '<path d="M18 6L6 18M6 6l12 12"/>',
+  ext: '<path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7"/>',
+  max: '<path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
+  sparkles: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+  check: '<path d="M20 6L9 17l-5-5"/>',
+  alert: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+};
+const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ""}</svg>`;
+
+function toast(msg, type = "ok", ms = 3500) {
   const t = document.createElement("div");
-  t.className = "toast" + (isErr ? " err" : "");
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), ms);
+  t.className = "toast " + type;
+  t.innerHTML = `${icon(type === "err" ? "alert" : type === "info" ? "info" : "check")}<span>${esc(msg)}</span>`;
+  $("#toasts").appendChild(t);
+  setTimeout(() => { t.style.transition = "opacity .3s"; t.style.opacity = "0"; setTimeout(() => t.remove(), 300); }, ms);
 }
 function showError(e) {
   console.error(e);
   const msg = String(e?.message || e);
   toast(/permission|insufficient/i.test(msg)
-    ? "Permission denied by Firestore. Check that the rules from firestore.rules have been published in the Firebase console."
-    : "Error: " + msg, true, 6000);
+    ? "Permission denied by Firestore. Check that the rules from firestore.rules are published in the Firebase console."
+    : "Something went wrong: " + msg, "err", 6000);
+}
+/* Promise-based confirm modal: ask("Title", "Body", { ok: "Delete", danger: true }) → true/false */
+function ask(title, body, { ok = "Confirm", danger = false, cancel = "Cancel" } = {}) {
+  return new Promise(res => {
+    const d = document.createElement("dialog");
+    d.className = "confirm";
+    d.innerHTML = `<div class="confirm-body"><h3>${esc(title)}</h3><p>${esc(body)}</p></div>
+      <div class="confirm-foot"><button class="btn" value="no">${esc(cancel)}</button><button class="btn ${danger ? "danger-solid" : "primary"}" value="yes">${esc(ok)}</button></div>`;
+    document.body.appendChild(d);
+    d.addEventListener("click", e => { const v = e.target.closest("button")?.value; if (v) d.close(v); else if (e.target === d) d.close("no"); });
+    d.addEventListener("close", () => { res(d.returnValue === "yes"); d.remove(); });
+    d.showModal();
+    d.querySelector('[value="yes"]').focus();
+  });
+}
+function confetti(host, n = 60) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = document.createElement("div");
+  box.className = "confetti";
+  const colors = ["#1b6082", "#16a34a", "#f5b400", "#e11d48", "#38bdf8", "#a855f7"];
+  for (let k = 0; k < n; k++) {
+    const i = document.createElement("i");
+    i.style.left = Math.random() * 100 + "%";
+    i.style.background = colors[k % colors.length];
+    i.style.setProperty("--x", (Math.random() * 160 - 80) + "px");
+    i.style.setProperty("--y", (host.clientHeight * (0.7 + Math.random() * 0.5)) + "px");
+    i.style.setProperty("--r", (Math.random() * 900 - 450) + "deg");
+    i.style.setProperty("--d", (1.3 + Math.random() * 1.2) + "s");
+    i.style.animationDelay = Math.random() * .25 + "s";
+    box.appendChild(i);
+  }
+  host.appendChild(box);
+  setTimeout(() => box.remove(), 3200);
 }
 
 const blankProgress = () => ({ step: 0, wrong: 0, attempts: 0, lastResult: null, lastAnswer: "", hintStep: -1, finishedAt: null, lastAt: null, history: [] });
@@ -413,6 +617,7 @@ function checkAnswer(input, q) {
     return normText(a) !== "" && normText(a) === normText(input);
   });
 }
+const isNumericQ = q => !!q && toNum(String(q.answer).split("|")[0]) !== null;
 const displayAnswer = q => {
   const alts = String(q?.answer ?? "").split("|").map(s => s.trim()).filter(Boolean);
   if (!alts.length) return "—";
@@ -471,63 +676,57 @@ const SKIN_TONES = [
 const DEFAULT_SKIN = 3;
 const skinHex = level => (SKIN_TONES[(+level || DEFAULT_SKIN) - 1] || SKIN_TONES[DEFAULT_SKIN - 1]).hex;
 
-/* ---------- character figure (SVG) ---------- */
+/* ---------- fallback drawn figure (used only if a sprite fails to load) ---------- */
 function figureSVG(gender, mood, skin) {
   const female = gender === "female";
-  const ink = "#111";
+  const ink = "#1e293b";
   const sk = skinHex(skin);
-  const F = (+skin || DEFAULT_SKIN) >= 5 ? "#f3e6dc" : "#2b1d14";   // face features: light on deep skin, dark otherwise
-  const arm = (d) => `<path d="${d}" stroke="${ink}" stroke-width="24" stroke-linecap="round" fill="none"/>`;
+  const F = (+skin || DEFAULT_SKIN) >= 5 ? "#f3e6dc" : "#2b1d14";
+  const arm = d => `<path d="${d}" stroke="${ink}" stroke-width="24" stroke-linecap="round" fill="none"/>`;
   const body = female
     ? `${arm("M70,114 L50,212")}${arm("M130,114 L150,212")}
        <path d="M70,110 Q70,94 100,92 Q130,94 130,110 L134,150 L158,250 L42,250 L66,150 Z" fill="${ink}"/>
        <rect x="72" y="244" width="24" height="142" fill="${ink}"/><rect x="104" y="244" width="24" height="142" fill="${ink}"/>
-       <circle class="skin" cx="50" cy="214" r="12" fill="${sk}"/><circle class="skin" cx="150" cy="214" r="12" fill="${sk}"/>`
+       <circle cx="50" cy="214" r="12" fill="${sk}"/><circle cx="150" cy="214" r="12" fill="${sk}"/>`
     : `${arm("M66,112 L48,212")}${arm("M134,112 L152,212")}
        <path d="M62,108 Q62,92 100,90 Q138,92 138,108 L136,232 L64,232 Z" fill="${ink}"/>
        <rect x="66" y="224" width="31" height="162" fill="${ink}"/><rect x="103" y="224" width="31" height="162" fill="${ink}"/>
-       <circle class="skin" cx="48" cy="214" r="12" fill="${sk}"/><circle class="skin" cx="152" cy="214" r="12" fill="${sk}"/>`;
+       <circle cx="48" cy="214" r="12" fill="${sk}"/><circle cx="152" cy="214" r="12" fill="${sk}"/>`;
   const W = `stroke="${F}" stroke-width="4" stroke-linecap="round" fill="none"`;
   const eyes = (l = 4.5, r = 4.5) => `<circle cx="86" cy="44" r="${l}" fill="${F}"/><circle cx="114" cy="44" r="${r}" fill="${F}"/>`;
-  const cheeks = `<circle cx="74" cy="58" r="6" fill="#ff8fa3" opacity=".6" stroke="none"/><circle cx="126" cy="58" r="6" fill="#ff8fa3" opacity=".6" stroke="none"/>`;
-  let face = "", extra = "";
-  switch (mood) {
-    case "worried":
-      face = `${eyes()}<path d="M76,34 L92,28" ${W}/><path d="M108,28 L124,34" ${W}/><path d="M86,68 Q100,58 114,68" ${W}/>`;
-      extra = `<path d="M134,18 q7,10 0,14 q-7,-4 0,-14z" fill="#6fb8e0"/>`;
-      break;
-    case "anxious":
-      face = `${eyes()}<path d="M77,32 L92,30" ${W}/><path d="M108,30 L123,32" ${W}/><path d="M85,65 q3.75,-3 7.5,0 t7.5,0 t7.5,0 t7.5,0" ${W}/>`;
-      break;
-    case "ok":
-      face = `${eyes()}<path d="M78,31 L92,31" ${W}/><path d="M108,31 L122,31" ${W}/><path d="M86,61 Q100,70 114,61" ${W}/>`;
-      break;
-    case "happy":
-      face = `${eyes()}<path d="M78,30 Q85,25 92,29" ${W}/><path d="M108,29 Q115,25 122,30" ${W}/><path d="M83,58 Q100,76 117,58" ${W}/>${cheeks}`;
-      break;
-    case "joy":
-      face = `<path d="M79,46 Q86,37 93,46" ${W}/><path d="M107,46 Q114,37 121,46" ${W}/><path d="M78,28 Q85,22 92,26" ${W}/><path d="M108,26 Q115,22 122,28" ${W}/>
-              <path d="M82,57 Q100,84 118,57 Z" fill="${F}" stroke="${F}" stroke-width="3" stroke-linejoin="round"/>${cheeks}`;
-      extra = `<path d="M24,30 l4,10 l10,4 l-10,4 l-4,10 l-4,-10 l-10,-4 l10,-4z" fill="#f5b400"/>
-               <path d="M168,60 l3,7 l7,3 l-7,3 l-3,7 l-3,-7 l-7,-3 l7,-3z" fill="#f5b400"/>
-               <path d="M172,6 l2.5,6 l6,2.5 l-6,2.5 l-2.5,6 l-2.5,-6 l-6,-2.5 l6,-2.5z" fill="#f5b400"/>`;
-      break;
-    case "confused":
-      face = `${eyes(5.5, 3.5)}<path d="M75,31 Q83,21 92,27" ${W}/><path d="M108,34 L123,30" ${W}/><path d="M88,67 L113,61" ${W}/>`;
-      extra = `<text x="146" y="44" font-size="50" font-weight="800" fill="#c77700" font-family="Segoe UI, Arial, sans-serif">?</text>`;
-      break;
-  }
-  return `<svg viewBox="0 0 200 390" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    ${body}<circle class="head" cx="100" cy="46" r="38" fill="${sk}" stroke="${ink}" stroke-width="2"/><g class="face">${face}</g>${extra}</svg>`;
+  const faces = {
+    worried: `${eyes()}<path d="M76,34 L92,28" ${W}/><path d="M108,28 L124,34" ${W}/><path d="M86,68 Q100,58 114,68" ${W}/>`,
+    anxious: `${eyes()}<path d="M77,32 L92,30" ${W}/><path d="M108,30 L123,32" ${W}/><path d="M85,65 q3.75,-3 7.5,0 t7.5,0 t7.5,0 t7.5,0" ${W}/>`,
+    ok: `${eyes()}<path d="M78,31 L92,31" ${W}/><path d="M108,31 L122,31" ${W}/><path d="M86,61 Q100,70 114,61" ${W}/>`,
+    happy: `${eyes()}<path d="M83,58 Q100,76 117,58" ${W}/>`,
+    joy: `<path d="M79,46 Q86,37 93,46" ${W}/><path d="M107,46 Q114,37 121,46" ${W}/><path d="M82,57 Q100,84 118,57 Z" fill="${F}"/>`,
+    confused: `${eyes(5.5, 3.5)}<path d="M75,31 Q83,21 92,27" ${W}/><path d="M108,34 L123,30" ${W}/><path d="M88,67 L113,61" ${W}/>`,
+  };
+  return `<svg viewBox="0 0 200 390" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${body}
+    <circle cx="100" cy="46" r="38" fill="${sk}" stroke="${ink}" stroke-width="2"/><g>${faces[mood] || faces.ok}</g></svg>`;
 }
+function moodByProgress(step, total) {
+  if (!total) return "ok";
+  const f = step / total;
+  if (f >= 1) return "joy";
+  if (f === 0) return "worried";
+  if (f < 0.5) return "anxious";
+  if (f < 0.75) return "ok";
+  return "happy";
+}
+
 /* ---------- pixel-art sprites ----------
    Sheets live in sprites/<gender>-<teen|adult|elderly>.png: 4x4 cells of cw x ch px.
    Rows: 0 talking, 1 impatient, 2 emotions (worried, confused, sad, neutral), 3 happy (smile, grin, cheer, jump).
    skin = reference skin colour measured in the sheet; it is recoloured to the tone chosen in admin.
-   Characters whose gender/age has no sheet yet fall back to the simple drawn figure. */
+   sub = frames to swap for another (a frame Gemini drew badly). Built with tools/build_sprites.py. */
 const SPRITES = {
-  "male-elderly":   { src: "sprites/male-elderly.png",   cw: 264, ch: 262, skin: [192, 129, 86] },
-  "female-elderly": { src: "sprites/female-elderly.png", cw: 227, ch: 305, skin: [193, 133, 92] },
+  "male-elderly":   { src: "sprites/male-elderly.png",   cw: 264, ch: 266, skin: [193, 129, 86] },
+  "female-elderly": { src: "sprites/female-elderly.png", cw: 220, ch: 305, skin: [193, 133, 92] },
+  "male-adult":     { src: "sprites/male-adult.png",     cw: 211, ch: 261, skin: [208, 137, 92] },
+  "female-adult":   { src: "sprites/female-adult.png",   cw: 240, ch: 266, skin: [201, 132, 91] },
+  "male-teen":      { src: "sprites/male-teen.png",      cw: 201, ch: 292, skin: [188, 125, 83] },
+  "female-teen":    { src: "sprites/female-teen.png",    cw: 257, ch: 330, skin: [194, 131, 90], sub: { "1,0": [1, 1], "3,2": [3, 1] } },
 };
 const ANIMS = {
   talk:      { f: [[0, 0], [0, 1], [0, 2], [0, 1], [0, 3], [0, 1]], ms: 160 },
@@ -542,7 +741,7 @@ const ANIMS = {
 };
 const ageGroup = age => { const a = parseInt(age, 10); return isNaN(a) ? "adult" : a < 20 ? "teen" : a < 60 ? "adult" : "elderly"; };
 const spriteKey = c => { const k = `${c?.gender === "female" ? "female" : "male"}-${ageGroup(c?.age)}`; return SPRITES[k] ? k : null; };
-function hexRGB(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+const hexRGB = h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
 
 const sheetCache = new Map();
 function loadSheet(key, skin) {
@@ -575,7 +774,7 @@ function recolorSheet(img, ref, target) {
   x.putImageData(d, 0, 0);
   return c;
 }
-/* Character figure: animated sprite if one exists for this gender/age, otherwise the drawn figure. */
+/* Character figure: animated sprite for this gender/age, or the drawn figure as a fallback. */
 function charFigure(c, mood) {
   const key = spriteKey(c);
   if (!key) {
@@ -590,36 +789,28 @@ setInterval(() => {
   document.querySelectorAll("canvas.sprite").forEach(cv => {
     if (!cv._st) {
       cv._st = { t0: now, k: -1, sheet: null };
-      loadSheet(cv.dataset.key, cv.dataset.skin).then(sh => { cv._st.sheet = sh; cv._st.k = -1; });
+      loadSheet(cv.dataset.key, cv.dataset.skin).then(sh => {
+        if (!sh) { const c = { gender: cv.dataset.key.split("-")[0], skin: cv.dataset.skin }; cv.outerHTML = figureSVG(c.gender, "ok", c.skin); return; }
+        cv._st.sheet = sh; cv._st.k = -1;
+      });
     }
     const st = cv._st; if (!st.sheet) return;
     const a = ANIMS[cv.dataset.anim] || ANIMS.ok;
     const k = Math.floor((now - st.t0) / (a.ms || 1000)) % a.f.length;
     if (k === st.k) return;
     st.k = k;
-    const [row, col] = a.f[k], W = cv.width, H = cv.height;
-    const ctx = cv.getContext("2d");
+    const S = SPRITES[cv.dataset.key];
+    const [row, col] = S.sub?.[a.f[k].join(",")] || a.f[k];
+    const W = cv.width, H = cv.height, ctx = cv.getContext("2d");
     ctx.clearRect(0, 0, W, H);
     ctx.drawImage(st.sheet, col * W, row * H, W, H, 0, 0, W, H);
   });
 }, 80);
 
-function moodByProgress(step, total) {
-  if (!total) return "ok";
-  const f = step / total;
-  if (f >= 1) return "joy";
-  if (f === 0) return "worried";
-  if (f < 0.5) return "anxious";
-  if (f < 0.75) return "ok";
-  return "happy";
-}
 function makeQR(el, text) {
   el.innerHTML = "";
-  if (window.QRCode) {
-    new window.QRCode(el, { text, width: 256, height: 256, colorDark: "#0e3b53", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.M });
-  } else {
-    el.innerHTML = `<div class="qr-fallback">${esc(text)}</div>`;
-  }
+  if (window.QRCode) new window.QRCode(el, { text, width: 256, height: 256, colorDark: "#0f3a50", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.M });
+  else el.innerHTML = `<div class="qr-fallback">${esc(text)}</div>`;
 }
 function finishRanks(prog) {
   const done = prog.map((p, i) => ({ i, t: tsMs(p?.finishedAt) })).filter(x => x.t != null).sort((a, b) => a.t - b.t);
@@ -627,6 +818,7 @@ function finishRanks(prog) {
 }
 const MEDAL = { 1: "🥇", 2: "🥈", 3: "🥉", 4: "🏅" };
 const ordinal = n => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
+const stepsHTML = (step, total, cls = "seg") => Array.from({ length: total }, (_, k) => `<div class="${cls}${k < step ? " on" : ""}${k === step ? " now" : ""}"><i></i></div>`).join("");
 
 /* =====================================================================
    4. MAIN SCREEN  (?view=display — the default)
@@ -634,21 +826,22 @@ const ordinal = n => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th"
 function viewDisplay() {
   let game = null;
   const prog = Array(SLOTS).fill(null);
-  const fx = Array.from({ length: SLOTS }, () => ({ prevStep: null, prevWrong: null, confusedUntil: 0, cheerUntil: 0, talkUntil: 0, lastActivity: Date.now(), timer: null }));
+  const fx = Array.from({ length: SLOTS }, () => ({ prevStep: null, prevWrong: null, confusedUntil: 0, cheerUntil: 0, talkUntil: 0, lastActivity: Date.now(), wasDone: null, timer: null }));
   const IMPATIENT_AFTER = 45000;   // ms without an answer before the character gets impatient
-  let prevStatus = null;
-  setInterval(() => { if (game) for (let i = 0; i < SLOTS; i++) renderSlot(i); }, 1000);
-  let structKey = "";
-  let hideQR = false;
+  let prevStatus = null, structKey = "", hideQR = false;
 
   app.innerHTML = `
     <div class="display" id="display">
-      <header class="topbar">
-        <h1><span id="secretAdmin" style="cursor:default;user-select:none">🏥</span> Healthcare Bill Challenge</h1>
-        <div class="tools">
-          <span class="status-pill" id="statusPill">…</span>
-          <button class="btn" id="qrBtn" title="Show/hide QR codes (Q)">QR</button>
-          <button class="btn" id="fsBtn" title="Full screen (F)">⛶</button>
+      <header class="d-top">
+        <div class="d-brand">
+          <div class="d-logo" id="secretAdmin" title="">🏥</div>
+          <div><div class="d-title">Healthcare Bill Challenge</div><div class="d-sub">Help each patient make sense of their hospital bill</div></div>
+        </div>
+        <div class="d-meta">
+          <span class="d-pill" id="finishedPill" hidden></span>
+          <span class="d-pill" id="statusPill"><span class="dot"></span><span>…</span></span>
+          <button class="d-tool" id="qrBtn" title="Show/hide QR codes (Q)" aria-label="Show or hide QR codes">${icon("qr")}</button>
+          <button class="d-tool" id="fsBtn" title="Full screen (F)" aria-label="Full screen">${icon("max")}</button>
         </div>
       </header>
       <main class="stage" id="stage"></main>
@@ -657,17 +850,17 @@ function viewDisplay() {
 
   const toggleQR = () => { hideQR = !hideQR; $("#display").classList.toggle("hide-qr", hideQR); };
   const toggleFS = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  const openAdmin = () => window.open("?view=admin", "_blank");   // hidden: triple-click 🏥 or Shift+A
   $("#qrBtn").onclick = toggleQR;
-  // Hidden admin access: triple-click the 🏥 icon, or press Shift+A
-  const openAdmin = () => window.open("?view=admin", "_blank");
-  $("#secretAdmin").addEventListener("click", e => { if (e.detail === 3) openAdmin(); });
   $("#fsBtn").onclick = toggleFS;
+  $("#secretAdmin").addEventListener("click", e => { if (e.detail === 3) openAdmin(); });
   document.addEventListener("keydown", e => {
     if (e.target.matches("input,textarea")) return;
     if (e.key === "q" || e.key === "Q") toggleQR();
     if (e.key === "f" || e.key === "F") toggleFS();
     if (e.key === "A" && e.shiftKey) openAdmin();
   });
+  setInterval(() => { if (game) for (let i = 0; i < SLOTS; i++) renderSlot(i); }, 1000);
 
   const info = i => {
     const s = game?.slots?.[i]; const ch = s?.character; const p = prog[i] || {};
@@ -678,28 +871,27 @@ function viewDisplay() {
   function buildStage() {
     const stage = $("#stage");
     if (!game) {
-      stage.innerHTML = `<div class="center-msg"><div style="font-size:48px">🩺</div><div>No game has been set up yet.</div><a class="btn primary" href="?view=admin">Open admin to set up characters</a></div>`;
+      stage.innerHTML = `<div class="center-msg"><div class="big">🩺</div><div>No game has been set up yet.</div><a class="btn primary" href="?view=admin">Set up characters</a></div>`;
       return;
     }
     stage.innerHTML = Array.from({ length: SLOTS }, (_, i) => `
-      <section class="col" id="col${i}">
+      <section class="pcard" id="col${i}">
+        <div class="pc-head"><span class="team-chip">${icon("users")}<span id="tn${i}"></span></span><span class="rank" id="rk${i}"></span></div>
         <div class="bubble" id="bub${i}"></div>
-        <div class="mid">
-          <div class="fig" id="fig${i}"></div>
-          <div class="qr-wrap"><div class="qr-box" id="qr${i}"></div><div class="qr-label" id="qrl${i}"></div></div>
+        <div class="pc-mid">
+          <div class="spot"><div class="fig" id="fig${i}"></div></div>
+          <div class="qr-wrap"><div class="qr-box" id="qr${i}"></div><div class="qr-label">Scan to answer</div></div>
         </div>
-        <div class="name" id="nm${i}"></div>
+        <div class="pc-name" id="nm${i}"></div>
         <div class="situation" id="sit${i}"></div>
-        <div>
-          <div class="track" id="trk${i}"><div class="line"></div><div class="fill"></div><div class="ticks"></div><div class="dot" style="left:0"></div><div class="dot" style="left:100%"></div><div class="marker"></div></div>
-          <div class="track-label" id="tl${i}"></div>
+        <div class="pc-foot">
+          <div class="steps" id="trk${i}"></div>
+          <div class="pc-stats" id="tl${i}"></div>
         </div>
       </section>`).join("");
     for (let i = 0; i < SLOTS; i++) {
-      const { ch, total } = info(i);
+      const { ch } = info(i);
       if (ch) makeQR($(`#qr${i}`), teamUrl(i)); else $(`#col${i}`).classList.add("empty");
-      $(`#trk${i} .ticks`).innerHTML = Array.from({ length: Math.max(total - 1, 0) }, (_, k) =>
-        `<div class="tick" data-k="${k + 1}" style="left:${((k + 1) / total) * 100}%"></div>`).join("");
     }
   }
 
@@ -710,18 +902,25 @@ function viewDisplay() {
     const confused = f.confusedUntil > now && !done;
     const cheer = f.cheerUntil > now;
     const status = game.status || "waiting";
+    const card = $(`#col${i}`);
+    card.classList.toggle("confused", confused);
+    card.classList.toggle("done", done);
+    if (f.wasDone === false && done) confetti(card, 70);
+    f.wasDone = done;
 
     // speech bubble
     const bub = $(`#bub${i}`);
     let html, cls = "bubble";
-    if (!ch) html = `<span>Waiting for a character…</span>`;
+    if (!ch) { html = `<span>Waiting for a character…</span>`; cls += " idle"; }
     else if (done) { html = `<span>Thank you! I finally understand my bill 😊</span>`; cls += " done"; }
-    else if (confused) { html = `<span>Hmm… are you sure? 🤔</span>`; cls += " confused"; }
+    else if (confused) { html = `<span class="qnum">Question ${step + 1} of ${total}</span><span>Hmm… are you sure? 🤔</span>`; cls += " confused"; }
     else if (status === "waiting") html = `<span>Hi! I'm ${esc(ch.name)}. Can you help me make sense of my hospital bill?</span>`;
     else html = `<span class="qnum">Question ${step + 1} of ${total}</span><span>${esc(qs[step]?.q)}</span>`;
     if (bub.dataset.h !== html + cls) {
       if (bub.dataset.h && !confused && !done) f.talkUntil = Math.max(now, f.cheerUntil) + 2600;
-      bub.dataset.h = html + cls; bub.className = cls; bub.innerHTML = html; bub.style.animation = "none"; void bub.offsetWidth; bub.style.animation = ""; }
+      bub.dataset.h = html + cls; bub.className = cls; bub.innerHTML = html;
+      bub.style.animation = "none"; void bub.offsetWidth; bub.style.animation = "";
+    }
 
     // figure
     const talking = !done && f.talkUntil > now;
@@ -732,29 +931,31 @@ function viewDisplay() {
     if (fig.dataset.k !== figKey) {
       fig.dataset.k = figKey;
       fig.className = "fig " + (confused ? "confused" : done ? "joy" : cheer ? "cheer" : "");
-      fig.innerHTML = charFigure(ch, mood);
+      fig.innerHTML = ch ? charFigure(ch, mood) : "";
     }
 
-    // name + QR label
-    $(`#nm${i}`).innerHTML = ch ? `${esc(ch.name)}${ch.age ? `<small>${esc(ch.age)} years old</small>` : ""}` : "NAME";
-    $(`#qrl${i}`).innerHTML = `<b>${esc(s?.teamName || `Team ${i + 1}`)}</b>Scan to answer`;
+    $(`#tn${i}`).textContent = s?.teamName || `Team ${i + 1}`;
+    $(`#nm${i}`).innerHTML = ch ? `<b>${esc(ch.name)}</b>${ch.age ? `<small>${esc(ch.age)} years old</small>` : ""}` : `<b>—</b>`;
 
-    // situation box (or hint card while confused)
+    // situation (or hint while confused)
     const sit = $(`#sit${i}`);
-    const sitHtml = confused && qs[step]?.hint
+    const showHint = confused && qs[step]?.hint;
+    const sitHtml = showHint
       ? `<h3>💡 Hint</h3><div class="sit-text">${esc(qs[step].hint)}</div>`
-      : `<h3>Medical Situation</h3><div class="sit-text">${esc(ch?.situation || "")}</div>`;
-    if (sit.dataset.h !== sitHtml) { sit.dataset.h = sitHtml; sit.innerHTML = sitHtml; sit.className = "situation" + (confused && qs[step]?.hint ? " hint" : ""); }
+      : `<h3>${icon("info")} Medical situation</h3><div class="sit-text">${esc(ch?.situation || "")}</div>`;
+    if (sit.dataset.h !== sitHtml) { sit.dataset.h = sitHtml; sit.innerHTML = sitHtml; sit.className = "situation" + (showHint ? " hint" : ""); }
 
-    // progress track
-    const pct = total ? (step / total) * 100 : 0;
-    $(`#trk${i} .marker`).style.left = pct + "%";
-    $(`#trk${i} .fill`).style.width = pct + "%";
-    $(`#trk${i}`).querySelectorAll(".tick").forEach(t => t.classList.toggle("passed", +t.dataset.k <= step));
+    // progress
+    const trk = $(`#trk${i}`);
+    if (trk.dataset.n !== String(total)) { trk.dataset.n = total; trk.innerHTML = stepsHTML(0, total) + `<div class="marker"></div>`; }
+    trk.querySelectorAll(".seg").forEach((sg, k) => sg.classList.toggle("on", k < step));
+    const mk = trk.querySelector(".marker");
+    if (mk) { mk.style.left = (total ? Math.min((step + 0.5) / total, 1 - 0.5 / total) * 100 : 0) + "%"; mk.hidden = done || !ch; }
     const rank = finishRanks(prog)[i];
+    $(`#rk${i}`).textContent = done && rank ? MEDAL[rank] : "";
     $(`#tl${i}`).innerHTML = !ch ? "" : done
-      ? `<span class="medal">${MEDAL[rank] || "🏅"}</span> Finished ${rank ? ordinal(rank) : ""} · ${plural(p.wrong || 0, "wrong attempt")}`
-      : `${step} of ${total} answered${p.wrong ? ` · ${plural(p.wrong, "wrong attempt")}` : ""}`;
+      ? `<span>Finished ${rank ? ordinal(rank) : ""}</span><span class="${p.wrong ? "wrong" : ""}">${plural(p.wrong || 0, "wrong try")}</span>`
+      : `<span>${step} of ${total} answered</span>${p.wrong ? `<span class="wrong">${plural(p.wrong, "wrong try")}</span>` : ""}`;
   }
 
   function renderDebrief() {
@@ -762,30 +963,38 @@ function viewDisplay() {
     if (!game?.reveal) { d.hidden = true; return; }
     d.hidden = false;
     const ranks = finishRanks(prog);
-    d.innerHTML = `<h2><span>📋 Debrief — Answers</span><span class="badge">Answers revealed by facilitator</span></h2>
+    d.innerHTML = `<div class="debrief-head"><h2>📋 Debrief: the answers</h2><span class="d-pill">${icon("eye")} Revealed by facilitator</span></div>
       <div class="debrief-grid">${Array.from({ length: SLOTS }, (_, i) => {
         const { s, ch, p, qs, total, step, done } = info(i);
         if (!ch) return `<div class="db-col"><div class="db-head"><h3>Slot ${i + 1}: no character</h3></div></div>`;
         return `<div class="db-col">
           <div class="db-head"><div class="fig">${charFigure(ch, done ? "joy" : "ok")}</div>
-            <div><h3>${esc(ch.name)}</h3><div class="meta">${ch.age ? esc(ch.age) + " · " : ""}${esc(s.teamName || "")}</div></div></div>
+            <div><h3>${esc(ch.name)}</h3><div class="meta">${ch.age ? esc(ch.age) + " yrs · " : ""}${esc(s.teamName || "")}</div></div></div>
           <div class="db-sit">${esc(ch.situation)}</div>
-          ${qs.map((q, k) => `<div class="db-q"><div class="q">Q${k + 1}. ${esc(q.q)}</div><div class="a">✅ ${esc(displayAnswer(q))}</div>${q.explain ? `<div class="e">${esc(q.explain)}</div>` : ""}</div>`).join("")}
-          <div class="db-team"><b>${esc(s.teamName || "")}</b>: ${step}/${total} answered · ${plural(p.wrong || 0, "wrong attempt")}${done && ranks[i] ? ` · ${MEDAL[ranks[i]]} ${ordinal(ranks[i])}` : ""}</div>
+          ${qs.map((q, k) => `<div class="db-q"><span class="n">${k + 1}</span><div class="q">${esc(q.q)}</div><div class="a">${esc(displayAnswer(q))}</div>${q.explain ? `<div class="e">${esc(q.explain)}</div>` : ""}</div>`).join("")}
+          <div class="db-team">${esc(s.teamName || "")}: ${step}/${total} answered · ${plural(p.wrong || 0, "wrong try")}${done && ranks[i] ? ` · ${MEDAL[ranks[i]]} ${ordinal(ranks[i])}` : ""}</div>
         </div>`;
       }).join("")}</div>`;
   }
 
   function renderAll() {
-    const pill = $("#statusPill");
     const st = game?.status || "waiting";
     if (st !== prevStatus) { const t = Date.now(); fx.forEach(f => { f.lastActivity = t; if (prevStatus !== null) f.talkUntil = t + 2600; }); prevStatus = st; }
-    pill.className = "status-pill " + st;
-    pill.textContent = { waiting: "Get ready…", live: "● Live", paused: "Paused" }[st] || st;
+    const pill = $("#statusPill");
+    pill.className = "d-pill " + st;
+    pill.lastElementChild.textContent = { waiting: "Get ready", live: "Live", paused: "Paused" }[st] || st;
     const key = game ? game.slots.map(s => (s.characterId || "") + ":" + (s.character?.questions?.length || 0) + ":" + (s.character?.updatedAt || "")).join("|") : "none";
     if (key !== structKey) { structKey = key; buildStage(); }
     for (let i = 0; i < SLOTS; i++) renderSlot(i);
+    renderFinished();
     renderDebrief();
+  }
+  function renderFinished() {
+    const used = (game?.slots || []).filter(s => s.character).length;
+    const n = Object.keys(finishRanks(prog)).length;
+    const el = $("#finishedPill");
+    el.hidden = !used || game?.status === "waiting";
+    el.innerHTML = `🏁 ${n} of ${used} finished`;
   }
 
   DB.watchDoc(GAME, g => { game = g; renderAll(); });
@@ -795,15 +1004,12 @@ function viewDisplay() {
       if (f.prevStep !== null) {
         if (step !== f.prevStep || wrong !== f.prevWrong) f.lastActivity = Date.now();
         if (step > f.prevStep) { f.confusedUntil = 0; f.cheerUntil = Date.now() + 2600; }
-        else if (step < f.prevStep) { f.confusedUntil = 0; f.cheerUntil = 0; }
+        else if (step < f.prevStep) { f.confusedUntil = 0; f.cheerUntil = 0; f.wasDone = null; }
         else if (wrong > f.prevWrong) { f.confusedUntil = Date.now() + 12000; }
-        clearTimeout(f.timer);
-        const until = Math.max(f.confusedUntil, f.cheerUntil) - Date.now();
-        if (until > 0) f.timer = setTimeout(() => renderSlot(i), until + 60);
       }
       f.prevStep = step; f.prevWrong = wrong;
       prog[i] = p;
-      if (game) { renderSlot(i); renderDebrief(); for (let k = 0; k < SLOTS; k++) if (k !== i) renderSlot(k); }
+      if (game) { for (let k = 0; k < SLOTS; k++) renderSlot(k); renderFinished(); renderDebrief(); }
     });
   }
 }
@@ -813,10 +1019,11 @@ function viewDisplay() {
    ===================================================================== */
 function viewTeam() {
   const slot = parseInt(params.get("slot"), 10) - 1;
-  let game = null, p = null, key = "", fb = null, busy = false;
+  let game = null, p = null, key = "", busy = false, sitOpen = false, sheetTimer = null;
+  document.body.classList.add("team-page");
 
   if (!(slot >= 0 && slot < SLOTS)) {
-    app.innerHTML = `<div class="team"><h2 style="color:var(--teal-dark)">Which character is your team helping?</h2><div class="chooser" id="chooser">Loading…</div></div>`;
+    app.innerHTML = `<div class="team"><div class="t-name" style="margin-top:20px">Which patient is your team helping?</div><p class="muted">Pick the character named on your team's printed bill.</p><div class="chooser" id="chooser">Loading…</div></div>`;
     DB.watchDoc(GAME, g => {
       $("#chooser").innerHTML = (g?.slots || []).map((s, i) => s.character
         ? `<a href="?view=team&slot=${i + 1}"><div class="fig">${charFigure(s.character, "ok")}</div><div><b>${esc(s.character.name)}</b><div class="muted">${esc(s.teamName)}</div></div></a>` : "").join("")
@@ -825,7 +1032,8 @@ function viewTeam() {
     return;
   }
 
-  app.innerHTML = `<div class="team" id="team"><p class="muted">Loading…</p></div>`;
+  app.innerHTML = `<div class="team" id="team"><p class="muted">Loading…</p></div>
+    <div class="sheet" id="sheet" role="status" aria-live="polite"><div class="sheet-inner" id="sheetIn"></div></div>`;
   const root = $("#team");
 
   function info() {
@@ -833,51 +1041,66 @@ function viewTeam() {
     const qs = ch?.questions || []; const total = qs.length; const step = Math.min(p?.step || 0, total);
     return { s, ch, qs, total, step, done: total > 0 && step >= total };
   }
+  function showSheet(type, html, autoHide) {
+    clearTimeout(sheetTimer);
+    const sh = $("#sheet");
+    sh.className = "sheet show " + type;
+    $("#sheetIn").innerHTML = html;
+    const btn = $("#sheetIn button");
+    if (btn) btn.onclick = () => { hideSheet(); $("#ans")?.focus(); };
+    if (autoHide) sheetTimer = setTimeout(hideSheet, autoHide);
+  }
+  function hideSheet() { clearTimeout(sheetTimer); $("#sheet").className = "sheet"; }
 
   function render() {
     const { s, ch, qs, total, step, done } = info();
-    if (!game || !ch) { key = ""; root.innerHTML = `<div class="t-big"><span class="emoji">⏳</span>Waiting for the facilitator to set up your character…</div>`; return; }
+    if (!game || !ch) {
+      key = "";
+      root.innerHTML = `<div class="t-state"><span class="emoji">⏳</span><h2>Almost ready</h2><p>Waiting for the facilitator to set up your character…</p></div>`;
+      return;
+    }
     const status = game.status || "waiting";
-    const k = [status, step, total, done, s.characterId, game.reveal, p?.hintStep === step, ch.skin, ch.age, ch.gender].join("|");
-    if (k !== key) {
-      key = k;
-      const confused = p?.hintStep === step && !done;
-      const mood = done ? "joy" : confused ? "confused" : moodByProgress(step, total);
-      const expectNum = qs[step] && toNum(String(qs[step].answer).split("|")[0]) !== null;
-      root.innerHTML = `
-        <div class="t-head"><div class="t-team">${esc(s.teamName || `Team ${slot + 1}`)}</div>
-          <div class="t-prog"><div class="bar"><i style="width:${total ? step / total * 100 : 0}%"></i></div><span>${step}/${total}</span></div></div>
-        <div class="t-char"><div class="fig ${done ? "joy" : ""}">${charFigure(ch, mood)}</div>
-          <div><div class="t-name">${esc(ch.name)}</div><div class="muted">${ch.age ? esc(ch.age) + " years old" : ""}</div>
-          <details ${step === 0 ? "open" : ""}><summary>Medical situation</summary><p>${esc(ch.situation)}</p></details></div></div>
-        ${done ? `<div class="t-big"><span class="emoji">🎉</span><b>You've answered all of ${esc(ch.name)}'s questions!</b><br><span class="muted">Look at the main screen to see how the other teams are doing.</span></div>`
-        : status !== "live" ? `<div class="t-big"><span class="emoji">${status === "paused" ? "⏸️" : "⏳"}</span>${status === "paused" ? "The game is paused." : "Get your bill ready — waiting for the facilitator to start the game…"}</div>`
-        : `<div class="t-bubble"><div class="qlabel">Question ${step + 1} of ${total}</div><div class="qtext">${esc(qs[step].q)}</div></div>
-           <form class="t-form" id="ansForm" autocomplete="off">
-             <input id="ans" name="ans" ${expectNum ? 'inputmode="decimal"' : ""} enterkeyhint="send" placeholder="${expectNum ? "e.g. 1234.50" : "Type your answer"}" aria-label="Your answer" required>
-             <button class="btn primary" id="sendBtn">Submit</button>
-           </form>`}
-        <div id="fb"></div>`;
-      const form = $("#ansForm");
-      if (form) form.onsubmit = e => { e.preventDefault(); submit($("#ans").value); };
-    }
-    renderFeedback();
-  }
-
-  function renderFeedback() {
-    const el = $("#fb"); if (!el) return;
-    const { qs, step, done } = info();
-    let h = "";
-    if (fb?.type === "correct" || (fb?.type === "advanced")) h = `<div class="t-note ok">✅ <b>Correct!</b> ${done ? "" : "Here's the next question."}</div>`;
-    if (fb?.type === "stale") h = `<div class="t-note info">A teammate already answered that one — here's the current question.</div>`;
-    if (fb?.type === "notlive") h = `<div class="t-note info">The game isn't running right now.</div>`;
-    if (!done && p?.hintStep === step && game?.status === "live") {
+    const confused = p?.hintStep === step && !done;
+    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, s.teamName].join("|");
+    if (k === key) return;
+    const wasDone = key && key.split("|")[3] === "true";
+    key = k;
+    const mood = done ? "joy" : confused ? "confused" : status !== "live" ? "talk" : moodByProgress(step, total);
+    const q = qs[step];
+    const numeric = isNumericQ(q);
+    root.innerHTML = `
+      <header class="t-top">
+        <div class="t-team">${esc(s.teamName || `Team ${slot + 1}`)}</div>
+        <div class="t-steps" aria-label="${step} of ${total} answered">${stepsHTML(step, total)}</div>
+        <span class="t-count">${step}/${total}</span>
+      </header>
+      <section class="t-hero">
+        <div class="fig ${done ? "joy" : confused ? "confused" : ""}">${charFigure(ch, mood)}</div>
+        <div class="t-id">
+          <div class="t-name">${esc(ch.name)}</div>
+          <div class="row">${ch.age ? `<span class="chip brand">${esc(ch.age)} years old</span>` : ""}</div>
+          <button class="t-sit-btn" id="sitBtn" aria-expanded="${sitOpen}">Medical situation ${icon("chev")}</button>
+        </div>
+      </section>
+      <div class="t-sit" id="sit" ${sitOpen ? "" : "hidden"}>${esc(ch.situation)}</div>
+      ${done ? `<div class="t-state" id="doneCard"><span class="emoji">🎉</span><h2>All questions answered!</h2><p>${esc(ch.name)} finally understands the bill. Look at the main screen to see how the other teams are doing.</p></div>`
+      : status !== "live" ? `<div class="t-state"><span class="emoji">${status === "paused" ? "⏸️" : "📄"}</span><h2>${status === "paused" ? "Game paused" : "Get your bill ready"}</h2><p>${status === "paused" ? "Hang tight, the facilitator will resume shortly." : "The facilitator will start the game in a moment. Read your patient's bill while you wait."}</p></div>`
+      : `<div class="q-card"><div class="q-label">Question ${step + 1} of ${total}</div><div class="q-text">${esc(q.q)}</div></div>
+         <form class="answer" id="ansForm" autocomplete="off">
+           <div class="field">${numeric ? `<span class="prefix">$</span>` : ""}<input id="ans" ${numeric ? 'inputmode="decimal" placeholder="0.00"' : 'placeholder="Type your answer"'} enterkeyhint="send" aria-label="Your answer" required></div>
+           <button class="btn-3d" id="sendBtn">Check answer</button>
+         </form>`}`;
+    $("#sitBtn").onclick = () => { sitOpen = !sitOpen; $("#sit").hidden = !sitOpen; $("#sitBtn").setAttribute("aria-expanded", sitOpen); };
+    const form = $("#ansForm");
+    if (form) form.onsubmit = e => { e.preventDefault(); submit($("#ans").value); };
+    if (done && !wasDone) confetti($("#doneCard"), 60);
+    if (confused && status === "live") {
       const tries = (p.history || []).filter(x => x.step === step && !x.ok).length;
-      h = `<div class="t-note wrong">🤔 <b>Hmm… are you sure?</b> ${fb?.type === "wrong" ? `“${esc(fb.answer)}” isn't quite right.` : "That wasn't quite right."} Try again!
-            ${qs[step]?.hint ? `<div class="hint">💡 <b>Hint:</b> ${esc(qs[step].hint)}</div>` : ""}
-            <div class="muted" style="font-size:13px;margin-top:6px">${plural(tries, "wrong attempt")} on this question</div></div>`;
-    }
-    el.innerHTML = h;
+      showSheet("wrong", `<h3><span class="ico">?</span>Hmm… are you sure?</h3>
+        <p class="msg">${p.lastAnswer ? `“${esc(p.lastAnswer)}” isn't quite right.` : "That wasn't quite right."} ${plural(tries, "wrong try")} on this question.</p>
+        ${q?.hint ? `<div class="hint"><b>💡 Hint:</b> ${esc(q.hint)}</div>` : ""}
+        <button class="btn-3d warn">Try again</button>`);
+    } else if ($("#sheet").classList.contains("wrong")) hideSheet();
   }
 
   async function submit(raw) {
@@ -898,9 +1121,10 @@ function viewTeam() {
         else { next.wrong = (cur.wrong || 0) + 1; next.hintStep = expectedStep; }
         return { write: next, result: ok ? "correct" : "wrong" };
       });
-      fb = { type: res, answer: ans };
-      if (res === "wrong") { const i = $("#ans"); if (i) { i.select(); } }
-      render();
+      navigator.vibrate?.(res === "correct" ? 40 : res === "wrong" ? [60, 50, 60] : 0);
+      if (res === "stale") showSheet("info", `<h3><span class="ico">↻</span>Already answered</h3><p class="msg">A teammate got there first. Here's the current question.</p>`, 2500);
+      if (res === "notlive") showSheet("info", `<h3><span class="ico">⏸</span>Not running</h3><p class="msg">The game isn't live right now.</p>`, 2500);
+      if (res === "wrong") { key = ""; render(); }
     } catch (e) { showError(e); }
     finally { busy = false; const b = $("#sendBtn"); if (b) b.disabled = false; }
   }
@@ -909,92 +1133,113 @@ function viewTeam() {
   DB.watchDoc(PROG(slot), x => {
     const prev = p?.step;
     p = x;
-    if (prev != null && (x?.step || 0) > prev && fb?.type !== "correct") fb = { type: "advanced" };
-    if (prev != null && (x?.step || 0) < prev) fb = null;
+    const now = x?.step || 0;
+    if (prev != null && now > prev) {
+      const { total } = info();
+      showSheet("ok", `<h3><span class="ico">✓</span>${now >= total ? "Correct, that's the last one!" : "Correct!"}</h3><p class="msg">${now >= total ? "Great work, team." : "On to the next question."}</p>`, 1800);
+    }
     render();
-    if (fb && (fb.type === "correct" || fb.type === "advanced")) { const f = fb; setTimeout(() => { if (fb === f) { fb = null; renderFeedback(); } }, 4000); }
   });
 }
 
 /* =====================================================================
-   6. ADMIN  (?view=admin)
+   6. ADMIN  (?view=admin — hidden: triple-click 🏥 on the main screen)
    ===================================================================== */
 function viewAdmin() {
-  app.innerHTML = `<div class="admin" id="admin"><p class="muted">Loading…</p></div>`;
   let unlocked = !ADMIN_PIN;
   try { if (sessionStorage.getItem("hcgame:pin") === ADMIN_PIN) unlocked = true; } catch {}
   if (unlocked) startAdmin(); else renderPin();
 
   function renderPin() {
-    $("#admin").innerHTML = `<form class="login" id="login">
-      <h1>Admin</h1>
-      <input type="password" id="pin" placeholder="Enter PIN" inputmode="numeric" required autofocus>
-      <button class="btn primary">Open admin</button>
+    app.innerHTML = `<form class="pin" id="login">
+      <div style="font-size:40px">🏥</div><h1>Admin</h1>
+      <input class="input" type="password" id="pin" placeholder="Enter PIN" inputmode="numeric" required autofocus style="text-align:center;font-size:18px">
+      <button class="btn primary" style="height:44px">Open admin</button>
       <a href="?view=display" class="muted" style="font-size:13px">← Back to main screen</a></form>`;
     $("#login").onsubmit = e => {
       e.preventDefault();
-      if ($("#pin").value !== ADMIN_PIN) return toast("Wrong PIN.", true);
+      if ($("#pin").value !== ADMIN_PIN) return toast("Wrong PIN.", "err");
       try { sessionStorage.setItem("hcgame:pin", ADMIN_PIN); } catch {}
       startAdmin();
     };
   }
 
   function startAdmin() {
-    let game = null, lib = [];
+    let game = null, lib = [], draft = null, openQs = new Set(), query = "";
     const prog = Array(SLOTS).fill(null);
-    let draft = null;
+    let tab = (() => { try { return localStorage.getItem("hcgame:tab") || "live"; } catch { return "live"; } })();
 
-    $("#admin").innerHTML = `
-      <header class="adm-top">
-        <div><h1>Healthcare Bill Challenge — Admin</h1>
-          <div class="muted" style="font-size:13px">${DB.mode === "local" ? `<span class="badge warn">Demo mode: data is saved in this browser only. Add your Firebase config to play with phones.</span>` : `Connected to Firebase project <b>${esc(firebaseConfig.projectId)}</b>`}</div></div>
-        <div class="row"><a class="btn primary" href="?view=display" target="_blank">Open main screen ↗</a></div>
-      </header>
-      <section class="card">
-        <div class="sec-head"><h2>Live game</h2><div class="row" id="gameCtl"></div></div>
-        <div class="slots" id="slots"></div>
-      </section>
-      <section class="card">
-        <div class="sec-head"><h2>Character library</h2>
-          <div class="row">
-            <button class="btn primary" id="newChar">+ New character</button>
-            <button class="btn" id="seed">Add 4 sample characters</button>
-            <button class="btn" id="exp">Export</button>
-            <label class="btn">Import<input type="file" accept=".json,application/json" id="imp" hidden></label>
-          </div></div>
-        <p class="note">Characters saved here can be reused in future sessions. Pick one for each of the 4 slots above. Answers are checked against the <b>Correct answer(s)</b> field: numbers ignore “$” and commas; separate alternatives with <b>|</b> (e.g. <code>Yes|Y</code>). Sample characters use illustrative figures — update them to match your printed bills.</p>
-        <div class="lib" id="lib"></div>
-      </section>
-      <dialog class="editor" id="editor"></dialog>`;
+    app.innerHTML = `
+      <header class="adm-nav"><div class="adm-nav-in">
+        <div class="adm-brand"><span class="logo">🏥</span>Healthcare Bill Challenge</div>
+        <nav class="tabs" role="tablist">
+          <button role="tab" data-tab="live">${icon("play")}Live game</button>
+          <button role="tab" data-tab="chars">${icon("users")}Characters <span class="count" id="libCount">0</span></button>
+        </nav>
+        <div class="spacer"></div>
+        <span class="conn ${DB.mode === "local" ? "local" : ""}"><span class="dot"></span>${DB.mode === "local" ? "Demo mode (this browser only)" : `Connected · ${esc(firebaseConfig.projectId)}`}</span>
+        <a class="btn primary" href="?view=display" target="_blank">${icon("ext")}Main screen</a>
+      </div></header>
+      <main class="adm-main">
+        <section id="tab-live">
+          <div class="page-head"><div><h1>Live game</h1><p>Assign a character to each team, then go live. Changes appear on the main screen instantly.</p></div></div>
+          <div class="toolbar" id="gameCtl"></div>
+          <div class="slots" id="slots"></div>
+        </section>
+        <section id="tab-chars" hidden>
+          <div class="page-head"><div><h1>Characters</h1><p>Your saved patients. Reuse them across sessions and assign them on the Live game tab.</p></div>
+            <button class="btn primary" id="newChar">${icon("plus")}New character</button></div>
+          <div class="note">${icon("info")}<div>Answers are checked against <b>Correct answer(s)</b>: numbers ignore “$” and commas; separate alternatives with <code>|</code> (e.g. <code>Yes|Y</code>). Sample characters use illustrative figures, so update them to match your printed bills.</div></div>
+          <div class="lib-tools">
+            <div class="search">${icon("search")}<input id="q" type="search" placeholder="Search characters" aria-label="Search characters"></div>
+            <div class="spacer"></div>
+            <button class="btn" id="seed">${icon("sparkles")}Add samples</button>
+            <label class="btn" tabindex="0">${icon("upload")}Import<input type="file" accept=".json,application/json" id="imp" hidden></label>
+            <button class="btn" id="exp">${icon("download")}Export</button>
+          </div>
+          <div class="lib" id="lib"></div>
+        </section>
+      </main>
+      <div class="scrim" id="scrim"></div>
+      <aside class="drawer" id="drawer" aria-label="Character editor" aria-hidden="true"></aside>`;
+
+    function setTab(t) {
+      tab = t; try { localStorage.setItem("hcgame:tab", t); } catch {}
+      document.querySelectorAll(".tabs button").forEach(b => { b.classList.toggle("on", b.dataset.tab === t); b.setAttribute("aria-selected", b.dataset.tab === t); });
+      $("#tab-live").hidden = t !== "live"; $("#tab-chars").hidden = t !== "chars";
+    }
+    document.querySelector(".tabs").onclick = e => { const b = e.target.closest("[data-tab]"); if (b) setTab(b.dataset.tab); };
+    setTab(tab);
 
     /* ----- game controls ----- */
     function renderCtl() {
       const st = game?.status || "waiting";
       $("#gameCtl").innerHTML = `
-        <div class="row" role="group" aria-label="Game status">
-          <button class="btn sm ${st === "waiting" ? "on" : ""}" data-status="waiting">Get ready</button>
-          <button class="btn sm ${st === "live" ? "on" : ""}" data-status="live">▶ Live</button>
-          <button class="btn sm ${st === "paused" ? "on" : ""}" data-status="paused">⏸ Pause</button>
+        <div class="seg-ctl" role="group" aria-label="Game status">
+          <button data-status="waiting" class="${st === "waiting" ? "on" : ""}">${icon("clock")}Get ready</button>
+          <button data-status="live" class="${st === "live" ? "on" : ""}">${icon("play")}Live</button>
+          <button data-status="paused" class="${st === "paused" ? "on" : ""}">${icon("pause")}Pause</button>
         </div>
-        <label class="switch ${game?.reveal ? "on" : ""}"><input type="checkbox" id="reveal" ${game?.reveal ? "checked" : ""}> Reveal answers (debrief)</label>
-        <button class="btn sm" id="resync" title="Copy the latest version of each assigned character from the library into the game">↻ Re-sync characters</button>
-        <button class="btn sm danger" id="resetAll">Reset all progress</button>`;
+        <label class="switch"><input type="checkbox" id="reveal" ${game?.reveal ? "checked" : ""}><span class="track"></span>Reveal answers</label>
+        <div class="spacer"></div>
+        <button class="btn sm ghost" id="resync" title="Copy the latest version of each assigned character from the library">${icon("refresh")}Re-sync</button>
+        <button class="btn sm danger" id="resetAll">${icon("rotate")}Reset all progress</button>`;
     }
     $("#gameCtl").addEventListener("click", async e => {
       const b = e.target.closest("[data-status]");
       if (b) {
-        if (b.dataset.status === "live" && !game.slots.some(s => s.character)) return toast("Assign at least one character first.", true);
+        if (b.dataset.status === "live" && !game.slots.some(s => s.character)) return toast("Assign at least one character first.", "err");
         await DB.merge(GAME, { status: b.dataset.status }).catch(showError);
       }
-      if (e.target.id === "resetAll") {
-        if (!confirm("Reset progress for all 4 teams? This cannot be undone.")) return;
+      if (e.target.closest("#resetAll")) {
+        if (!await ask("Reset all progress?", "All four teams go back to question 1. This can't be undone.", { ok: "Reset all", danger: true })) return;
         await Promise.all(Array.from({ length: SLOTS }, (_, i) => DB.set(PROG(i), blankProgress()))).catch(showError);
         toast("All progress reset.");
       }
-      if (e.target.id === "resync") resync();
+      if (e.target.closest("#resync")) resync();
     });
     $("#gameCtl").addEventListener("change", e => {
-      if (e.target.id === "reveal") DB.merge(GAME, { reveal: e.target.checked }).catch(showError);
+      if (e.target.id === "reveal") DB.merge(GAME, { reveal: e.target.checked }).then(() => toast(e.target.checked ? "Answers revealed on the main screen." : "Answers hidden.", "info")).catch(showError);
     });
 
     const snapshot = ch => ({
@@ -1009,7 +1254,7 @@ function viewAdmin() {
         return ch ? { ...s, character: snapshot(ch) } : s;
       });
       await DB.merge(GAME, { slots }).catch(showError);
-      toast("Game updated with the latest character details.");
+      toast("Live game updated with the latest character details.");
     }
 
     /* ----- slots ----- */
@@ -1019,15 +1264,23 @@ function viewAdmin() {
       el.innerHTML = game.slots.map((s, i) => {
         const inLib = s.characterId && lib.some(c => c.id === s.characterId);
         return `<div class="slot">
-          <div class="slot-h"><b>Character ${i + 1}</b><span class="stat" id="stat${i}"></span></div>
-          <label>Team name<input id="team${i}" data-team="${i}" value="${esc(s.teamName)}" maxlength="40"></label>
-          <label>Character<select id="char${i}" data-char="${i}">
-            <option value="">— choose from library —</option>
-            ${lib.map(c => `<option value="${esc(c.id)}" ${c.id === s.characterId ? "selected" : ""}>${esc(c.name || "(unnamed)")}${c.age ? ", " + esc(c.age) : ""}</option>`).join("")}
-            ${s.characterId && !inLib ? `<option value="${esc(s.characterId)}" selected>${esc(s.character?.name)} (deleted from library)</option>` : ""}
-          </select></label>
-          <div class="mini-log" id="log${i}"></div>
-          <div class="row"><button class="btn sm" data-reset="${i}">Reset progress</button><a class="btn sm" href="${esc(teamUrl(i))}" target="_blank">Team page ↗</a></div>
+          <div class="slot-top">
+            <div class="avatar fig ${s.character ? "" : "empty"}">${s.character ? charFigure(s.character, "ok") : icon("users")}</div>
+            <div class="slot-id"><div class="slot-n">Team ${i + 1}</div><input class="inline-input" id="team${i}" data-team="${i}" value="${esc(s.teamName)}" maxlength="40" aria-label="Team ${i + 1} name"></div>
+          </div>
+          <label class="flabel">Character
+            <select class="select" id="char${i}" data-char="${i}">
+              <option value="">Choose from library…</option>
+              ${lib.map(c => `<option value="${esc(c.id)}" ${c.id === s.characterId ? "selected" : ""}>${esc(c.name || "(unnamed)")}${c.age ? ", " + esc(c.age) : ""}</option>`).join("")}
+              ${s.characterId && !inLib ? `<option value="${esc(s.characterId)}" selected>${esc(s.character?.name)} (deleted from library)</option>` : ""}
+            </select></label>
+          <div class="mini" id="mini${i}"></div>
+          <ul class="feed" id="log${i}"></ul>
+          <div class="slot-actions">
+            <button class="btn sm ghost" data-reset="${i}">${icon("rotate")}Reset</button>
+            <a class="btn sm ghost" href="${esc(teamUrl(i))}" target="_blank">${icon("ext")}Team page</a>
+            <button class="btn sm ghost icon" data-copy="${i}" title="Copy team link" aria-label="Copy team ${i + 1} link">${icon("link")}</button>
+          </div>
         </div>`;
       }).join("");
       if (focusId && $("#" + focusId)) { const f = $("#" + focusId); f.focus(); if (f.tagName === "INPUT") f.value = val; }
@@ -1037,13 +1290,15 @@ function viewAdmin() {
       if (!game) return;
       const ranks = finishRanks(prog);
       game.slots.forEach((s, i) => {
-        const st = $(`#stat${i}`), lg = $(`#log${i}`); if (!st) return;
+        const mini = $(`#mini${i}`), lg = $(`#log${i}`); if (!mini) return;
         const p = prog[i] || {}; const total = s.character?.questions?.length || 0; const step = Math.min(p.step || 0, total);
-        st.innerHTML = !s.character ? `<span class="muted">empty</span>`
-          : step >= total && total ? `<span class="badge ok">${MEDAL[ranks[i]] || ""} Done ${step}/${total}</span>`
-          : `<span class="badge">${step}/${total}</span>`;
-        if (p.wrong) st.innerHTML += ` <span class="badge warn">${p.wrong} wrong</span>`;
-        lg.innerHTML = (p.history || []).slice(-3).reverse().map(h => `<div class="${h.ok ? "c" : "w"}">${h.ok ? "✓" : "✗"} Q${h.step + 1}: “${esc(h.answer)}”</div>`).join("") || "No answers yet";
+        const done = total && step >= total;
+        mini.innerHTML = s.character
+          ? `<div class="bar ${done ? "done" : ""}"><i style="width:${total ? step / total * 100 : 0}%"></i></div><span>${done ? (MEDAL[ranks[i]] || "✓") + " " : ""}${step}/${total}</span>${p.wrong ? `<span class="chip warn">${p.wrong} wrong</span>` : ""}`
+          : `<span class="muted" style="font-weight:600">No character yet</span>`;
+        const h = (p.history || []).slice(-3).reverse();
+        lg.innerHTML = h.length ? h.map(x => `<li class="${x.ok ? "c" : "w"}"><span class="tag">${x.ok ? "✓" : "✗"}</span><span class="muted">Q${x.step + 1}</span><span class="ans">${esc(x.answer)}</span></li>`).join("")
+          : `<li class="empty">No answers yet</li>`;
       });
     }
     $("#slots").addEventListener("change", async e => {
@@ -1055,57 +1310,85 @@ function viewAdmin() {
       }
       if (t.dataset.char != null) {
         const i = +t.dataset.char; const id = t.value;
-        const p = prog[i];
-        if ((p?.attempts || 0) > 0 && !confirm("This team has already started. Changing the character resets their progress. Continue?")) { renderSlots(); return; }
+        if ((prog[i]?.attempts || 0) > 0 && !await ask("Change character?", `${game.slots[i].teamName} has already started. Changing the character resets their progress.`, { ok: "Change & reset", danger: true })) { renderSlots(); return; }
         const ch = lib.find(c => c.id === id);
         const slots = game.slots.map((s, k) => k === i ? { ...s, characterId: id || null, character: ch ? snapshot(ch) : null } : s);
         await DB.merge(GAME, { slots }).catch(showError);
         await DB.set(PROG(i), blankProgress()).catch(showError);
       }
     });
+    $("#slots").addEventListener("keydown", e => { if (e.target.dataset.team != null && e.key === "Enter") e.target.blur(); });
     $("#slots").addEventListener("click", async e => {
-      const b = e.target.closest("[data-reset]"); if (!b) return;
-      const i = +b.dataset.reset;
-      if (!confirm(`Reset progress for ${game.slots[i].teamName}?`)) return;
-      await DB.set(PROG(i), blankProgress()).catch(showError);
+      const r = e.target.closest("[data-reset]");
+      if (r) {
+        const i = +r.dataset.reset;
+        if (!await ask(`Reset ${game.slots[i].teamName}?`, "This team goes back to question 1.", { ok: "Reset", danger: true })) return;
+        await DB.set(PROG(i), blankProgress()).catch(showError);
+        toast(`${game.slots[i].teamName} reset.`);
+      }
+      const c = e.target.closest("[data-copy]");
+      if (c) { try { await navigator.clipboard.writeText(teamUrl(+c.dataset.copy)); toast("Team link copied."); } catch { toast(teamUrl(+c.dataset.copy), "info", 8000); } }
     });
 
     /* ----- library ----- */
     function renderLib() {
+      $("#libCount").textContent = lib.length;
       const used = id => game?.slots?.map((s, i) => s.characterId === id ? i + 1 : null).filter(Boolean) || [];
-      const sorted = [...lib].sort((a, b) => String(a.name).localeCompare(String(b.name)));
-      $("#lib").innerHTML = sorted.length ? sorted.map(c => `
-        <div class="lcard"><div class="fig">${charFigure(c, "ok")}</div>
-          <div style="min-width:0;flex:1">
-            <h3>${esc(c.name || "(unnamed)")} <small>${c.age ? esc(c.age) + " · " : ""}${c.gender === "female" ? "Female" : "Male"}</small></h3>
+      const ql = query.trim().toLowerCase();
+      const list = [...lib].filter(c => !ql || [c.name, c.situation, c.age].join(" ").toLowerCase().includes(ql))
+        .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      $("#lib").innerHTML = list.length ? list.map(c => `
+        <div class="lcard" data-open="${esc(c.id)}" tabindex="0" role="button" aria-label="Edit ${esc(c.name)}">
+          <div class="avatar fig">${charFigure(c, "ok")}</div>
+          <div class="lc-body">
+            <div class="lc-title">${esc(c.name || "(unnamed)")}</div>
+            <div class="row">
+              ${c.age ? `<span class="chip">${esc(c.age)} yrs</span>` : ""}
+              <span class="chip">${c.gender === "female" ? "Female" : "Male"}</span>
+              <span class="chip"><span class="sw" style="background:${skinHex(c.skin)}"></span>Skin</span>
+              <span class="chip brand">${plural((c.questions || []).length, "question")}</span>
+              ${used(c.id).map(n => `<span class="chip ok">Team ${n}</span>`).join("")}
+            </div>
             <p>${esc(c.situation)}</p>
-            <div class="row"><span class="badge">${plural((c.questions || []).length, "question")}</span>${used(c.id).map(n => `<span class="badge ok">In slot ${n}</span>`).join("")}</div>
-            <div class="row"><button class="btn sm" data-edit="${esc(c.id)}">Edit</button><button class="btn sm" data-dup="${esc(c.id)}">Duplicate</button><button class="btn sm danger" data-del="${esc(c.id)}">Delete</button></div>
-          </div></div>`).join("")
-        : `<div class="empty-lib">No saved characters yet. Click <b>+ New character</b> or <b>Add 4 sample characters</b> to get started.</div>`;
+          </div>
+          <div class="lc-actions">
+            <button class="btn sm ghost icon" data-dup="${esc(c.id)}" title="Duplicate" aria-label="Duplicate ${esc(c.name)}">${icon("copy")}</button>
+            <button class="btn sm ghost icon danger" data-del="${esc(c.id)}" title="Delete" aria-label="Delete ${esc(c.name)}">${icon("trash")}</button>
+          </div>
+        </div>`).join("")
+        : lib.length ? `<div class="empty-state"><div class="big">🔍</div><h3>No matches</h3><p>No characters match “${esc(query)}”.</p></div>`
+        : `<div class="empty-state"><div class="big">🧑‍⚕️</div><h3>No characters yet</h3><p>Create your first patient, or add four samples to explore.</p>
+            <div class="row" style="justify-content:center;margin-top:14px"><button class="btn" data-act="seed">${icon("sparkles")}Add samples</button><button class="btn primary" data-act="new">${icon("plus")}New character</button></div></div>`;
     }
+    $("#q").addEventListener("input", e => { query = e.target.value; renderLib(); });
     $("#lib").addEventListener("click", async e => {
-      const b = e.target.closest("button"); if (!b) return;
-      const ch = lib.find(c => c.id === (b.dataset.edit || b.dataset.dup || b.dataset.del));
-      if (!ch) return;
-      if (b.dataset.edit) openEditor(ch);
-      if (b.dataset.dup) { const { id, ...rest } = ch; openEditor({ ...structuredClone(rest), name: rest.name + " (copy)" }); }
-      if (b.dataset.del) {
-        if (!confirm(`Delete "${ch.name}" from the library? (Any copy already in the live game stays until you replace it.)`)) return;
+      if (e.target.closest('[data-act="seed"]')) return seed();
+      if (e.target.closest('[data-act="new"]')) return openEditor(null);
+      const dup = e.target.closest("[data-dup]"), del = e.target.closest("[data-del]");
+      if (dup) { const ch = lib.find(c => c.id === dup.dataset.dup); const { id, ...rest } = ch; return openEditor({ ...structuredClone(rest), name: rest.name + " (copy)" }); }
+      if (del) {
+        const ch = lib.find(c => c.id === del.dataset.del);
+        if (!await ask(`Delete “${ch.name}”?`, "It's removed from the library. A copy already in the live game stays until you replace it.", { ok: "Delete", danger: true })) return;
         await DB.del(`${COL_CHARS}/${ch.id}`).catch(showError);
+        return toast(`Deleted “${ch.name}”.`);
       }
+      const card = e.target.closest("[data-open]");
+      if (card) openEditor(lib.find(c => c.id === card.dataset.open));
     });
+    $("#lib").addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-open]")) { e.preventDefault(); e.target.click(); } });
     $("#newChar").onclick = () => openEditor(null);
-    $("#seed").onclick = async () => {
+    async function seed() {
       await Promise.all(sampleCharacters().map(c => DB.set(`${COL_CHARS}/${DB.newId(COL_CHARS)}`, { ...c, createdAt: Date.now(), updatedAt: Date.now() }))).catch(showError);
-      toast("4 sample characters added to the library.");
-    };
+      toast("Added 4 sample characters.");
+    }
+    $("#seed").onclick = seed;
     $("#exp").onclick = () => {
       const data = JSON.stringify(lib.map(({ id, ...c }) => c), null, 2);
       const a = document.createElement("a");
       a.href = URL.createObjectURL(new Blob([data], { type: "application/json" }));
       a.download = `healthcare-characters-${new Date().toISOString().slice(0, 10)}.json`;
       a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      toast(`Exported ${plural(lib.length, "character")}.`);
     };
     $("#imp").onchange = async e => {
       const file = e.target.files[0]; e.target.value = ""; if (!file) return;
@@ -1114,85 +1397,175 @@ function viewAdmin() {
         const list = (Array.isArray(arr) ? arr : [arr]).filter(c => c && c.name && Array.isArray(c.questions));
         await Promise.all(list.map(c => DB.set(`${COL_CHARS}/${DB.newId(COL_CHARS)}`, { ...snapshot(c), createdAt: Date.now() })));
         toast(`Imported ${plural(list.length, "character")}.`);
-      } catch (err) { toast("Could not import: " + err.message, true); }
+      } catch (err) { toast("Couldn't import that file: " + err.message, "err"); }
     };
 
-    /* ----- character editor ----- */
-    const dlg = $("#editor");
+    /* ----- character editor (slide-over) ----- */
+    const drawer = $("#drawer"), scrim = $("#scrim");
     function openEditor(ch) {
       draft = ch ? structuredClone(ch) : { name: "", age: "", gender: "male", skin: DEFAULT_SKIN, situation: "", questions: DEFAULT_QUESTIONS() };
       if (!Array.isArray(draft.questions)) draft.questions = [];
-      dlg.innerHTML = `<form class="ed" id="edForm" method="dialog">
-        <div class="ed-head"><h2>${draft.id ? "Edit character" : "New character"}</h2><button type="button" class="btn sm" data-act="cancel">✕</button></div>
-        <div class="ed-body">
-          <div class="grid3">
-            <label>Name<input data-f="name" value="${esc(draft.name)}" placeholder="e.g. Mr Tan" required maxlength="40"></label>
-            <label>Age<input data-f="age" type="number" min="0" max="120" value="${esc(draft.age)}"></label>
-            <label>Gender<select data-f="gender"><option value="male" ${draft.gender !== "female" ? "selected" : ""}>Male</option><option value="female" ${draft.gender === "female" ? "selected" : ""}>Female</option></select></label>
+      draft.questions.forEach((q, i) => q._k = q._k || Math.random().toString(36).slice(2));
+      openQs = new Set(ch ? [] : draft.questions.filter(q => !q.answer).map(q => q._k));
+      drawer.innerHTML = `
+        <div class="dr-head"><h2>${draft.id ? "Edit character" : "New character"}</h2><button class="btn ghost icon" data-act="close" aria-label="Close">${icon("x")}</button></div>
+        <div class="dr-body">
+          <div class="sec">
+            <div class="sec-title">Profile</div>
+            <div class="profile">
+              <div class="grid2">
+                <label class="flabel">Name<input class="input" data-f="name" value="${esc(draft.name)}" placeholder="e.g. Mr Tan" maxlength="40"></label>
+                <label class="flabel">Age<input class="input" data-f="age" type="number" min="0" max="120" value="${esc(draft.age)}" placeholder="e.g. 68"></label>
+              </div>
+              <div class="preview"><div class="fig" id="edPreview"></div></div>
+              <div class="flabel">Gender
+                <div class="pills" role="radiogroup" aria-label="Gender">
+                  <label><input type="radio" name="g" data-f="gender" value="male" ${draft.gender !== "female" ? "checked" : ""}><span>Male</span></label>
+                  <label><input type="radio" name="g" data-f="gender" value="female" ${draft.gender === "female" ? "checked" : ""}><span>Female</span></label>
+                </div></div>
+              <div class="flabel">Skin tone
+                <div class="skin-pick" role="radiogroup" aria-label="Skin tone">
+                  ${SKIN_TONES.map((t, k) => `<label title="${t.label}"><input type="radio" name="skin" data-f="skin" value="${k + 1}" ${(+draft.skin || DEFAULT_SKIN) === k + 1 ? "checked" : ""} aria-label="${t.label}"><span style="background:${t.hex}"></span></label>`).join("")}
+                </div></div>
+            </div>
+            <p class="help" style="margin:10px 0 0">The sprite is picked from gender and age: under 20 teen, 20–59 adult, 60+ elderly.</p>
           </div>
-          <div class="skin-row">
-            <div class="fig" id="edPreview"></div>
-            <div><div class="skin-label">Skin tone</div>
-              <div class="skin-pick" role="radiogroup" aria-label="Skin tone">
-                ${SKIN_TONES.map((t, k) => `<label class="sw" title="${t.label}"><input type="radio" name="skin" data-f="skin" value="${k + 1}" ${(+draft.skin || DEFAULT_SKIN) === k + 1 ? "checked" : ""}><span style="background:${t.hex}"></span></label>`).join("")}
-              </div></div>
+          <div class="sec">
+            <div class="sec-title">Medical situation</div>
+            <textarea class="textarea" data-f="situation" rows="3" placeholder="e.g. Singapore Citizen, admitted 4 days in a B2 ward for pneumonia.">${esc(draft.situation)}</textarea>
+            <p class="help" style="margin:6px 0 0">Shown on the main screen under the character.</p>
           </div>
-          <label>Medical situation (shown on the main screen)<textarea data-f="situation" rows="3" placeholder="e.g. Singapore Citizen, admitted 4 days in a B2 ward for pneumonia.">${esc(draft.situation)}</textarea></label>
-          <div class="sec-head" style="margin:6px 0 0"><h2>Questions</h2><button type="button" class="btn sm" data-act="addq">+ Add question</button></div>
-          <div id="qlist" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div class="sec">
+            <div class="sec-title"><span>Questions</span><span class="help" style="text-transform:none;letter-spacing:0">Drag ${icon("grip")} to reorder</span></div>
+            <div class="qlist" id="qlist"></div>
+            <button type="button" class="add-q" data-act="addq" style="margin-top:10px;width:100%">${icon("plus")}Add question</button>
+          </div>
         </div>
-        <div class="ed-foot"><span class="muted" style="font-size:13px">Saved characters can be reused in future sessions.</span>
-          <div class="row"><button type="button" class="btn" data-act="cancel">Cancel</button><button type="button" class="btn primary" data-act="save">Save character</button></div></div>
-      </form>`;
-      renderQList();
-      renderPreview();
-      dlg.showModal();
+        <div class="dr-foot"><button class="btn" data-act="close">Cancel</button><button class="btn primary" data-act="save">${icon("check")}Save character</button></div>`;
+      renderQList(); renderPreview();
+      drawer.classList.add("show"); scrim.classList.add("show"); drawer.setAttribute("aria-hidden", "false");
+      setTimeout(() => drawer.querySelector('[data-f="name"]')?.focus(), 250);
     }
+    function closeEditor() { drawer.classList.remove("show"); scrim.classList.remove("show"); drawer.setAttribute("aria-hidden", "true"); draft = null; }
+    scrim.onclick = closeEditor;
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && draft && !document.querySelector("dialog[open]")) closeEditor(); });
     function renderPreview() { const el = $("#edPreview"); if (el) el.innerHTML = charFigure(draft, "talk"); }
+    function qSummary(q) {
+      const bits = [];
+      bits.push(q.answer ? `Answer: ${q.answer}` : "No answer yet");
+      if (q.hint) bits.push("hint ✓");
+      if (q.explain) bits.push("debrief ✓");
+      return bits.join(" · ");
+    }
     function renderQList() {
       const n = draft.questions.length;
       $("#qlist").innerHTML = draft.questions.map((q, i) => `
-        <div class="qrow">
-          <div class="qrow-h"><b>Question ${i + 1}</b>
-            <div class="row"><button type="button" class="btn sm" data-up="${i}" ${i === 0 ? "disabled" : ""} title="Move up">↑</button>
-            <button type="button" class="btn sm" data-down="${i}" ${i === n - 1 ? "disabled" : ""} title="Move down">↓</button>
-            <button type="button" class="btn sm danger" data-delq="${i}" title="Remove">Remove</button></div></div>
-          <label>Question the character asks<input data-qi="${i}" data-qf="q" value="${esc(q.q)}" placeholder="e.g. How much is MediShield Life covering?"></label>
-          <div class="grid2">
-            <label>Correct answer(s) — use | for alternatives<input data-qi="${i}" data-qf="answer" value="${esc(q.answer)}" placeholder="e.g. 1200   or   Yes|Y"></label>
-            <label>Allowed ± margin<input data-qi="${i}" data-qf="tolerance" type="number" min="0" step="0.01" value="${esc(q.tolerance || 0)}"></label>
+        <div class="qitem ${openQs.has(q._k) ? "open" : ""}" data-i="${i}">
+          <div class="q-head" data-toggle="${i}">
+            <span class="grip" draggable="true" data-drag="${i}" title="Drag to reorder" aria-hidden="true">${icon("grip")}</span>
+            <span class="q-no">${i + 1}</span>
+            <div class="q-sum"><b>${esc(q.q) || "<span class='muted'>New question</span>"}</b><small>${esc(qSummary(q))}</small></div>
+            <button type="button" class="btn sm ghost icon" data-up="${i}" ${i === 0 ? "disabled" : ""} aria-label="Move question ${i + 1} up">${icon("up")}</button>
+            <button type="button" class="btn sm ghost icon" data-down="${i}" ${i === n - 1 ? "disabled" : ""} aria-label="Move question ${i + 1} down">${icon("down")}</button>
+            <span class="q-chev">${icon("chev")}</span>
           </div>
-          <label>Hint (shown when a team answers wrongly)<textarea data-qi="${i}" data-qf="hint" rows="2">${esc(q.hint)}</textarea></label>
-          <label>Debrief explanation (shown when answers are revealed — optional)<textarea data-qi="${i}" data-qf="explain" rows="2">${esc(q.explain)}</textarea></label>
-        </div>`).join("") || `<div class="empty-lib">No questions yet.</div>`;
+          <div class="q-body">
+            <label class="flabel">Question the character asks<input class="input" data-qi="${i}" data-qf="q" value="${esc(q.q)}" placeholder="e.g. How much is MediShield Life covering?"></label>
+            <div class="grid2">
+              <label class="flabel">Correct answer(s)<input class="input" data-qi="${i}" data-qf="answer" value="${esc(q.answer)}" placeholder="e.g. 1200   or   Yes|Y"></label>
+              <label class="flabel">Allowed ± margin<input class="input" data-qi="${i}" data-qf="tolerance" type="number" min="0" step="0.01" value="${esc(q.tolerance || 0)}"></label>
+            </div>
+            <label class="flabel">Hint (shown after a wrong answer)<textarea class="textarea" data-qi="${i}" data-qf="hint" rows="2">${esc(q.hint)}</textarea></label>
+            <label class="flabel">Debrief explanation (optional)<textarea class="textarea" data-qi="${i}" data-qf="explain" rows="2" placeholder="Shown when you reveal answers">${esc(q.explain)}</textarea></label>
+            <div class="row" style="justify-content:flex-end"><button type="button" class="btn sm danger" data-delq="${i}">${icon("trash")}Remove question</button></div>
+          </div>
+        </div>`).join("") || `<div class="empty-state" style="padding:24px"><p>No questions yet.</p></div>`;
     }
-    dlg.addEventListener("input", e => {
-      const t = e.target;
+    drawer.addEventListener("input", e => {
+      const t = e.target; if (!draft) return;
       if (t.dataset.f) draft[t.dataset.f] = t.dataset.f === "age" ? (t.value === "" ? "" : +t.value) : t.dataset.f === "skin" ? +t.value : t.value;
       if (["skin", "gender", "age"].includes(t.dataset.f)) renderPreview();
-      if (t.dataset.qf) draft.questions[+t.dataset.qi][t.dataset.qf] = t.dataset.qf === "tolerance" ? (+t.value || 0) : t.value;
+      if (t.dataset.qf) {
+        const i = +t.dataset.qi;
+        draft.questions[i][t.dataset.qf] = t.dataset.qf === "tolerance" ? (+t.value || 0) : t.value;
+        const item = t.closest(".qitem");
+        item.querySelector(".q-sum b").textContent = draft.questions[i].q || "New question";
+        item.querySelector(".q-sum small").textContent = qSummary(draft.questions[i]);
+        item.classList.remove("invalid");
+      }
     });
-    dlg.addEventListener("click", async e => {
-      const b = e.target.closest("button"); if (!b) return;
+    drawer.addEventListener("click", async e => {
+      if (!draft) return;
+      const b = e.target.closest("button, [data-toggle]"); if (!b) return;
       const qs = draft.questions;
-      if (b.dataset.up) { const i = +b.dataset.up; [qs[i - 1], qs[i]] = [qs[i], qs[i - 1]]; renderQList(); }
-      if (b.dataset.down) { const i = +b.dataset.down; [qs[i + 1], qs[i]] = [qs[i], qs[i + 1]]; renderQList(); }
-      if (b.dataset.delq) { if (confirm("Remove this question?")) { qs.splice(+b.dataset.delq, 1); renderQList(); } }
-      if (b.dataset.act === "addq") { qs.push({ q: "", answer: "", hint: "", explain: "", tolerance: 0 }); renderQList(); $("#qlist").lastElementChild?.scrollIntoView({ behavior: "smooth" }); }
-      if (b.dataset.act === "cancel") dlg.close();
-      if (b.dataset.act === "save") await saveDraft();
+      if (b.dataset.act === "close") return closeEditor();
+      if (b.dataset.act === "save") return saveDraft();
+      if (b.dataset.act === "addq") {
+        const q = { q: "", answer: "", hint: "", explain: "", tolerance: 0, _k: Math.random().toString(36).slice(2) };
+        qs.push(q); openQs.add(q._k); renderQList();
+        const last = $("#qlist").lastElementChild; last?.scrollIntoView({ behavior: "smooth", block: "center" }); last?.querySelector("input")?.focus();
+        return;
+      }
+      if (b.dataset.up) { e.stopPropagation(); const i = +b.dataset.up; [qs[i - 1], qs[i]] = [qs[i], qs[i - 1]]; return renderQList(); }
+      if (b.dataset.down) { e.stopPropagation(); const i = +b.dataset.down; [qs[i + 1], qs[i]] = [qs[i], qs[i + 1]]; return renderQList(); }
+      if (b.dataset.delq) {
+        const i = +b.dataset.delq;
+        if (!await ask(`Remove question ${i + 1}?`, qs[i].q || "This question will be removed.", { ok: "Remove", danger: true })) return;
+        qs.splice(i, 1); return renderQList();
+      }
+      if (b.dataset.toggle != null && !e.target.closest(".grip")) {
+        const k = qs[+b.dataset.toggle]._k;
+        openQs.has(k) ? openQs.delete(k) : openQs.add(k);
+        b.closest(".qitem").classList.toggle("open");
+      }
     });
+    // drag & drop reordering
+    let dragFrom = null;
+    drawer.addEventListener("dragstart", e => {
+      const g = e.target.closest?.("[data-drag]"); if (!g) return;
+      dragFrom = +g.dataset.drag;
+      const item = g.closest(".qitem"); item.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(dragFrom));
+      try { e.dataTransfer.setDragImage(item, 20, 20); } catch {}
+    });
+    drawer.addEventListener("dragover", e => {
+      if (dragFrom == null) return;
+      const item = e.target.closest(".qitem"); if (!item) return;
+      e.preventDefault();
+      drawer.querySelectorAll(".qitem").forEach(x => x.classList.remove("drop-before", "drop-after"));
+      const r = item.getBoundingClientRect();
+      item.classList.add(e.clientY < r.top + r.height / 2 ? "drop-before" : "drop-after");
+    });
+    drawer.addEventListener("drop", e => {
+      if (dragFrom == null) return;
+      const item = e.target.closest(".qitem"); if (!item) return;
+      e.preventDefault();
+      const r = item.getBoundingClientRect();
+      let to = +item.dataset.i + (e.clientY < r.top + r.height / 2 ? 0 : 1);
+      const qs = draft.questions; const [m] = qs.splice(dragFrom, 1);
+      if (to > dragFrom) to--;
+      qs.splice(to, 0, m);
+      dragFrom = null; renderQList();
+    });
+    drawer.addEventListener("dragend", () => { dragFrom = null; drawer.querySelectorAll(".qitem").forEach(x => x.classList.remove("dragging", "drop-before", "drop-after")); });
+
     async function saveDraft() {
-      if (!String(draft.name).trim()) return toast("Please enter a name.", true);
-      if (!draft.questions.length) return toast("Add at least one question.", true);
+      if (!String(draft.name).trim()) { drawer.querySelector('[data-f="name"]').focus(); return toast("Give the character a name.", "err"); }
+      if (!draft.questions.length) return toast("Add at least one question.", "err");
       const bad = draft.questions.findIndex(q => !String(q.q).trim() || !String(q.answer).trim());
-      if (bad >= 0) return toast(`Question ${bad + 1} needs both a question and a correct answer.`, true);
+      if (bad >= 0) {
+        openQs.add(draft.questions[bad]._k); renderQList();
+        const it = $("#qlist").children[bad]; it.classList.add("invalid"); it.scrollIntoView({ behavior: "smooth", block: "center" });
+        return toast(`Question ${bad + 1} needs both a question and a correct answer.`, "err");
+      }
       const id = draft.id || DB.newId(COL_CHARS);
       const data = { ...snapshot(draft), createdAt: draft.createdAt || Date.now() };
       try { await DB.set(`${COL_CHARS}/${id}`, data); } catch (err) { return showError(err); }
-      dlg.close();
+      const wasExisting = !!draft.id;
+      closeEditor();
       toast(`Saved “${data.name}”.`);
-      if (draft.id && game?.slots?.some(s => s.characterId === id) && confirm(`“${data.name}” is in the current game. Update the game with these changes now?`)) {
+      if (wasExisting && game?.slots?.some(s => s.characterId === id) &&
+          await ask("Update the live game too?", `“${data.name}” is assigned to a team. Apply these changes to the running game now?`, { ok: "Update game", cancel: "Not now" })) {
         lib = lib.map(c => c.id === id ? { ...data, id } : c);
         resync(id);
       }
@@ -1219,7 +1592,7 @@ let DB;
 try {
   DB = USE_FIREBASE ? await makeFirebaseStore() : makeLocalStore();
 } catch (e) {
-  app.innerHTML = `<div class="admin"><h2>Could not connect to Firebase</h2><p>${esc(e.message)}</p></div>`;
+  app.innerHTML = `<div class="pin"><h1>Couldn't connect</h1><p class="muted">${esc(e.message)}</p></div>`;
   throw e;
 }
 const view = params.get("view") || (params.get("slot") ? "team" : "display");
@@ -1227,8 +1600,8 @@ const view = params.get("view") || (params.get("slot") ? "team" : "display");
 if (DB.mode === "local") {
   const b = document.createElement("div");
   b.className = "demo-banner";
-  b.textContent = "Demo mode — not connected to Firebase. Data stays in this browser only. (click to hide)";
-  b.style.cursor = "pointer"; b.onclick = () => b.remove();
+  b.textContent = "Demo mode: data stays in this browser (click to hide)";
+  b.onclick = () => b.remove();
   document.body.appendChild(b);
 }
 </script>
