@@ -67,9 +67,10 @@
 
   /* ---------- figure animations ---------- */
   .fig svg { display: block; height: 100%; width: auto; overflow: visible; }
-  .fig.confused svg { animation: shake .45s ease-in-out 3; }
-  .fig.cheer svg { animation: hop .6s ease-out 2; }
-  .fig.joy svg { animation: bounce 1.4s ease-in-out infinite; }
+  .fig canvas.sprite { display: block; height: 100%; width: auto; max-width: 100%; object-fit: contain; object-position: 50% 100%; }
+  .fig.confused > * { animation: shake .45s ease-in-out 3; }
+  .fig.cheer > * { animation: hop .6s ease-out 2; }
+  .fig.joy > svg { animation: bounce 1.4s ease-in-out infinite; }
   @keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-6px) rotate(-2deg) } 75% { transform: translateX(6px) rotate(2deg) } }
   @keyframes hop { 0%,100% { transform: translateY(0) } 40% { transform: translateY(-12%) } }
   @keyframes bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4%) } }
@@ -108,7 +109,7 @@
   .bubble.done::after { background: var(--ok); }
 
   .mid { display: flex; align-items: flex-end; justify-content: space-between; gap: .8vw; min-height: 0; padding-top: 4.2vh; }
-  .mid .fig { height: 100%; min-height: 0; flex: 0 0 auto; margin-left: 4%; }
+  .mid .fig { height: 100%; min-height: 0; min-width: 0; flex: 0 1 auto; margin-left: 4%; }
   .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: .5vh; width: 40%; max-width: 15vh; margin-bottom: .5vh; }
   .qr-box { width: 100%; aspect-ratio: 1; background: #fff; padding: 5%; border: 2px solid var(--teal); border-radius: 8px; }
   .qr-box img, .qr-box canvas { width: 100% !important; height: auto !important; display: block; }
@@ -519,6 +520,90 @@ function figureSVG(gender, mood, skin) {
   return `<svg viewBox="0 0 200 390" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     ${body}<circle class="head" cx="100" cy="46" r="38" fill="${sk}" stroke="${ink}" stroke-width="2"/><g class="face">${face}</g>${extra}</svg>`;
 }
+/* ---------- pixel-art sprites ----------
+   Sheets live in sprites/<gender>-<teen|adult|elderly>.png: 4x4 cells of cw x ch px.
+   Rows: 0 talking, 1 impatient, 2 emotions (worried, confused, sad, neutral), 3 happy (smile, grin, cheer, jump).
+   skin = reference skin colour measured in the sheet; it is recoloured to the tone chosen in admin.
+   Characters whose gender/age has no sheet yet fall back to the simple drawn figure. */
+const SPRITES = {
+  "male-elderly":   { src: "sprites/male-elderly.png",   cw: 264, ch: 262, skin: [192, 129, 86] },
+  "female-elderly": { src: "sprites/female-elderly.png", cw: 227, ch: 305, skin: [193, 133, 92] },
+};
+const ANIMS = {
+  talk:      { f: [[0, 0], [0, 1], [0, 2], [0, 1], [0, 3], [0, 1]], ms: 160 },
+  impatient: { f: [[1, 0], [1, 1], [1, 0], [1, 1], [1, 0], [1, 1], [1, 2], [1, 2], [1, 2], [1, 2], [1, 2], [1, 3], [1, 3], [1, 3], [1, 3], [1, 3]], ms: 300 },
+  worried:   { f: [[2, 0]] },
+  confused:  { f: [[2, 1]] },
+  sad:       { f: [[2, 2]] },
+  anxious:   { f: [[2, 3]] },
+  ok:        { f: [[3, 0]] },
+  happy:     { f: [[3, 1]] },
+  joy:       { f: [[3, 2], [3, 3]], ms: 420 },
+};
+const ageGroup = age => { const a = parseInt(age, 10); return isNaN(a) ? "adult" : a < 20 ? "teen" : a < 60 ? "adult" : "elderly"; };
+const spriteKey = c => { const k = `${c?.gender === "female" ? "female" : "male"}-${ageGroup(c?.age)}`; return SPRITES[k] ? k : null; };
+function hexRGB(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+
+const sheetCache = new Map();
+function loadSheet(key, skin) {
+  const id = key + "|" + (+skin || DEFAULT_SKIN);
+  if (!sheetCache.has(id)) sheetCache.set(id, new Promise(res => {
+    const img = new Image();
+    img.onload = () => { try { res(recolorSheet(img, SPRITES[key].skin, hexRGB(skinHex(skin)))); } catch { res(img); } };
+    img.onerror = () => res(null);
+    img.src = SPRITES[key].src;
+  }));
+  return sheetCache.get(id);
+}
+function recolorSheet(img, ref, target) {
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const x = c.getContext("2d"); x.drawImage(img, 0, 0);
+  const d = x.getImageData(0, 0, c.width, c.height), p = d.data;   // throws on file:// → original colours used
+  for (let i = 0; i < p.length; i += 4) {
+    if (!p[i + 3]) continue;
+    const r = p[i] / 255, g = p[i + 1] / 255, b = p[i + 2] / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, dd = mx - mn;
+    if (l < 0.22 || l > 0.85 || dd === 0) continue;
+    const sat = l > 0.5 ? dd / (2 - mx - mn) : dd / (mx + mn);
+    if (sat < 0.25 || sat > 0.65) continue;
+    let h = mx === r ? ((g - b) / dd) % 6 : mx === g ? (b - r) / dd + 2 : (r - g) / dd + 4;
+    h *= 60; if (h < 0) h += 360;
+    if (h < 8 || h > 33) continue;   // only skin-like oranges/browns
+    for (let k = 0; k < 3; k++) p[i + k] = Math.min(255, target[k] * p[i + k] / ref[k]);
+  }
+  x.putImageData(d, 0, 0);
+  return c;
+}
+/* Character figure: animated sprite if one exists for this gender/age, otherwise the drawn figure. */
+function charFigure(c, mood) {
+  const key = spriteKey(c);
+  if (!key) {
+    const m = mood === "talk" ? "ok" : mood === "impatient" ? "anxious" : mood === "sad" ? "worried" : mood;
+    return figureSVG(c?.gender, m, c?.skin);
+  }
+  const S = SPRITES[key];
+  return `<canvas class="sprite" width="${S.cw}" height="${S.ch}" data-key="${key}" data-skin="${+c?.skin || DEFAULT_SKIN}" data-anim="${mood}" aria-hidden="true"></canvas>`;
+}
+setInterval(() => {
+  const now = performance.now();
+  document.querySelectorAll("canvas.sprite").forEach(cv => {
+    if (!cv._st) {
+      cv._st = { t0: now, k: -1, sheet: null };
+      loadSheet(cv.dataset.key, cv.dataset.skin).then(sh => { cv._st.sheet = sh; cv._st.k = -1; });
+    }
+    const st = cv._st; if (!st.sheet) return;
+    const a = ANIMS[cv.dataset.anim] || ANIMS.ok;
+    const k = Math.floor((now - st.t0) / (a.ms || 1000)) % a.f.length;
+    if (k === st.k) return;
+    st.k = k;
+    const [row, col] = a.f[k], W = cv.width, H = cv.height;
+    const ctx = cv.getContext("2d");
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(st.sheet, col * W, row * H, W, H, 0, 0, W, H);
+  });
+}, 80);
+
 function moodByProgress(step, total) {
   if (!total) return "ok";
   const f = step / total;
@@ -549,7 +634,10 @@ const ordinal = n => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th"
 function viewDisplay() {
   let game = null;
   const prog = Array(SLOTS).fill(null);
-  const fx = Array.from({ length: SLOTS }, () => ({ prevStep: null, prevWrong: null, confusedUntil: 0, cheerUntil: 0, timer: null }));
+  const fx = Array.from({ length: SLOTS }, () => ({ prevStep: null, prevWrong: null, confusedUntil: 0, cheerUntil: 0, talkUntil: 0, lastActivity: Date.now(), timer: null }));
+  const IMPATIENT_AFTER = 45000;   // ms without an answer before the character gets impatient
+  let prevStatus = null;
+  setInterval(() => { if (game) for (let i = 0; i < SLOTS; i++) renderSlot(i); }, 1000);
   let structKey = "";
   let hideQR = false;
 
@@ -631,16 +719,20 @@ function viewDisplay() {
     else if (confused) { html = `<span>Hmm… are you sure? 🤔</span>`; cls += " confused"; }
     else if (status === "waiting") html = `<span>Hi! I'm ${esc(ch.name)}. Can you help me make sense of my hospital bill?</span>`;
     else html = `<span class="qnum">Question ${step + 1} of ${total}</span><span>${esc(qs[step]?.q)}</span>`;
-    if (bub.dataset.h !== html + cls) { bub.dataset.h = html + cls; bub.className = cls; bub.innerHTML = html; bub.style.animation = "none"; void bub.offsetWidth; bub.style.animation = ""; }
+    if (bub.dataset.h !== html + cls) {
+      if (bub.dataset.h && !confused && !done) f.talkUntil = Math.max(now, f.cheerUntil) + 2600;
+      bub.dataset.h = html + cls; bub.className = cls; bub.innerHTML = html; bub.style.animation = "none"; void bub.offsetWidth; bub.style.animation = ""; }
 
     // figure
-    const mood = !ch ? "ok" : confused ? "confused" : done ? "joy" : cheer ? "happy" : moodByProgress(step, total);
+    const talking = !done && f.talkUntil > now;
+    const impatient = status === "live" && !done && now - f.lastActivity > IMPATIENT_AFTER;
+    const mood = !ch ? "ok" : confused ? "confused" : done ? "joy" : cheer ? "happy" : talking ? "talk" : impatient ? "impatient" : moodByProgress(step, total);
     const fig = $(`#fig${i}`);
-    const figKey = (ch?.gender || "male") + mood + (cheer ? "c" : "");
+    const figKey = [ch?.gender, ch?.age, ch?.skin, mood, cheer].join("|");
     if (fig.dataset.k !== figKey) {
       fig.dataset.k = figKey;
       fig.className = "fig " + (confused ? "confused" : done ? "joy" : cheer ? "cheer" : "");
-      fig.innerHTML = figureSVG(ch?.gender, mood, ch?.skin);
+      fig.innerHTML = charFigure(ch, mood);
     }
 
     // name + QR label
@@ -675,7 +767,7 @@ function viewDisplay() {
         const { s, ch, p, qs, total, step, done } = info(i);
         if (!ch) return `<div class="db-col"><div class="db-head"><h3>Slot ${i + 1}: no character</h3></div></div>`;
         return `<div class="db-col">
-          <div class="db-head"><div class="fig">${figureSVG(ch.gender, done ? "joy" : "ok", ch.skin)}</div>
+          <div class="db-head"><div class="fig">${charFigure(ch, done ? "joy" : "ok")}</div>
             <div><h3>${esc(ch.name)}</h3><div class="meta">${ch.age ? esc(ch.age) + " · " : ""}${esc(s.teamName || "")}</div></div></div>
           <div class="db-sit">${esc(ch.situation)}</div>
           ${qs.map((q, k) => `<div class="db-q"><div class="q">Q${k + 1}. ${esc(q.q)}</div><div class="a">✅ ${esc(displayAnswer(q))}</div>${q.explain ? `<div class="e">${esc(q.explain)}</div>` : ""}</div>`).join("")}
@@ -687,6 +779,7 @@ function viewDisplay() {
   function renderAll() {
     const pill = $("#statusPill");
     const st = game?.status || "waiting";
+    if (st !== prevStatus) { const t = Date.now(); fx.forEach(f => { f.lastActivity = t; if (prevStatus !== null) f.talkUntil = t + 2600; }); prevStatus = st; }
     pill.className = "status-pill " + st;
     pill.textContent = { waiting: "Get ready…", live: "● Live", paused: "Paused" }[st] || st;
     const key = game ? game.slots.map(s => (s.characterId || "") + ":" + (s.character?.questions?.length || 0) + ":" + (s.character?.updatedAt || "")).join("|") : "none";
@@ -700,6 +793,7 @@ function viewDisplay() {
     DB.watchDoc(PROG(i), p => {
       const f = fx[i]; const step = p?.step || 0; const wrong = p?.wrong || 0;
       if (f.prevStep !== null) {
+        if (step !== f.prevStep || wrong !== f.prevWrong) f.lastActivity = Date.now();
         if (step > f.prevStep) { f.confusedUntil = 0; f.cheerUntil = Date.now() + 2600; }
         else if (step < f.prevStep) { f.confusedUntil = 0; f.cheerUntil = 0; }
         else if (wrong > f.prevWrong) { f.confusedUntil = Date.now() + 12000; }
@@ -725,7 +819,7 @@ function viewTeam() {
     app.innerHTML = `<div class="team"><h2 style="color:var(--teal-dark)">Which character is your team helping?</h2><div class="chooser" id="chooser">Loading…</div></div>`;
     DB.watchDoc(GAME, g => {
       $("#chooser").innerHTML = (g?.slots || []).map((s, i) => s.character
-        ? `<a href="?view=team&slot=${i + 1}"><div class="fig">${figureSVG(s.character.gender, "ok", s.character.skin)}</div><div><b>${esc(s.character.name)}</b><div class="muted">${esc(s.teamName)}</div></div></a>` : "").join("")
+        ? `<a href="?view=team&slot=${i + 1}"><div class="fig">${charFigure(s.character, "ok")}</div><div><b>${esc(s.character.name)}</b><div class="muted">${esc(s.teamName)}</div></div></a>` : "").join("")
         || `<p class="muted">No characters have been set up yet.</p>`;
     });
     return;
@@ -744,7 +838,7 @@ function viewTeam() {
     const { s, ch, qs, total, step, done } = info();
     if (!game || !ch) { key = ""; root.innerHTML = `<div class="t-big"><span class="emoji">⏳</span>Waiting for the facilitator to set up your character…</div>`; return; }
     const status = game.status || "waiting";
-    const k = [status, step, total, done, s.characterId, game.reveal].join("|");
+    const k = [status, step, total, done, s.characterId, game.reveal, p?.hintStep === step, ch.skin, ch.age, ch.gender].join("|");
     if (k !== key) {
       key = k;
       const confused = p?.hintStep === step && !done;
@@ -753,7 +847,7 @@ function viewTeam() {
       root.innerHTML = `
         <div class="t-head"><div class="t-team">${esc(s.teamName || `Team ${slot + 1}`)}</div>
           <div class="t-prog"><div class="bar"><i style="width:${total ? step / total * 100 : 0}%"></i></div><span>${step}/${total}</span></div></div>
-        <div class="t-char"><div class="fig ${done ? "joy" : ""}">${figureSVG(ch.gender, mood, ch.skin)}</div>
+        <div class="t-char"><div class="fig ${done ? "joy" : ""}">${charFigure(ch, mood)}</div>
           <div><div class="t-name">${esc(ch.name)}</div><div class="muted">${ch.age ? esc(ch.age) + " years old" : ""}</div>
           <details ${step === 0 ? "open" : ""}><summary>Medical situation</summary><p>${esc(ch.situation)}</p></details></div></div>
         ${done ? `<div class="t-big"><span class="emoji">🎉</span><b>You've answered all of ${esc(ch.name)}'s questions!</b><br><span class="muted">Look at the main screen to see how the other teams are doing.</span></div>`
@@ -981,7 +1075,7 @@ function viewAdmin() {
       const used = id => game?.slots?.map((s, i) => s.characterId === id ? i + 1 : null).filter(Boolean) || [];
       const sorted = [...lib].sort((a, b) => String(a.name).localeCompare(String(b.name)));
       $("#lib").innerHTML = sorted.length ? sorted.map(c => `
-        <div class="lcard"><div class="fig">${figureSVG(c.gender, "ok", c.skin)}</div>
+        <div class="lcard"><div class="fig">${charFigure(c, "ok")}</div>
           <div style="min-width:0;flex:1">
             <h3>${esc(c.name || "(unnamed)")} <small>${c.age ? esc(c.age) + " · " : ""}${c.gender === "female" ? "Female" : "Male"}</small></h3>
             <p>${esc(c.situation)}</p>
@@ -1054,7 +1148,7 @@ function viewAdmin() {
       renderPreview();
       dlg.showModal();
     }
-    function renderPreview() { const el = $("#edPreview"); if (el) el.innerHTML = figureSVG(draft.gender, "happy", draft.skin); }
+    function renderPreview() { const el = $("#edPreview"); if (el) el.innerHTML = charFigure(draft, "talk"); }
     function renderQList() {
       const n = draft.questions.length;
       $("#qlist").innerHTML = draft.questions.map((q, i) => `
@@ -1075,7 +1169,7 @@ function viewAdmin() {
     dlg.addEventListener("input", e => {
       const t = e.target;
       if (t.dataset.f) draft[t.dataset.f] = t.dataset.f === "age" ? (t.value === "" ? "" : +t.value) : t.dataset.f === "skin" ? +t.value : t.value;
-      if (t.dataset.f === "skin" || t.dataset.f === "gender") renderPreview();
+      if (["skin", "gender", "age"].includes(t.dataset.f)) renderPreview();
       if (t.dataset.qf) draft.questions[+t.dataset.qi][t.dataset.qf] = t.dataset.qf === "tolerance" ? (+t.value || 0) : t.value;
     });
     dlg.addEventListener("click", async e => {

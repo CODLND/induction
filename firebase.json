@@ -4,7 +4,7 @@
   },
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "firestore.rules", "**/.*", "**/*.md"],
+    "ignore": ["firebase.json", "firestore.rules", "**/.*", "**/*.md", "tools/**"],
     "rewrites": [{ "source": "/", "destination": "/healthcare.html" }]
   }
 }
