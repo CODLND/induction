@@ -17,8 +17,10 @@
   :root {
     --brand: #1b6082; --brand-600: #164f6b; --brand-700: #0f3a50; --brand-50: #eef6fa; --brand-100: #d6eaf3; --brand-200: #a9d2e4;
     --ink: #0f172a; --text: #1e293b; --muted: #64748b; --subtle: #94a3b8;
-    --line: #e2e8f0; --line-2: #cbd5e1;
-    --bg: #f4f7fb; --surface: #ffffff; --surface-2: #f8fafc;
+    /* default theme = "mist": soft teal-grey background with off-white cards (less glare on projectors) */
+    --line: #cfdbe0; --line-2: #b8c7ce;
+    --bg: #dde7eb; --surface: #f6f9fa; --surface-2: #ecf2f4;
+    --glow-1: #cde2ec; --glow-2: #d5e7de;
     --ok: #16a34a; --ok-600: #15803d; --ok-50: #ecfdf3; --ok-100: #d1fadf;
     --warn: #d97706; --warn-600: #b45309; --warn-50: #fffbeb; --warn-100: #fef3c7;
     --bad: #e11d48; --bad-50: #fff1f2;
@@ -32,6 +34,10 @@
     --spring: cubic-bezier(.3, 1.4, .5, 1);
     color-scheme: light;
   }
+  /* other background themes (picked in admin → Live game → Main screen heading) */
+  :root[data-theme="sand"]  { --bg: #e8e2d6; --surface: #faf7f1; --surface-2: #f1ece3; --line: #ddd3c3; --line-2: #c8bca7; --glow-1: #eedfc6; --glow-2: #dde5d3; --brand-50: #eaf1f3; }
+  :root[data-theme="sage"]  { --bg: #dfe8de; --surface: #f6f9f5; --surface-2: #ebf2e9; --line: #cfdbcc; --line-2: #b7c7b3; --glow-1: #cfe4d3; --glow-2: #e3ead0; --brand-50: #e6f1f2; }
+  :root[data-theme="bright"] { --bg: #f4f7fb; --surface: #ffffff; --surface-2: #f8fafc; --line: #e2e8f0; --line-2: #cbd5e1; --glow-1: #dff0f7; --glow-2: #e6f4ec; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); -webkit-font-smoothing: antialiased; }
   button, input, select, textarea { font: inherit; color: inherit; }
@@ -113,7 +119,7 @@
      DISPLAY — main screen (projector)
      ================================================================= */
   .display { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
-    background: radial-gradient(1200px 600px at 10% -10%, #dff0f7 0%, transparent 60%), radial-gradient(900px 500px at 110% 110%, #e6f4ec 0%, transparent 55%), var(--bg); }
+    background: radial-gradient(1200px 600px at 10% -10%, var(--glow-1) 0%, transparent 60%), radial-gradient(900px 500px at 110% 110%, var(--glow-2) 0%, transparent 55%), var(--bg); }
   .d-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 1.6vh 2vw 1vh; }
   .d-brand { display: flex; align-items: center; gap: 1vw; }
   .d-logo { width: 5.2vh; height: 5.2vh; border-radius: 1.4vh; background: var(--brand); display: grid; place-items: center; font-size: 3vh; box-shadow: var(--sh-2); user-select: none; cursor: default; }
@@ -140,7 +146,7 @@
   .pwrap.flipped .flipper { transform: rotateY(180deg); }
   .flipper > .pcard { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
   .pwrap.flipped .flipper > .pcard:not(.back) { pointer-events: none; }
-  .pcard.back { transform: rotateY(180deg); display: flex; flex-direction: column; gap: 1.2vh; cursor: pointer; background: linear-gradient(180deg, #fff 0, var(--surface-2) 100%); }
+  .pcard.back { transform: rotateY(180deg); display: flex; flex-direction: column; gap: 1.2vh; cursor: pointer; background: linear-gradient(180deg, var(--surface) 0, var(--surface-2) 100%); }
   .pc-foot { cursor: default; user-select: none; }
   .bk-head { display: flex; align-items: center; gap: .8vw; }
   .bk-head .fig { height: 7.5vh; flex: 0 0 auto; }
@@ -216,7 +222,7 @@
 
   /* debrief */
   .debrief { position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column; padding: 2.2vh 2vw; overflow: auto;
-    background: radial-gradient(1200px 600px at 0% 0%, #dff0f7 0%, transparent 60%), var(--bg); animation: pop .35s var(--ease); }
+    background: radial-gradient(1200px 600px at 0% 0%, var(--glow-1) 0%, transparent 60%), var(--bg); animation: pop .35s var(--ease); }
   .debrief-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.8vh; }
   .debrief-head h2 { margin: 0; font-size: min(3.4vh, 2.2vw); color: var(--ink); letter-spacing: -.02em; }
   .debrief-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.2vw; flex: 1; min-height: 0; }
@@ -270,7 +276,7 @@
   .t-count { font-weight: 800; color: var(--muted); font-size: 14px; }
   .t-hero { display: flex; align-items: flex-end; gap: 14px; }
   .t-hero .fig { height: 150px; flex: 0 0 auto; min-width: 70px; display: flex; align-items: flex-end; position: relative; z-index: 1; }
-  .t-stage { position: relative; width: 136px; height: 168px; flex: 0 0 auto; border-radius: var(--r-lg); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; background: linear-gradient(180deg, #fff, var(--brand-50)); box-shadow: var(--sh-1); border: 1px solid var(--line); }
+  .t-stage { position: relative; width: 136px; height: 168px; flex: 0 0 auto; border-radius: var(--r-lg); overflow: hidden; display: flex; align-items: flex-end; justify-content: center; background: linear-gradient(180deg, var(--surface), var(--brand-50)); box-shadow: var(--sh-1); border: 1px solid var(--line); }
   .t-stage .fig { height: 150px; margin-bottom: 4px; }
   .t-id { padding-bottom: 8px; min-width: 0; }
   .t-name { font-size: 24px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; line-height: 1.15; }
@@ -318,7 +324,7 @@
   /* =================================================================
      ADMIN
      ================================================================= */
-  .adm-nav { position: sticky; top: 0; z-index: 30; background: rgba(255, 255, 255, .82); backdrop-filter: saturate(1.6) blur(14px); border-bottom: 1px solid var(--line); }
+  .adm-nav { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--surface) 84%, transparent); backdrop-filter: saturate(1.6) blur(14px); border-bottom: 1px solid var(--line); }
   .adm-nav-in { max-width: 1240px; margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
   .adm-brand { display: flex; align-items: center; gap: 10px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
   .adm-brand .logo { width: 32px; height: 32px; border-radius: 10px; background: var(--brand); display: grid; place-items: center; font-size: 17px; }
@@ -349,7 +355,7 @@
   .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
   .slot { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--sh-1); }
   .slot-top { display: flex; align-items: center; gap: 12px; }
-  .avatar { position: relative; width: 52px; height: 60px; border-radius: 14px; background: linear-gradient(180deg, var(--brand-50), #fff); border: 1px solid var(--line); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; flex: 0 0 auto; padding-top: 4px; }
+  .avatar { position: relative; width: 52px; height: 60px; border-radius: 14px; background: linear-gradient(180deg, var(--brand-50), var(--surface)); border: 1px solid var(--line); display: flex; align-items: flex-end; justify-content: center; overflow: hidden; flex: 0 0 auto; padding-top: 4px; }
   .avatar > canvas, .avatar > svg { position: relative; z-index: 1; }
   .avatar.fig > * { height: 100%; }
   .avatar.empty { align-items: center; color: var(--subtle); padding: 0; }
@@ -408,7 +414,7 @@
   .sec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; box-shadow: var(--sh-1); }
   .sec-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; font-size: 13px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
   .profile { display: grid; grid-template-columns: 1fr 120px; gap: 16px; }
-  .profile .preview { position: relative; overflow: hidden; grid-row: span 3; border-radius: var(--r); background: linear-gradient(180deg, var(--brand-50), #fff); border: 1px solid var(--line); display: flex; align-items: flex-end; justify-content: center; padding: 10px 6px 6px; min-height: 160px; }
+  .profile .preview { position: relative; overflow: hidden; grid-row: span 3; border-radius: var(--r); background: linear-gradient(180deg, var(--brand-50), var(--surface)); border: 1px solid var(--line); display: flex; align-items: flex-end; justify-content: center; padding: 10px 6px 6px; min-height: 160px; }
   .profile .preview .fig { height: 140px; position: relative; z-index: 1; }
   .bg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 10px; }
   .bg-opt { cursor: pointer; display: flex; flex-direction: column; gap: 6px; position: relative; }
@@ -429,6 +435,7 @@
   .pills span { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 13px; color: var(--muted); }
   .pills input:checked + span { border-color: var(--brand); background: var(--brand-50); color: var(--brand-700); }
   .pills input:focus-visible + span { outline: 3px solid var(--brand-200); }
+  .tsw { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(15, 23, 42, .2); display: inline-block; }
   .skin-pick { display: flex; gap: 8px; }
   .skin-pick label { cursor: pointer; position: relative; }
   .skin-pick input { position: absolute; opacity: 0; pointer-events: none; }
@@ -759,6 +766,10 @@ function billHTML(ch) {
     <div class="bill-foot">Sample bill for training purposes only. Hospital names are fictional.</div>
   </div>`;
 }
+
+/* Background theme (stored on the game; applies to the main screen, team phones and admin). */
+const THEMES = [["mist", "Mist", "Soft teal-grey (default)", "#dde7eb", "#f6f9fa"], ["sand", "Sand", "Warm beige", "#e8e2d6", "#faf7f1"], ["sage", "Sage", "Gentle green", "#dfe8de", "#f6f9f5"], ["bright", "Bright", "Original white", "#f4f7fb", "#ffffff"]];
+const applyTheme = g => { const t = THEMES.some(x => x[0] === g?.theme) ? g.theme : "mist"; if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t; };
 
 /* Main-screen heading (editable in admin, stored on the game). */
 const DEFAULT_TITLE = "Healthcare Bill Challenge";
@@ -1292,7 +1303,7 @@ function viewDisplay() {
     el.innerHTML = `🏁 ${n} of ${used} finished`;
   }
 
-  DB.watchDoc(GAME, g => { game = g; renderAll(); });
+  DB.watchDoc(GAME, g => { game = g; applyTheme(g); renderAll(); });
   for (let i = 0; i < SLOTS; i++) {
     DB.watchDoc(PROG(i), p => {
       const f = fx[i]; const step = p?.step || 0; const wrong = p?.wrong || 0;
@@ -1426,7 +1437,7 @@ function viewTeam() {
     finally { busy = false; const b = $("#sendBtn"); if (b) b.disabled = false; }
   }
 
-  DB.watchDoc(GAME, g => { game = g; render(); });
+  DB.watchDoc(GAME, g => { game = g; applyTheme(g); render(); });
   DB.watchDoc(PROG(slot), x => {
     const prev = p?.step;
     p = x;
@@ -1488,6 +1499,11 @@ function viewAdmin() {
               <label class="flabel">Subtitle<input class="input" id="hSub" maxlength="120" placeholder="${esc(DEFAULT_SUB)}"></label>
             </div>
             <p class="help" style="margin:8px 0 0">Shown at the top of the main screen. Leave a box empty to use the default. Type a single <b>-</b> as the subtitle to hide it. Saves when you press Enter or click away.</p>
+            <div class="sec-title" style="margin-top:16px">Background colour</div>
+            <div class="pills theme-pick" role="radiogroup" aria-label="Background colour" id="themePick">
+              ${THEMES.map(([id, name, desc, bg, card]) => `<label title="${esc(desc)}"><input type="radio" name="theme" value="${id}"><span><i class="tsw" style="background:linear-gradient(135deg, ${bg} 50%, ${card} 50%)"></i>${esc(name)}</span></label>`).join("")}
+            </div>
+            <p class="help" style="margin:8px 0 0">Applies to the main screen, team phones and this page.</p>
           </div>
           <div class="slots" id="slots"></div>
         </section>
@@ -1561,6 +1577,17 @@ function viewAdmin() {
       await DB.merge(GAME, { slots }).catch(showError);
       toast("Live game updated with the latest character details.");
     }
+
+    /* ----- background theme ----- */
+    function renderTheme() {
+      const t = THEMES.some(x => x[0] === game?.theme) ? game.theme : "mist";
+      document.querySelectorAll('#themePick input').forEach(i => i.checked = i.value === t);
+    }
+    $("#themePick").addEventListener("change", async e => {
+      if (e.target.name !== "theme") return;
+      await DB.merge(GAME, { theme: e.target.value }).catch(showError);
+      toast(`Background set to ${THEMES.find(x => x[0] === e.target.value)[1]}.`);
+    });
 
     /* ----- main screen heading ----- */
     function renderHeading() {
@@ -1992,7 +2019,7 @@ function viewAdmin() {
     /* ----- subscriptions ----- */
     DB.watchDoc(GAME, g => {
       if (!g) { DB.set(GAME, defaultGame()).catch(showError); return; }
-      game = g; renderCtl(); renderSlots(); renderLib(); renderHeading();
+      game = g; applyTheme(g); renderCtl(); renderSlots(); renderLib(); renderHeading(); renderTheme();
     });
     DB.watchCol(COL_CHARS, list => { lib = list; if (game) renderSlots(); renderLib(); });
     for (let i = 0; i < SLOTS; i++) DB.watchDoc(PROG(i), p => {
