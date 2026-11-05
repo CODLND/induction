@@ -620,6 +620,9 @@ function checkAnswer(input, q) {
 /* Opening line shown before the game starts. Editable per character; {name} is replaced with the name. */
 const DEFAULT_INTRO = "Hi! I'm {name}. Can you help me make sense of my hospital bill?";
 const openingLine = ch => (String(ch?.intro || "").trim() || DEFAULT_INTRO).replaceAll("{name}", ch?.name || "");
+/* Thank-you line shown once the team has answered every question. Same rules as the opening line. */
+const DEFAULT_OUTRO = "Thank you! I finally understand my bill 😊";
+const closingLine = ch => (String(ch?.outro || "").trim() || DEFAULT_OUTRO).replaceAll("{name}", ch?.name || "");
 const isNumericQ = q => !!q && toNum(String(q.answer).split("|")[0]) !== null;
 const displayAnswer = q => {
   const alts = String(q?.answer ?? "").split("|").map(s => s.trim()).filter(Boolean);
@@ -915,7 +918,7 @@ function viewDisplay() {
     const bub = $(`#bub${i}`);
     let html, cls = "bubble";
     if (!ch) { html = `<span>Waiting for a character…</span>`; cls += " idle"; }
-    else if (done) { html = `<span>Thank you! I finally understand my bill 😊</span>`; cls += " done"; }
+    else if (done) { html = `<span>${esc(closingLine(ch))}</span>`; cls += " done"; }
     else if (confused) { html = `<span class="qnum">Question ${step + 1} of ${total}</span><span>Hmm… are you sure? 🤔</span>`; cls += " confused"; }
     else if (status === "waiting") html = `<span>${esc(openingLine(ch))}</span>`;
     else html = `<span class="qnum">Question ${step + 1} of ${total}</span><span>${esc(qs[step]?.q)}</span>`;
@@ -1246,7 +1249,7 @@ function viewAdmin() {
     });
 
     const snapshot = ch => ({
-      name: ch.name || "", age: ch.age ?? "", gender: ch.gender || "male", skin: +ch.skin || DEFAULT_SKIN, situation: ch.situation || "", intro: ch.intro || "",
+      name: ch.name || "", age: ch.age ?? "", gender: ch.gender || "male", skin: +ch.skin || DEFAULT_SKIN, situation: ch.situation || "", intro: ch.intro || "", outro: ch.outro || "",
       questions: (ch.questions || []).map(q => ({ q: q.q || "", answer: q.answer || "", hint: q.hint || "", explain: q.explain || "", tolerance: +q.tolerance || 0 })),
       updatedAt: Date.now(),
     });
@@ -1437,6 +1440,9 @@ function viewAdmin() {
             <div class="sec-title">Opening line</div>
             <textarea class="textarea" data-f="intro" rows="2" placeholder="${esc(DEFAULT_INTRO)}">${esc(draft.intro || "")}</textarea>
             <p class="help" style="margin:6px 0 16px">What the character says in the speech bubble before the game starts. Leave blank for the default. <b>{name}</b> is replaced with the character's name.</p>
+            <div class="sec-title">Thank-you line</div>
+            <textarea class="textarea" data-f="outro" rows="2" placeholder="${esc(DEFAULT_OUTRO)}">${esc(draft.outro || "")}</textarea>
+            <p class="help" style="margin:6px 0 16px">What the character says once the team has answered every question. Leave blank for the default. <b>{name}</b> works here too.</p>
             <div class="sec-title">Medical situation</div>
             <textarea class="textarea" data-f="situation" rows="3" placeholder="e.g. Singapore Citizen, admitted 4 days in a B2 ward for pneumonia.">${esc(draft.situation)}</textarea>
             <p class="help" style="margin:6px 0 0">Shown on the main screen under the character.</p>
