@@ -118,7 +118,22 @@
   /* =================================================================
      DISPLAY — main screen (projector)
      ================================================================= */
-  .display { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+  /* intro card (main screen, during Get ready) */
+  .intro { position: absolute; left: 0; right: 0; top: 8.6vh; bottom: 0; padding: 1vh 2vw 2.2vh; z-index: 10; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 55%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); animation: pop .45s var(--spring); }
+  .intro-card { width: min(100%, 150vh); max-height: 100%; display: grid; grid-template-columns: 1fr auto; gap: 4vw; align-items: center; background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--sh-3); border: 1px solid rgba(15, 23, 42, .06); padding: 6vh 4.5vw; overflow: auto; }
+  .intro-card.no-qr { grid-template-columns: 1fr; text-align: center; }
+  .intro-kicker { display: inline-flex; align-items: center; gap: .5vw; font-size: min(1.8vh, 1.1vw); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--brand); background: var(--brand-50); padding: .6vh 1vw; border-radius: 99px; }
+  .intro-card h2 { margin: 2vh 0 2.2vh; font-size: min(5.6vh, 3.4vw); line-height: 1.1; letter-spacing: -.03em; color: var(--ink); }
+  .intro-body { font-size: min(2.7vh, 1.65vw); line-height: 1.55; color: var(--text); white-space: pre-line; }
+  .intro-qr { display: flex; flex-direction: column; align-items: center; gap: 1.4vh; width: min(34vh, 24vw); }
+  .intro-qr .qr-box { padding: 5%; border-radius: var(--r-lg); box-shadow: var(--sh-2); }
+  .intro-qr b { font-size: min(2.2vh, 1.35vw); color: var(--ink); text-align: center; line-height: 1.3; }
+  .intro-qr small { font-size: min(1.5vh, .95vw); color: var(--muted); word-break: break-all; text-align: center; }
+  .t-link { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-1); color: var(--brand-700); font-weight: 700; text-decoration: none; }
+  .t-link .i { flex: 0 0 auto; }
+  .t-link span { min-width: 0; flex: 1; }
+  .t-link small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .display { position: relative; height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
     background: radial-gradient(1200px 600px at 10% -10%, var(--glow-1) 0%, transparent 60%), radial-gradient(900px 500px at 110% 110%, var(--glow-2) 0%, transparent 55%), var(--bg); }
   .d-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 1.6vh 2vw 1vh; }
   .d-brand { display: flex; align-items: center; gap: 1vw; }
@@ -257,6 +272,8 @@
     .steps { height: 8px; margin-top: 14px; } .steps .marker { top: -14px; width: 12px; height: 9px; }
     .d-top { padding: 12px 16px; flex-wrap: wrap; } .d-logo { width: 40px; height: 40px; font-size: 22px; border-radius: 12px; }
     .d-title { font-size: 18px; } .d-sub { font-size: 12px; } .d-pill { height: 32px; font-size: 13px; padding: 0 12px; } .d-tool { width: 32px; height: 32px; font-size: 15px; }
+    .intro { position: fixed; top: 70px; left: 12px; right: 12px; bottom: 12px; } .intro-card { grid-template-columns: 1fr; padding: 24px; gap: 20px; text-align: center; }
+    .intro-card h2 { font-size: 26px; } .intro-body { font-size: 16px; } .intro-kicker { font-size: 12px; padding: 4px 10px; } .intro-qr { width: 200px; margin: 0 auto; } .intro-qr b { font-size: 15px; } .intro-qr small { font-size: 11px; }
     .debrief-grid { grid-template-columns: 1fr; flex: none; } .db-col { overflow: visible; } .debrief-head { flex-wrap: wrap; gap: 8px; } .debrief-head h2 { font-size: 20px; }
     .db-head h3 { font-size: 17px; } .db-head .meta, .db-sit, .db-q, .db-team { font-size: 14px; } .db-head .fig { height: 64px; } .db-q .n { width: 24px; height: 24px; }
   }
@@ -771,6 +788,11 @@ function billHTML(ch) {
 const THEMES = [["mist", "Mist", "Soft teal-grey (default)", "#dde7eb", "#f6f9fa"], ["sand", "Sand", "Warm beige", "#e8e2d6", "#faf7f1"], ["sage", "Sage", "Gentle green", "#dfe8de", "#f6f9f5"], ["bright", "Bright", "Original white", "#f4f7fb", "#ffffff"]];
 const applyTheme = g => { const t = THEMES.some(x => x[0] === g?.theme) ? g.theme : "mist"; if (document.documentElement.dataset.theme !== t) document.documentElement.dataset.theme = t; };
 
+/* Intro card shown on the main screen during "Get ready" (stored on the game as game.intro). */
+const DEFAULT_INTRO_CARD = { enabled: false, title: "Welcome to the Healthcare Bill Challenge!", body: "Each team will help one patient understand their hospital bill.\n\n1. Scan your character's QR code when the game starts.\n2. Read the bill and answer the patient's questions.\n3. First team to answer everything wins!", url: "", urlLabel: "" };
+const introCard = g => ({ ...DEFAULT_INTRO_CARD, ...(g?.intro || {}) });
+const cleanUrl = u => { u = String(u || "").trim(); if (!u) return ""; if (!/^https?:\/\//i.test(u)) u = "https://" + u; try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch { return ""; } };
+
 /* Main-screen heading (editable in admin, stored on the game). */
 const DEFAULT_TITLE = "Healthcare Bill Challenge";
 const DEFAULT_SUB = "Help each patient make sense of their hospital bill";
@@ -1081,7 +1103,7 @@ function viewDisplay() {
   const IMPATIENT_AFTER = 45000;   // ms without an answer before the character gets impatient
   /* Facilitator walkthrough: click a card's progress bar 5 times to flip it; click the back to reveal answers one by one. */
   const flips = Array.from({ length: SLOTS }, () => ({ flipped: false, shown: 0, clicks: [] }));
-  let prevStatus = null, structKey = "", hideQR = false;
+  let prevStatus = null, structKey = "", hideQR = false, introHidden = false, introKey = "";
 
   app.innerHTML = `
     <div class="display" id="display">
@@ -1098,6 +1120,7 @@ function viewDisplay() {
         </div>
       </header>
       <main class="stage" id="stage"></main>
+      <div class="intro" id="intro" hidden></div>
     </div>
     <div class="debrief" id="debrief" hidden></div>`;
 
@@ -1112,6 +1135,7 @@ function viewDisplay() {
     if (e.key === "q" || e.key === "Q") toggleQR();
     if (e.key === "f" || e.key === "F") toggleFS();
     if (e.key === "A" && e.shiftKey) openAdmin();
+    if (e.key === "i" || e.key === "I") { introHidden = !introHidden; renderIntro(); }   // hide/show the intro card on this screen
   });
   setInterval(() => { if (game) for (let i = 0; i < SLOTS; i++) renderSlot(i); }, 1000);
   $("#stage").addEventListener("click", e => {
@@ -1293,7 +1317,25 @@ function viewDisplay() {
     if (key !== structKey) { structKey = key; buildStage(); }
     for (let i = 0; i < SLOTS; i++) renderSlot(i);
     renderFinished();
+    renderIntro();
     renderDebrief();
+  }
+  function renderIntro() {
+    const el = $("#intro"), it = introCard(game);
+    const show = !!game && it.enabled && (game.status || "waiting") === "waiting" && !introHidden;
+    el.hidden = !show;
+    if (!show) { introKey = ""; return; }
+    const url = cleanUrl(it.url);
+    const k = JSON.stringify([it.title, it.body, url, it.urlLabel]);
+    if (k === introKey) return;
+    introKey = k;
+    el.innerHTML = `<div class="intro-card ${url ? "" : "no-qr"}">
+      <div><span class="intro-kicker">${icon("info")}Before we begin</span>
+        ${it.title ? `<h2>${esc(it.title)}</h2>` : ""}
+        <div class="intro-body">${esc(it.body)}</div></div>
+      ${url ? `<div class="intro-qr"><div class="qr-box" id="introQR"></div><b>${esc(it.urlLabel || "Scan for more info")}</b><small>${esc(url.replace(/^https?:\/\//, "").replace(/\/$/, ""))}</small></div>` : ""}
+    </div>`;
+    if (url) makeQR($("#introQR"), url);
   }
   function renderFinished() {
     const used = (game?.slots || []).filter(s => s.character).length;
@@ -1367,7 +1409,7 @@ function viewTeam() {
     }
     const status = game.status || "waiting";
     const confused = p?.hintStep === step && !done;
-    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null)].join("|");
+    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null), JSON.stringify(game.intro?.url ? [game.intro.url, game.intro.urlLabel] : null)].join("|");
     if (k === key) return;
     const wasDone = key && key.split("|")[3] === "true";
     key = k;
@@ -1396,7 +1438,8 @@ function viewTeam() {
            <div class="field">${numeric ? `<span class="prefix">$</span>` : ""}<input id="ans" ${numeric ? 'inputmode="decimal" placeholder="0.00"' : 'placeholder="Type your answer"'} enterkeyhint="send" aria-label="Your answer" required></div>
            <button class="btn-3d" id="sendBtn">Check answer</button>
          </form>`}
-      ${ch.bill && ch.bill.show !== false ? `<details class="t-bill" id="billBox" ${billOpen ? "open" : ""}><summary><span>📄 ${esc(ch.name)}'s bill</span><span class="chev">${icon("chev")}</span></summary>${billHTML(ch)}</details>` : ""}`;
+      ${ch.bill && ch.bill.show !== false ? `<details class="t-bill" id="billBox" ${billOpen ? "open" : ""}><summary><span>📄 ${esc(ch.name)}'s bill</span><span class="chev">${icon("chev")}</span></summary>${billHTML(ch)}</details>` : ""}
+      ${(() => { const u = cleanUrl(introCard(game).url); return u ? `<a class="t-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${icon("link")}<span>${esc(introCard(game).urlLabel || "Useful link")}<small>${esc(u.replace(/^https?:\/\//, ""))}</small></span>${icon("ext")}</a>` : ""; })()}`;
     $("#billBox")?.addEventListener("toggle", e => { billOpen = e.target.open; });
     $("#sitBtn").onclick = () => { sitOpen = !sitOpen; $("#sit").hidden = !sitOpen; $("#sitBtn").setAttribute("aria-expanded", sitOpen); };
     const form = $("#ansForm");
@@ -1505,6 +1548,19 @@ function viewAdmin() {
             </div>
             <p class="help" style="margin:8px 0 0">Applies to the main screen, team phones and this page.</p>
           </div>
+          <div class="sec" style="margin-bottom:16px">
+            <div class="sec-title"><span>Intro card</span>
+              <label class="switch" style="text-transform:none;letter-spacing:0;color:var(--text)"><input type="checkbox" id="iOn"><span class="track"></span>Show while on “Get ready”</label></div>
+            <div class="grid2" style="grid-template-columns:1fr">
+              <label class="flabel">Header<input class="input" id="iTitle" maxlength="80" placeholder="e.g. Welcome to the Healthcare Bill Challenge!"></label>
+              <label class="flabel">Text<textarea class="textarea" id="iBody" rows="5" placeholder="Explain the game, the rules or anything else. Line breaks are kept."></textarea></label>
+            </div>
+            <div class="grid2" style="margin-top:12px;grid-template-columns:1.4fr 1fr">
+              <label class="flabel">Link for the QR code (optional)<input class="input" id="iUrl" inputmode="url" placeholder="e.g. https://www.cpf.gov.sg/…"></label>
+              <label class="flabel">Link label<input class="input" id="iLabel" maxlength="60" placeholder="e.g. CPF MediShield Life calculator"></label>
+            </div>
+            <p class="help" style="margin:8px 0 0">The card covers the main screen while the game is on <b>Get ready</b> and disappears when you go <b>Live</b>. Press <b>I</b> on the main screen to hide or show it there. If you add a link, it becomes a QR code on the card, and teams also get it as a button on their phones.</p>
+          </div>
           <div class="slots" id="slots"></div>
         </section>
         <section id="tab-chars" hidden>
@@ -1577,6 +1633,28 @@ function viewAdmin() {
       await DB.merge(GAME, { slots }).catch(showError);
       toast("Live game updated with the latest character details.");
     }
+
+    /* ----- intro card ----- */
+    const iFields = { iTitle: "title", iBody: "body", iUrl: "url", iLabel: "urlLabel" };
+    function renderIntroEd() {
+      const it = introCard(game);
+      $("#iOn").checked = !!it.enabled;
+      for (const [id, k] of Object.entries(iFields)) if (document.activeElement !== $("#" + id)) $("#" + id).value = it[k] || "";
+    }
+    async function saveIntro(msg) {
+      const it = introCard(game);
+      const next = { enabled: $("#iOn").checked, title: $("#iTitle").value.trim(), body: $("#iBody").value.replace(/\s+$/, ""), url: $("#iUrl").value.trim(), urlLabel: $("#iLabel").value.trim() };
+      if (next.url && !cleanUrl(next.url)) return toast("That link doesn't look like a web address.", "err");
+      if (next.url) { next.url = cleanUrl(next.url); $("#iUrl").value = next.url; }
+      if (JSON.stringify(next) === JSON.stringify({ enabled: it.enabled, title: it.title, body: it.body, url: it.url, urlLabel: it.urlLabel })) return;
+      await DB.merge(GAME, { intro: next }).catch(showError);
+      toast(msg || "Intro card updated.");
+    }
+    $("#iOn").addEventListener("change", e => saveIntro(e.target.checked ? "Intro card on. It shows on the main screen during Get ready." : "Intro card off."));
+    Object.keys(iFields).forEach(id => {
+      $("#" + id).addEventListener("change", () => saveIntro());
+      if (id !== "iBody") $("#" + id).addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
+    });
 
     /* ----- background theme ----- */
     function renderTheme() {
@@ -2019,7 +2097,7 @@ function viewAdmin() {
     /* ----- subscriptions ----- */
     DB.watchDoc(GAME, g => {
       if (!g) { DB.set(GAME, defaultGame()).catch(showError); return; }
-      game = g; applyTheme(g); renderCtl(); renderSlots(); renderLib(); renderHeading(); renderTheme();
+      game = g; applyTheme(g); renderCtl(); renderSlots(); renderLib(); renderHeading(); renderTheme(); renderIntroEd();
     });
     DB.watchCol(COL_CHARS, list => { lib = list; if (game) renderSlots(); renderLib(); });
     for (let i = 0; i < SLOTS; i++) DB.watchDoc(PROG(i), p => {
