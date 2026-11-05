@@ -248,6 +248,15 @@ def build(src, out_png, name=None):
     for (r, c), can in cells.items():
         sheet[r * th:(r + 1) * th, c * tw:(c + 1) * tw] = can[y_top:CH, X0:X1]
 
+    # remove tiny stray specks (JPEG noise / leftovers) from each cell; keep sparkles and other details
+    for r in range(ROWS):
+        for c in range(COLS):
+            cell = sheet[r * th:(r + 1) * th, c * tw:(c + 1) * tw]
+            lab = label(cell[..., 3] > 0)
+            ids, counts = np.unique(lab[lab > 0], return_counts=True)
+            for i, n in zip(ids, counts):
+                if n < 90: cell[lab == i] = 0
+
     # downscale 2x with premultiplied alpha
     scale = 0.5
     a = sheet[..., 3:4].astype(np.float32) / 255
