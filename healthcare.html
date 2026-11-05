@@ -957,16 +957,17 @@ const SPRITES = {
   "male-teen":      { src: "sprites/male-teen.png",      cw: 201, ch: 292, skin: [188, 125, 83] },
   "female-teen":    { src: "sprites/female-teen.png",    cw: 257, ch: 330, skin: [194, 131, 90], sub: { "1,0": [1, 1], "3,2": [3, 1] } },
 };
+/* Looping animations. rest = random pause [min, max] ms between loops, so characters never move in sync. */
 const ANIMS = {
-  talk:      { f: [[0, 0], [0, 1], [0, 2], [0, 1], [0, 3], [0, 1]], ms: 160 },
-  impatient: { f: [[1, 0], [1, 1], [1, 0], [1, 1], [1, 0], [1, 1], [1, 2], [1, 2], [1, 2], [1, 2], [1, 2], [1, 3], [1, 3], [1, 3], [1, 3], [1, 3]], ms: 300 },
+  talk:      { f: [[0, 0], [0, 1], [0, 2], [0, 1], [0, 3], [0, 1]], ms: 160, rest: [0, 450] },
+  impatient: { f: [[1, 0], [1, 1], [1, 0], [1, 1], [1, 0], [1, 1], [1, 2], [1, 2], [1, 2], [1, 2], [1, 2], [1, 3], [1, 3], [1, 3], [1, 3], [1, 3]], ms: 300, rest: [300, 2600] },
   worried:   { f: [[2, 0]] },
   confused:  { f: [[2, 1]] },
   sad:       { f: [[2, 2]] },
   anxious:   { f: [[2, 3]] },
   ok:        { f: [[3, 0]] },
   happy:     { f: [[3, 1]] },
-  joy:       { f: [[3, 2], [3, 3]], ms: 420 },
+  joy:       { f: [[3, 2], [3, 3]], ms: 420, rest: [0, 900] },
 };
 const ageGroup = age => { const a = parseInt(age, 10); return isNaN(a) ? "adult" : a < 20 ? "teen" : a < 60 ? "adult" : "elderly"; };
 const spriteKey = c => { const k = `${c?.gender === "female" ? "female" : "male"}-${ageGroup(c?.age)}`; return SPRITES[k] ? k : null; };
@@ -1017,7 +1018,8 @@ setInterval(() => {
   const now = performance.now();
   document.querySelectorAll("canvas.sprite").forEach(cv => {
     if (!cv._st) {
-      cv._st = { t0: now, k: -1, sheet: null };
+      // each sprite gets its own random start delay and a slightly different speed
+      cv._st = { t0: now + Math.random() * 2000, rest: 0, speed: 0.88 + Math.random() * 0.24, k: -1, sheet: null };
       loadSheet(cv.dataset.key, cv.dataset.skin).then(sh => {
         if (!sh) { const c = { gender: cv.dataset.key.split("-")[0], skin: cv.dataset.skin }; cv.outerHTML = figureSVG(c.gender, "ok", c.skin); return; }
         cv._st.sheet = sh; cv._st.k = -1;
@@ -1025,7 +1027,16 @@ setInterval(() => {
     }
     const st = cv._st; if (!st.sheet) return;
     const a = ANIMS[cv.dataset.anim] || ANIMS.ok;
-    const k = Math.floor((now - st.t0) / (a.ms || 1000)) % a.f.length;
+    let k = 0;
+    if (a.f.length > 1) {
+      const step = (a.ms || 1000) * st.speed, loop = step * a.f.length;
+      let t = now - st.t0;
+      if (t >= loop + st.rest) {   // loop (and its pause) finished: start the next one after a fresh random pause
+        st.t0 = now; t = 0;
+        st.rest = a.rest ? a.rest[0] + Math.random() * (a.rest[1] - a.rest[0]) : 0;
+      }
+      k = t < 0 || t >= loop ? 0 : Math.floor(t / step);   // waiting to start, or resting: hold the first frame
+    }
     if (k === st.k) return;
     st.k = k;
     const S = SPRITES[cv.dataset.key];
