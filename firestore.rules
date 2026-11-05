@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // TODO: replace with the email(s) of your facilitator/admin account(s)
+    // created under Firebase Console > Authentication > Users.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['facilitator@example.gov.sg'];
+    }
+
+    // Saved character library — only the admin can see or change it.
+    match /hc_characters/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // Current game (4 slots, status, reveal switch). Everyone can read it
+    // (main screen + team phones); only the admin can change it.
+    match /hc_game/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Live progress per team. Teams (not signed in) may only move forward
+    // by at most one question at a time, and only while the game is live.
+    match /hc_progress/{slot} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        get(/databases/$(database)/documents/hc_game/state).data.status == 'live'
+        && request.resource.data.step is int
+        && request.resource.data.step >= resource.data.step
+        && request.resource.data.step <= resource.data.step + 1
+        && request.resource.data.keys().hasOnly(
+             ['step', 'wrong', 'attempts', 'lastResult', 'lastAnswer',
+              'hintStep', 'finishedAt', 'lastAt', 'history'])
+      );
+    }
+  }
+}

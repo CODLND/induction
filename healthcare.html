@@ -1,0 +1,1114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Healthcare Bill Challenge</title>
+<!-- QR code generator (classic script, exposes window.QRCode) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --teal: #1b6082;
+    --teal-dark: #0e3b53;
+    --teal-soft: #e6f0f5;
+    --ink: #111;
+    --text: #1d2a33;
+    --muted: #5b6b75;
+    --line: #d5dee4;
+    --bg: #ffffff;
+    --card: #f5f8fa;
+    --ok: #1f9d55;
+    --ok-soft: #e7f6ee;
+    --warn: #c77700;
+    --warn-soft: #fff6e0;
+    --bad: #c2410c;
+    --bad-soft: #fdeee7;
+    --radius: 12px;
+    font-family: "Aptos", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  a { color: var(--teal); }
+  [hidden] { display: none !important; }
+
+  /* ---------- shared bits ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 14px; border-radius: 9px; border: 1px solid var(--line);
+    background: #fff; cursor: pointer; text-decoration: none; color: var(--text);
+    font-weight: 600; font-size: 14px; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--teal); }
+  .btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .btn.primary:hover { background: var(--teal-dark); }
+  .btn.danger { color: var(--bad); }
+  .btn.danger:hover { border-color: var(--bad); }
+  .btn.sm { padding: 6px 10px; font-size: 13px; }
+  .btn.on { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .muted { color: var(--muted); }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 700; background: var(--teal-soft); color: var(--teal-dark); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge.ok { background: var(--ok-soft); color: var(--ok); }
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    background: #222; color: #fff; padding: 10px 16px; border-radius: 10px;
+    z-index: 1000; max-width: min(92vw, 640px); font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  }
+  .toast.err { background: var(--bad); }
+  .demo-banner {
+    position: fixed; right: 10px; bottom: 10px; z-index: 50;
+    background: var(--warn-soft); color: var(--warn); border: 1px solid #f0d9a8;
+    font-size: 12px; padding: 6px 10px; border-radius: 8px; max-width: 90vw;
+  }
+
+  /* ---------- figure animations ---------- */
+  .fig svg { display: block; height: 100%; width: auto; overflow: visible; }
+  .fig.confused svg { animation: shake .45s ease-in-out 3; }
+  .fig.cheer svg { animation: hop .6s ease-out 2; }
+  .fig.joy svg { animation: bounce 1.4s ease-in-out infinite; }
+  @keyframes shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-6px) rotate(-2deg) } 75% { transform: translateX(6px) rotate(2deg) } }
+  @keyframes hop { 0%,100% { transform: translateY(0) } 40% { transform: translateY(-12%) } }
+  @keyframes bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4%) } }
+  @keyframes pop { 0% { transform: scale(.8); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+
+  /* ---------- DISPLAY (main screen) ---------- */
+  .display { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 1.2vh 2vw 0; min-height: 6vh; }
+  .topbar h1 { margin: 0; font-size: min(3vh, 2vw); color: var(--teal-dark); letter-spacing: .2px; }
+  .topbar .tools { display: flex; gap: 8px; align-items: center; }
+  .topbar .tools .btn { font-size: min(1.6vh, 13px); padding: .6vh .8vw; opacity: .55; }
+  .topbar .tools .btn:hover { opacity: 1; }
+  .status-pill { font-size: min(1.8vh, 15px); font-weight: 700; padding: .5vh 1vw; border-radius: 99px; background: var(--teal-soft); color: var(--teal-dark); }
+  .status-pill.live { background: var(--ok-soft); color: var(--ok); }
+  .status-pill.paused { background: var(--warn-soft); color: var(--warn); }
+
+  .stage { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.2vw; padding: 1vh 2.2vw 2vh; }
+  .col { display: grid; grid-template-rows: 19vh minmax(0, 1fr) auto 22vh auto; min-width: 0; }
+  .col.empty { opacity: .4; }
+
+  .bubble {
+    position: relative; margin-left: 24%; margin-right: 0;
+    background: var(--teal); color: #fff; border: 3px solid var(--teal-dark);
+    border-radius: 50% / 50%; padding: 1.6vh 2.2vw;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    font-size: min(2.35vh, 1.35vw); line-height: 1.25; animation: pop .35s ease-out;
+  }
+  .bubble::after {
+    content: ""; position: absolute; left: 7%; bottom: -3.4vh; width: 4.8vw; height: 4.4vh;
+    background: var(--teal); clip-path: polygon(0 100%, 38% 0, 100% 0);
+  }
+  .bubble .qnum { font-size: .7em; opacity: .8; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; margin-bottom: .3vh; }
+  .bubble.confused { background: #b86b00; border-color: #7a4700; }
+  .bubble.confused::after { background: #b86b00; }
+  .bubble.done { background: var(--ok); border-color: #136b39; }
+  .bubble.done::after { background: var(--ok); }
+
+  .mid { display: flex; align-items: flex-end; justify-content: space-between; gap: .8vw; min-height: 0; padding-top: 4.2vh; }
+  .mid .fig { height: 100%; min-height: 0; flex: 0 0 auto; margin-left: 4%; }
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: .5vh; width: 40%; max-width: 15vh; margin-bottom: .5vh; }
+  .qr-box { width: 100%; aspect-ratio: 1; background: #fff; padding: 5%; border: 2px solid var(--teal); border-radius: 8px; }
+  .qr-box img, .qr-box canvas { width: 100% !important; height: auto !important; display: block; }
+  .qr-box .qr-fallback { font-size: 1.1vh; word-break: break-all; }
+  .qr-label { font-size: min(1.5vh, .9vw); text-align: center; color: var(--muted); line-height: 1.2; }
+  .qr-label b { color: var(--teal-dark); display: block; font-size: 1.15em; }
+  .hide-qr .qr-wrap { visibility: hidden; }
+
+  .name { text-align: center; font-weight: 800; font-size: min(3.3vh, 2vw); text-transform: uppercase; padding: 1vh 0 1.2vh; letter-spacing: .3px; color: var(--ink); line-height: 1.1; }
+  .name small { display: block; text-transform: none; font-weight: 600; font-size: .55em; color: var(--muted); margin-top: .3vh; }
+
+  .situation {
+    background: var(--teal); color: #fff; border: 3px solid var(--teal-dark);
+    padding: 1.2vh 1vw; overflow: auto; min-height: 0;
+  }
+  .situation h3 { margin: 0 0 .8vh; text-align: center; font-weight: 500; font-size: min(2.6vh, 1.6vw); }
+  .situation .sit-text { font-size: min(1.9vh, 1.1vw); line-height: 1.35; white-space: pre-line; }
+  .situation.hint { background: var(--warn-soft); color: var(--text); border-color: var(--warn); animation: pop .3s ease-out; }
+  .situation.hint h3 { color: var(--warn); font-weight: 800; }
+
+  .track { position: relative; height: 6vh; margin: 1.2vh 2% 0; }
+  .track .line { position: absolute; left: 0; right: 0; top: 68%; height: .35vh; background: var(--teal); transform: translateY(-50%); opacity: .35; }
+  .track .fill { position: absolute; left: 0; top: 68%; height: .55vh; background: var(--teal); transform: translateY(-50%); transition: width .9s cubic-bezier(.3,1.3,.5,1); }
+  .track .dot, .track .tick { position: absolute; top: 68%; transform: translate(-50%, -50%); border-radius: 50%; }
+  .track .dot { width: 2.6vh; height: 2.6vh; background: var(--teal); border: 2px solid var(--teal-dark); }
+  .track .tick { width: 1.2vh; height: 1.2vh; background: #fff; border: 2px solid var(--teal); }
+  .track .tick.passed { background: var(--teal); }
+  .track .marker {
+    position: absolute; top: 0; width: 2.6vh; height: 2.6vh; transform: translateX(-50%);
+    background: var(--teal); clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transition: left .9s cubic-bezier(.3,1.3,.5,1);
+  }
+  .track .marker::before { content: ""; position: absolute; inset: 3px 3px 5px; background: var(--teal); }
+  .track-label { text-align: center; font-size: min(1.7vh, 1vw); color: var(--muted); font-weight: 600; }
+  .track-label .medal { font-size: 1.3em; }
+
+  .center-msg { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; color: var(--muted); font-size: 18px; }
+
+  /* debrief overlay */
+  .debrief { position: fixed; inset: 0; background: #fff; z-index: 20; display: flex; flex-direction: column; padding: 2vh 2vw; overflow: auto; }
+  .debrief h2 { margin: 0 0 1.5vh; color: var(--teal-dark); font-size: min(3.4vh, 2.2vw); display: flex; justify-content: space-between; align-items: center; }
+  .debrief-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.4vw; flex: 1; min-height: 0; }
+  .db-col { border: 2px solid var(--teal); border-radius: var(--radius); overflow: auto; display: flex; flex-direction: column; }
+  .db-head { background: var(--teal); color: #fff; padding: 1.2vh 1vw; display: flex; gap: .8vw; align-items: center; }
+  .db-head .fig { height: 8vh; flex: 0 0 auto; }
+  .db-head .fig svg path, .db-head .fig svg rect, .db-head .fig svg circle.head { fill: #fff; }
+  .db-head .fig svg .face * { stroke: var(--teal); }
+  .db-head .fig svg .face .fillw { fill: var(--teal); }
+  .db-head h3 { margin: 0; font-size: min(2.4vh, 1.4vw); }
+  .db-head .meta { font-size: min(1.5vh, .95vw); opacity: .9; }
+  .db-sit { padding: 1vh 1vw; font-size: min(1.6vh, 1vw); background: var(--teal-soft); color: var(--teal-dark); white-space: pre-line; }
+  .db-q { padding: 1vh 1vw; border-top: 1px solid var(--line); font-size: min(1.7vh, 1.05vw); }
+  .db-q .q { font-weight: 700; }
+  .db-q .a { color: var(--ok); font-weight: 800; font-size: 1.15em; margin-top: .3vh; }
+  .db-q .e { color: var(--muted); margin-top: .3vh; white-space: pre-line; }
+  .db-team { margin-top: auto; padding: 1vh 1vw; background: var(--card); font-size: min(1.6vh, 1vw); border-top: 1px solid var(--line); }
+
+  /* ---------- TEAM (phone) ---------- */
+  .team { max-width: 560px; margin: 0 auto; padding: 16px 16px 90px; }
+  .t-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .t-team { font-weight: 800; font-size: 18px; color: var(--teal-dark); }
+  .t-prog { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; color: var(--muted); }
+  .t-prog .bar { width: 110px; height: 8px; border-radius: 99px; background: var(--teal-soft); overflow: hidden; }
+  .t-prog .bar i { display: block; height: 100%; background: var(--teal); transition: width .6s; }
+  .t-char { display: flex; gap: 14px; align-items: flex-start; background: var(--card); border-radius: var(--radius); padding: 12px; }
+  .t-char .fig { height: 120px; flex: 0 0 auto; }
+  .t-name { font-weight: 800; font-size: 20px; }
+  .t-char details { margin-top: 6px; font-size: 14px; }
+  .t-char summary { cursor: pointer; color: var(--teal); font-weight: 600; }
+  .t-char details p { margin: 6px 0 0; white-space: pre-line; }
+  .t-bubble { margin-top: 16px; background: var(--teal); color: #fff; border-radius: 22px; padding: 16px 18px; position: relative; animation: pop .3s ease-out; }
+  .t-bubble::before { content: ""; position: absolute; left: 30px; top: -12px; width: 24px; height: 14px; background: var(--teal); clip-path: polygon(0 100%, 30% 0, 100% 100%); }
+  .t-bubble .qlabel { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; opacity: .85; font-weight: 700; }
+  .t-bubble .qtext { font-size: 20px; font-weight: 600; margin-top: 4px; line-height: 1.3; }
+  .t-form { display: flex; gap: 8px; margin-top: 14px; }
+  .t-form input { flex: 1; min-width: 0; font-size: 20px; padding: 12px 14px; border-radius: 10px; border: 2px solid var(--line); }
+  .t-form input:focus { outline: none; border-color: var(--teal); }
+  .t-form .btn { font-size: 17px; padding: 12px 18px; }
+  .t-note { margin-top: 14px; border-radius: var(--radius); padding: 14px 16px; font-size: 16px; line-height: 1.4; animation: pop .3s ease-out; }
+  .t-note.ok { background: var(--ok-soft); color: #145c34; }
+  .t-note.wrong { background: var(--warn-soft); color: #6b4200; border: 1px solid #f0d9a8; }
+  .t-note.info { background: var(--teal-soft); color: var(--teal-dark); }
+  .t-note .hint { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e6c78a; }
+  .t-big { text-align: center; padding: 26px 16px; font-size: 18px; }
+  .t-big .emoji { font-size: 46px; display: block; margin-bottom: 6px; }
+  .chooser { display: grid; gap: 10px; margin-top: 14px; }
+  .chooser a { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; color: var(--text); }
+  .chooser .fig { height: 60px; }
+
+  /* ---------- ADMIN ---------- */
+  .admin { max-width: 1200px; margin: 0 auto; padding: 18px 16px 80px; }
+  .adm-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .adm-top h1 { margin: 0 0 4px; font-size: 22px; color: var(--teal-dark); }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+  .sec-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .sec-head h2 { margin: 0; font-size: 18px; }
+  .note { background: var(--card); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+  .slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .slot { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--card); }
+  .slot-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .slot label, .ed label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .slot input, .slot select, .ed input, .ed select, .ed textarea, .login input {
+    font-size: 14px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--text); font-weight: 400;
+  }
+  .ed textarea { resize: vertical; min-height: 54px; }
+  .stat { font-size: 12px; font-weight: 700; }
+  .mini-log { font-size: 12px; color: var(--muted); min-height: 16px; }
+  .mini-log .w { color: var(--bad); } .mini-log .c { color: var(--ok); }
+  .switch { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; cursor: pointer; padding: 6px 10px; border-radius: 9px; border: 1px solid var(--line); }
+  .switch input { width: 18px; height: 18px; accent-color: var(--ok); }
+  .switch.on { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+  .lib { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .lcard { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; gap: 12px; }
+  .lcard .fig { height: 90px; flex: 0 0 auto; }
+  .lcard h3 { margin: 0; font-size: 16px; }
+  .lcard h3 small { font-weight: 500; color: var(--muted); font-size: 13px; }
+  .lcard p { margin: 4px 0 6px; font-size: 13px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .lcard .row { margin-top: 6px; }
+  .empty-lib { color: var(--muted); padding: 20px; text-align: center; border: 2px dashed var(--line); border-radius: 12px; grid-column: 1 / -1; }
+
+  dialog.editor { width: min(860px, 96vw); max-height: 92vh; border: none; border-radius: 16px; padding: 0; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  dialog.editor::backdrop { background: rgba(10, 30, 40, .45); }
+  .ed { display: flex; flex-direction: column; max-height: 92vh; }
+  .ed-head, .ed-foot { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+  .ed-foot { border-bottom: none; border-top: 1px solid var(--line); }
+  .ed-head h2 { margin: 0; font-size: 18px; }
+  .ed-body { padding: 16px 18px; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+  .grid2 { display: grid; grid-template-columns: 3fr 1fr; gap: 10px; }
+  .qrow { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--card); }
+  .qrow-h { display: flex; justify-content: space-between; align-items: center; }
+  .qrow-h b { color: var(--teal-dark); }
+  .login { max-width: 360px; margin: 10vh auto; display: flex; flex-direction: column; gap: 10px; }
+  .login h1 { color: var(--teal-dark); font-size: 22px; margin: 0 0 6px; }
+
+  /* ---------- narrow screens ---------- */
+  @media (max-width: 900px) {
+    .display { height: auto; overflow: visible; }
+    .stage { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px 16px; padding: 12px 16px 40px; }
+    .col { grid-template-rows: auto 260px auto 180px auto; }
+    .bubble { font-size: 15px; padding: 14px 18px; min-height: 90px; margin-left: 20%; }
+    .bubble::after { width: 40px; height: 26px; bottom: -22px; }
+    .mid { padding-top: 28px; }
+    .qr-wrap { max-width: 110px; }
+    .qr-label, .track-label { font-size: 12px; }
+    .name { font-size: 20px; }
+    .situation h3 { font-size: 16px; } .situation .sit-text { font-size: 14px; }
+    .track { height: 40px; } .track .dot { width: 18px; height: 18px; } .track .tick { width: 10px; height: 10px; } .track .marker { width: 18px; height: 18px; }
+    .topbar h1 { font-size: 18px; } .topbar .tools .btn { font-size: 12px; padding: 5px 8px; }
+    .status-pill { font-size: 12px; padding: 4px 10px; }
+    .debrief-grid { grid-template-columns: 1fr; }
+    .debrief h2 { font-size: 20px; }
+    .db-head h3 { font-size: 17px; } .db-head .meta, .db-sit, .db-q, .db-team { font-size: 14px; } .db-head .fig { height: 60px; }
+    .grid3, .grid2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+/* =====================================================================
+   1. FIREBASE CONFIG — paste your web app config here (see FIREBASE_SETUP.md).
+      While apiKey still starts with "PASTE", the game runs in DEMO MODE:
+      everything is stored in this browser only (good for trying it out on
+      one computer with several tabs, but phones will not see the data).
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:0000000000000000"
+};
+
+const FIREBASE_VERSION = "10.12.2";
+const USE_FIREBASE = !!firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("PASTE");
+const SLOTS = 4;
+const COL_CHARS = "hc_characters";       // saved character library (admin only)
+const GAME = "hc_game/state";            // current game: slots, status, reveal
+const PROG = i => `hc_progress/${i}`;    // live progress per slot (0..3)
+
+/* =====================================================================
+   2. DATA LAYER — same small API for Firebase and the local demo store
+   ===================================================================== */
+async function makeFirebaseStore() {
+  const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/`;
+  const [{ initializeApp }, fs, au] = await Promise.all([
+    import(base + "firebase-app.js"),
+    import(base + "firebase-firestore.js"),
+    import(base + "firebase-auth.js"),
+  ]);
+  const app = initializeApp(firebaseConfig);
+  const db = fs.getFirestore(app);
+  const auth = au.getAuth(app);
+  const ref = p => fs.doc(db, p);
+  return {
+    mode: "firebase",
+    watchDoc: (p, cb) => fs.onSnapshot(ref(p), s => cb(s.exists() ? s.data() : null), showError),
+    watchCol: (c, cb) => fs.onSnapshot(fs.collection(db, c), qs => cb(qs.docs.map(d => ({ ...d.data(), id: d.id }))), showError),
+    set: (p, d) => fs.setDoc(ref(p), d),
+    merge: (p, d) => fs.setDoc(ref(p), d, { merge: true }),
+    del: p => fs.deleteDoc(ref(p)),
+    newId: c => fs.doc(fs.collection(db, c)).id,
+    now: () => fs.serverTimestamp(),
+    // fn(currentData) -> { write?: newData, result }
+    tx: (p, fn) => fs.runTransaction(db, async t => {
+      const r = ref(p); const s = await t.get(r);
+      const out = fn(s.exists() ? s.data() : null);
+      if (out.write) t.set(r, out.write);
+      return out.result;
+    }),
+    onAuth: cb => au.onAuthStateChanged(auth, u => cb(u ? { email: u.email } : null)),
+    signIn: (email, pw) => au.signInWithEmailAndPassword(auth, email, pw),
+    signOut: () => au.signOut(auth),
+  };
+}
+
+function makeLocalStore() {
+  const P = "hcgame:";
+  const subs = new Set();
+  const get = p => { try { const v = localStorage.getItem(P + p); return v ? JSON.parse(v) : null; } catch { return null; } };
+  const ping = () => queueMicrotask(() => subs.forEach(f => f()));
+  const put = (p, d) => { localStorage.setItem(P + p, JSON.stringify(d)); ping(); };
+  window.addEventListener("storage", e => { if (!e.key || e.key.startsWith(P)) ping(); });
+  const sub = f => { subs.add(f); queueMicrotask(f); return () => subs.delete(f); };
+  const listCol = c => {
+    const out = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(P + c + "/")) out.push({ ...get(k.slice(P.length)), id: k.slice(P.length + c.length + 1) });
+    }
+    return out;
+  };
+  return {
+    mode: "local",
+    watchDoc: (p, cb) => sub(() => cb(get(p))),
+    watchCol: (c, cb) => sub(() => cb(listCol(c))),
+    set: async (p, d) => put(p, d),
+    merge: async (p, d) => put(p, { ...(get(p) || {}), ...d }),
+    del: async p => { localStorage.removeItem(P + p); ping(); },
+    newId: () => Math.random().toString(36).slice(2, 12),
+    now: () => Date.now(),
+    tx: async (p, fn) => { const out = fn(get(p)); if (out.write) put(p, out.write); return out.result; },
+    onAuth: cb => { cb({ email: "demo" }); return () => {}; },
+    signIn: async () => {}, signOut: async () => {},
+  };
+}
+
+/* =====================================================================
+   3. HELPERS
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const tsMs = v => v == null ? null : typeof v === "number" ? v : (v.toMillis ? v.toMillis() : null);
+const params = new URLSearchParams(location.search);
+const baseUrl = location.origin + location.pathname;
+const teamUrl = i => `${baseUrl}?view=team&slot=${i + 1}`;
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+function toast(msg, isErr = false, ms = 3500) {
+  const t = document.createElement("div");
+  t.className = "toast" + (isErr ? " err" : "");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}
+function showError(e) {
+  console.error(e);
+  const msg = String(e?.message || e);
+  toast(/permission|insufficient/i.test(msg)
+    ? "Permission denied by Firestore rules. Are you signed in with an admin email listed in firestore.rules?"
+    : "Error: " + msg, true, 6000);
+}
+
+const blankProgress = () => ({ step: 0, wrong: 0, attempts: 0, lastResult: null, lastAnswer: "", hintStep: -1, finishedAt: null, lastAt: null, history: [] });
+const defaultGame = () => ({
+  status: "waiting", reveal: false,
+  slots: Array.from({ length: SLOTS }, (_, i) => ({ teamName: `Team ${i + 1}`, characterId: null, character: null })),
+});
+
+/* Answer checking: numbers compared numerically ($ and commas ignored, optional ± tolerance);
+   text compared case-insensitively ignoring punctuation. Several accepted answers: separate with |  */
+function toNum(s) {
+  const t = String(s ?? "").replace(/sgd|s\$|\$|,|\s/gi, "");
+  return /^-?\d*\.?\d+$/.test(t) ? parseFloat(t) : null;
+}
+const normText = s => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+function checkAnswer(input, q) {
+  const alts = String(q?.answer ?? "").split("|").map(s => s.trim()).filter(Boolean);
+  const tol = Math.abs(parseFloat(q?.tolerance)) || 0;
+  const n = toNum(input);
+  return alts.some(a => {
+    const an = toNum(a);
+    if (an !== null && n !== null) return Math.abs(an - n) <= tol + 1e-9;
+    return normText(a) !== "" && normText(a) === normText(input);
+  });
+}
+const displayAnswer = q => {
+  const alts = String(q?.answer ?? "").split("|").map(s => s.trim()).filter(Boolean);
+  if (!alts.length) return "—";
+  const first = alts[0], n = toNum(first);
+  return n !== null && !/[a-z]/i.test(first.replace(/sgd/i, "")) ? "$" + n.toLocaleString("en-SG", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) : first;
+};
+
+/* ---------- default questions & sample characters ---------- */
+const DEFAULT_QUESTIONS = () => [
+  { q: "Am I eligible for subsidies?", answer: "Yes|Y", tolerance: 0,
+    hint: "Check the ward class and the patient's citizenship on the bill. Subsidies apply to Singapore Citizens and PRs in subsidised wards (B2/C) at public healthcare institutions.",
+    explain: "" },
+  { q: "How much is MediShield Life covering?", answer: "", tolerance: 0,
+    hint: "Look for the MediShield Life line in the payment breakdown. Remember the deductible and co-insurance are paid first.",
+    explain: "" },
+  { q: "How much of my MediSave can I use?", answer: "", tolerance: 0,
+    hint: "Find the MediSave line in the payment section. MediSave withdrawal limits depend on the length of stay and type of treatment.",
+    explain: "" },
+  { q: "How much do I have to pay out of pocket?", answer: "", tolerance: 0,
+    hint: "Out of pocket (cash) = bill after subsidy − MediShield Life − MediSave (− any other payments).",
+    explain: "" },
+];
+function sampleCharacters() {
+  const mk = (name, age, gender, situation, answers, explains) => ({
+    name, age, gender, situation,
+    questions: DEFAULT_QUESTIONS().map((q, i) => ({ ...q, answer: answers[i], explain: explains[i] || "" })),
+  });
+  return [
+    mk("Mr Tan", 68, "male",
+      "Singapore Citizen, retired. Admitted for 4 days in a B2 ward at a public hospital for pneumonia.",
+      ["Yes|Y", "1200", "650", "150"],
+      ["Citizen in a B2 ward → subsidised. Bill before subsidy $5,000; subsidy $3,000; $2,000 payable.", "MediShield Life pays $1,200 after deductible & co-insurance.", "MediSave pays $650 of the remaining $800.", "$2,000 − $1,200 − $650 = $150 cash."]),
+    mk("Mdm Siti", 45, "female",
+      "Singapore Citizen, working full-time. Day surgery at a public hospital to remove her gallbladder (subsidised class).",
+      ["Yes|Y", "1500", "1300", "400"],
+      ["Subsidised day surgery. Bill $8,000; subsidy $4,800; $3,200 payable.", "MediShield Life pays $1,500.", "MediSave pays $1,300.", "$3,200 − $1,500 − $1,300 = $400 cash."]),
+    mk("Mr Kumar", 52, "male",
+      "Permanent Resident. Hospitalised 7 days in an A-class ward after a heart attack.",
+      ["No|N", "6000", "3500", "8500"],
+      ["A-class wards are not subsidised. Full bill $18,000.", "MediShield Life pays $6,000 (pro-rated, as claims are pegged to subsidised-ward bills).", "MediSave pays $3,500.", "$18,000 − $6,000 − $3,500 = $8,500 cash."]),
+    mk("Mdm Lim", 75, "female",
+      "Singapore Citizen, lives alone. Admitted 10 days in a C-class ward for hip fracture surgery.",
+      ["Yes|Y", "3200", "600", "200"],
+      ["C-class ward → highest subsidy tier. Bill $20,000; subsidy $16,000; $4,000 payable.", "MediShield Life pays $3,200.", "MediSave pays $600.", "$4,000 − $3,200 − $600 = $200 cash."]),
+  ];
+}
+
+/* ---------- character figure (SVG) ---------- */
+function figureSVG(gender, mood) {
+  const female = gender === "female";
+  const ink = "#111";
+  const arm = (d) => `<path d="${d}" stroke="${ink}" stroke-width="24" stroke-linecap="round" fill="none"/>`;
+  const body = female
+    ? `${arm("M70,114 L50,212")}${arm("M130,114 L150,212")}
+       <path d="M70,110 Q70,94 100,92 Q130,94 130,110 L134,150 L158,250 L42,250 L66,150 Z" fill="${ink}"/>
+       <rect x="72" y="244" width="24" height="142" fill="${ink}"/><rect x="104" y="244" width="24" height="142" fill="${ink}"/>`
+    : `${arm("M66,112 L48,212")}${arm("M134,112 L152,212")}
+       <path d="M62,108 Q62,92 100,90 Q138,92 138,108 L136,232 L64,232 Z" fill="${ink}"/>
+       <rect x="66" y="224" width="31" height="162" fill="${ink}"/><rect x="103" y="224" width="31" height="162" fill="${ink}"/>`;
+  const W = `stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"`;
+  const eyes = (l = 4.5, r = 4.5) => `<circle class="fillw" cx="86" cy="44" r="${l}" fill="#fff"/><circle class="fillw" cx="114" cy="44" r="${r}" fill="#fff"/>`;
+  const cheeks = `<circle cx="74" cy="58" r="6" fill="#ff8fa3" opacity=".6" stroke="none"/><circle cx="126" cy="58" r="6" fill="#ff8fa3" opacity=".6" stroke="none"/>`;
+  let face = "", extra = "";
+  switch (mood) {
+    case "worried":
+      face = `${eyes()}<path d="M76,34 L92,28" ${W}/><path d="M108,28 L124,34" ${W}/><path d="M86,68 Q100,58 114,68" ${W}/>`;
+      extra = `<path d="M134,18 q7,10 0,14 q-7,-4 0,-14z" fill="#6fb8e0"/>`;
+      break;
+    case "anxious":
+      face = `${eyes()}<path d="M77,32 L92,30" ${W}/><path d="M108,30 L123,32" ${W}/><path d="M85,65 q3.75,-3 7.5,0 t7.5,0 t7.5,0 t7.5,0" ${W}/>`;
+      break;
+    case "ok":
+      face = `${eyes()}<path d="M78,31 L92,31" ${W}/><path d="M108,31 L122,31" ${W}/><path d="M86,61 Q100,70 114,61" ${W}/>`;
+      break;
+    case "happy":
+      face = `${eyes()}<path d="M78,30 Q85,25 92,29" ${W}/><path d="M108,29 Q115,25 122,30" ${W}/><path d="M83,58 Q100,76 117,58" ${W}/>${cheeks}`;
+      break;
+    case "joy":
+      face = `<path d="M79,46 Q86,37 93,46" ${W}/><path d="M107,46 Q114,37 121,46" ${W}/><path d="M78,28 Q85,22 92,26" ${W}/><path d="M108,26 Q115,22 122,28" ${W}/>
+              <path class="fillw" d="M82,57 Q100,84 118,57 Z" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>${cheeks}`;
+      extra = `<path d="M24,30 l4,10 l10,4 l-10,4 l-4,10 l-4,-10 l-10,-4 l10,-4z" fill="#f5b400"/>
+               <path d="M168,60 l3,7 l7,3 l-7,3 l-3,7 l-3,-7 l-7,-3 l7,-3z" fill="#f5b400"/>
+               <path d="M172,6 l2.5,6 l6,2.5 l-6,2.5 l-2.5,6 l-2.5,-6 l-6,-2.5 l6,-2.5z" fill="#f5b400"/>`;
+      break;
+    case "confused":
+      face = `${eyes(5.5, 3.5)}<path d="M75,31 Q83,21 92,27" ${W}/><path d="M108,34 L123,30" ${W}/><path d="M88,67 L113,61" ${W}/>`;
+      extra = `<text x="146" y="44" font-size="50" font-weight="800" fill="#c77700" font-family="Segoe UI, Arial, sans-serif">?</text>`;
+      break;
+  }
+  return `<svg viewBox="0 0 200 390" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    ${body}<circle class="head" cx="100" cy="46" r="38" fill="${ink}"/><g class="face">${face}</g>${extra}</svg>`;
+}
+function moodByProgress(step, total) {
+  if (!total) return "ok";
+  const f = step / total;
+  if (f >= 1) return "joy";
+  if (f === 0) return "worried";
+  if (f < 0.5) return "anxious";
+  if (f < 0.75) return "ok";
+  return "happy";
+}
+function makeQR(el, text) {
+  el.innerHTML = "";
+  if (window.QRCode) {
+    new window.QRCode(el, { text, width: 256, height: 256, colorDark: "#0e3b53", colorLight: "#ffffff", correctLevel: window.QRCode.CorrectLevel.M });
+  } else {
+    el.innerHTML = `<div class="qr-fallback">${esc(text)}</div>`;
+  }
+}
+function finishRanks(prog) {
+  const done = prog.map((p, i) => ({ i, t: tsMs(p?.finishedAt) })).filter(x => x.t != null).sort((a, b) => a.t - b.t);
+  const r = {}; done.forEach((x, k) => r[x.i] = k + 1); return r;
+}
+const MEDAL = { 1: "🥇", 2: "🥈", 3: "🥉", 4: "🏅" };
+const ordinal = n => n + (["th", "st", "nd", "rd"][(n % 100 - 20) % 10] || ["th", "st", "nd", "rd"][n % 100] || "th");
+
+/* =====================================================================
+   4. MAIN SCREEN  (?view=display — the default)
+   ===================================================================== */
+function viewDisplay() {
+  let game = null;
+  const prog = Array(SLOTS).fill(null);
+  const fx = Array.from({ length: SLOTS }, () => ({ prevStep: null, prevWrong: null, confusedUntil: 0, cheerUntil: 0, timer: null }));
+  let structKey = "";
+  let hideQR = false;
+
+  app.innerHTML = `
+    <div class="display" id="display">
+      <header class="topbar">
+        <h1>🏥 Healthcare Bill Challenge</h1>
+        <div class="tools">
+          <span class="status-pill" id="statusPill">…</span>
+          <button class="btn" id="qrBtn" title="Show/hide QR codes (Q)">QR</button>
+          <button class="btn" id="fsBtn" title="Full screen (F)">⛶</button>
+          <a class="btn" href="?view=admin" target="_blank" title="Admin">⚙</a>
+        </div>
+      </header>
+      <main class="stage" id="stage"></main>
+    </div>
+    <div class="debrief" id="debrief" hidden></div>`;
+
+  const toggleQR = () => { hideQR = !hideQR; $("#display").classList.toggle("hide-qr", hideQR); };
+  const toggleFS = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  $("#qrBtn").onclick = toggleQR;
+  $("#fsBtn").onclick = toggleFS;
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input,textarea")) return;
+    if (e.key === "q" || e.key === "Q") toggleQR();
+    if (e.key === "f" || e.key === "F") toggleFS();
+  });
+
+  const info = i => {
+    const s = game?.slots?.[i]; const ch = s?.character; const p = prog[i] || {};
+    const qs = ch?.questions || []; const total = qs.length; const step = Math.min(p.step || 0, total);
+    return { s, ch, p, qs, total, step, done: total > 0 && step >= total };
+  };
+
+  function buildStage() {
+    const stage = $("#stage");
+    if (!game) {
+      stage.innerHTML = `<div class="center-msg"><div style="font-size:48px">🩺</div><div>No game has been set up yet.</div><a class="btn primary" href="?view=admin">Open admin to set up characters</a></div>`;
+      return;
+    }
+    stage.innerHTML = Array.from({ length: SLOTS }, (_, i) => `
+      <section class="col" id="col${i}">
+        <div class="bubble" id="bub${i}"></div>
+        <div class="mid">
+          <div class="fig" id="fig${i}"></div>
+          <div class="qr-wrap"><div class="qr-box" id="qr${i}"></div><div class="qr-label" id="qrl${i}"></div></div>
+        </div>
+        <div class="name" id="nm${i}"></div>
+        <div class="situation" id="sit${i}"></div>
+        <div>
+          <div class="track" id="trk${i}"><div class="line"></div><div class="fill"></div><div class="ticks"></div><div class="dot" style="left:0"></div><div class="dot" style="left:100%"></div><div class="marker"></div></div>
+          <div class="track-label" id="tl${i}"></div>
+        </div>
+      </section>`).join("");
+    for (let i = 0; i < SLOTS; i++) {
+      const { ch, total } = info(i);
+      if (ch) makeQR($(`#qr${i}`), teamUrl(i)); else $(`#col${i}`).classList.add("empty");
+      $(`#trk${i} .ticks`).innerHTML = Array.from({ length: Math.max(total - 1, 0) }, (_, k) =>
+        `<div class="tick" data-k="${k + 1}" style="left:${((k + 1) / total) * 100}%"></div>`).join("");
+    }
+  }
+
+  function renderSlot(i) {
+    if (!game || !$(`#col${i}`)) return;
+    const { s, ch, p, qs, total, step, done } = info(i);
+    const f = fx[i]; const now = Date.now();
+    const confused = f.confusedUntil > now && !done;
+    const cheer = f.cheerUntil > now;
+    const status = game.status || "waiting";
+
+    // speech bubble
+    const bub = $(`#bub${i}`);
+    let html, cls = "bubble";
+    if (!ch) html = `<span>Waiting for a character…</span>`;
+    else if (done) { html = `<span>Thank you! I finally understand my bill 😊</span>`; cls += " done"; }
+    else if (confused) { html = `<span>Hmm… are you sure? 🤔</span>`; cls += " confused"; }
+    else if (status === "waiting") html = `<span>Hi! I'm ${esc(ch.name)}. Can you help me make sense of my hospital bill?</span>`;
+    else html = `<span class="qnum">Question ${step + 1} of ${total}</span><span>${esc(qs[step]?.q)}</span>`;
+    if (bub.dataset.h !== html + cls) { bub.dataset.h = html + cls; bub.className = cls; bub.innerHTML = html; bub.style.animation = "none"; void bub.offsetWidth; bub.style.animation = ""; }
+
+    // figure
+    const mood = !ch ? "ok" : confused ? "confused" : done ? "joy" : cheer ? "happy" : moodByProgress(step, total);
+    const fig = $(`#fig${i}`);
+    const figKey = (ch?.gender || "male") + mood + (cheer ? "c" : "");
+    if (fig.dataset.k !== figKey) {
+      fig.dataset.k = figKey;
+      fig.className = "fig " + (confused ? "confused" : done ? "joy" : cheer ? "cheer" : "");
+      fig.innerHTML = figureSVG(ch?.gender, mood);
+    }
+
+    // name + QR label
+    $(`#nm${i}`).innerHTML = ch ? `${esc(ch.name)}${ch.age ? `<small>${esc(ch.age)} years old</small>` : ""}` : "NAME";
+    $(`#qrl${i}`).innerHTML = `<b>${esc(s?.teamName || `Team ${i + 1}`)}</b>Scan to answer`;
+
+    // situation box (or hint card while confused)
+    const sit = $(`#sit${i}`);
+    const sitHtml = confused && qs[step]?.hint
+      ? `<h3>💡 Hint</h3><div class="sit-text">${esc(qs[step].hint)}</div>`
+      : `<h3>Medical Situation</h3><div class="sit-text">${esc(ch?.situation || "")}</div>`;
+    if (sit.dataset.h !== sitHtml) { sit.dataset.h = sitHtml; sit.innerHTML = sitHtml; sit.className = "situation" + (confused && qs[step]?.hint ? " hint" : ""); }
+
+    // progress track
+    const pct = total ? (step / total) * 100 : 0;
+    $(`#trk${i} .marker`).style.left = pct + "%";
+    $(`#trk${i} .fill`).style.width = pct + "%";
+    $(`#trk${i}`).querySelectorAll(".tick").forEach(t => t.classList.toggle("passed", +t.dataset.k <= step));
+    const rank = finishRanks(prog)[i];
+    $(`#tl${i}`).innerHTML = !ch ? "" : done
+      ? `<span class="medal">${MEDAL[rank] || "🏅"}</span> Finished ${rank ? ordinal(rank) : ""} · ${plural(p.wrong || 0, "wrong attempt")}`
+      : `${step} of ${total} answered${p.wrong ? ` · ${plural(p.wrong, "wrong attempt")}` : ""}`;
+  }
+
+  function renderDebrief() {
+    const d = $("#debrief");
+    if (!game?.reveal) { d.hidden = true; return; }
+    d.hidden = false;
+    const ranks = finishRanks(prog);
+    d.innerHTML = `<h2><span>📋 Debrief — Answers</span><span class="badge">Answers revealed by facilitator</span></h2>
+      <div class="debrief-grid">${Array.from({ length: SLOTS }, (_, i) => {
+        const { s, ch, p, qs, total, step, done } = info(i);
+        if (!ch) return `<div class="db-col"><div class="db-head"><h3>Slot ${i + 1}: no character</h3></div></div>`;
+        return `<div class="db-col">
+          <div class="db-head"><div class="fig">${figureSVG(ch.gender, done ? "joy" : "ok")}</div>
+            <div><h3>${esc(ch.name)}</h3><div class="meta">${ch.age ? esc(ch.age) + " · " : ""}${esc(s.teamName || "")}</div></div></div>
+          <div class="db-sit">${esc(ch.situation)}</div>
+          ${qs.map((q, k) => `<div class="db-q"><div class="q">Q${k + 1}. ${esc(q.q)}</div><div class="a">✅ ${esc(displayAnswer(q))}</div>${q.explain ? `<div class="e">${esc(q.explain)}</div>` : ""}</div>`).join("")}
+          <div class="db-team"><b>${esc(s.teamName || "")}</b>: ${step}/${total} answered · ${plural(p.wrong || 0, "wrong attempt")}${done && ranks[i] ? ` · ${MEDAL[ranks[i]]} ${ordinal(ranks[i])}` : ""}</div>
+        </div>`;
+      }).join("")}</div>`;
+  }
+
+  function renderAll() {
+    const pill = $("#statusPill");
+    const st = game?.status || "waiting";
+    pill.className = "status-pill " + st;
+    pill.textContent = { waiting: "Get ready…", live: "● Live", paused: "Paused" }[st] || st;
+    const key = game ? game.slots.map(s => (s.characterId || "") + ":" + (s.character?.questions?.length || 0) + ":" + (s.character?.updatedAt || "")).join("|") : "none";
+    if (key !== structKey) { structKey = key; buildStage(); }
+    for (let i = 0; i < SLOTS; i++) renderSlot(i);
+    renderDebrief();
+  }
+
+  DB.watchDoc(GAME, g => { game = g; renderAll(); });
+  for (let i = 0; i < SLOTS; i++) {
+    DB.watchDoc(PROG(i), p => {
+      const f = fx[i]; const step = p?.step || 0; const wrong = p?.wrong || 0;
+      if (f.prevStep !== null) {
+        if (step > f.prevStep) { f.confusedUntil = 0; f.cheerUntil = Date.now() + 2600; }
+        else if (step < f.prevStep) { f.confusedUntil = 0; f.cheerUntil = 0; }
+        else if (wrong > f.prevWrong) { f.confusedUntil = Date.now() + 12000; }
+        clearTimeout(f.timer);
+        const until = Math.max(f.confusedUntil, f.cheerUntil) - Date.now();
+        if (until > 0) f.timer = setTimeout(() => renderSlot(i), until + 60);
+      }
+      f.prevStep = step; f.prevWrong = wrong;
+      prog[i] = p;
+      if (game) { renderSlot(i); renderDebrief(); for (let k = 0; k < SLOTS; k++) if (k !== i) renderSlot(k); }
+    });
+  }
+}
+
+/* =====================================================================
+   5. TEAM PAGE  (?view=team&slot=1..4 — opened by scanning the QR code)
+   ===================================================================== */
+function viewTeam() {
+  const slot = parseInt(params.get("slot"), 10) - 1;
+  let game = null, p = null, key = "", fb = null, busy = false;
+
+  if (!(slot >= 0 && slot < SLOTS)) {
+    app.innerHTML = `<div class="team"><h2 style="color:var(--teal-dark)">Which character is your team helping?</h2><div class="chooser" id="chooser">Loading…</div></div>`;
+    DB.watchDoc(GAME, g => {
+      $("#chooser").innerHTML = (g?.slots || []).map((s, i) => s.character
+        ? `<a href="?view=team&slot=${i + 1}"><div class="fig">${figureSVG(s.character.gender, "ok")}</div><div><b>${esc(s.character.name)}</b><div class="muted">${esc(s.teamName)}</div></div></a>` : "").join("")
+        || `<p class="muted">No characters have been set up yet.</p>`;
+    });
+    return;
+  }
+
+  app.innerHTML = `<div class="team" id="team"><p class="muted">Loading…</p></div>`;
+  const root = $("#team");
+
+  function info() {
+    const s = game?.slots?.[slot]; const ch = s?.character;
+    const qs = ch?.questions || []; const total = qs.length; const step = Math.min(p?.step || 0, total);
+    return { s, ch, qs, total, step, done: total > 0 && step >= total };
+  }
+
+  function render() {
+    const { s, ch, qs, total, step, done } = info();
+    if (!game || !ch) { key = ""; root.innerHTML = `<div class="t-big"><span class="emoji">⏳</span>Waiting for the facilitator to set up your character…</div>`; return; }
+    const status = game.status || "waiting";
+    const k = [status, step, total, done, s.characterId, game.reveal].join("|");
+    if (k !== key) {
+      key = k;
+      const confused = p?.hintStep === step && !done;
+      const mood = done ? "joy" : confused ? "confused" : moodByProgress(step, total);
+      const expectNum = qs[step] && toNum(String(qs[step].answer).split("|")[0]) !== null;
+      root.innerHTML = `
+        <div class="t-head"><div class="t-team">${esc(s.teamName || `Team ${slot + 1}`)}</div>
+          <div class="t-prog"><div class="bar"><i style="width:${total ? step / total * 100 : 0}%"></i></div><span>${step}/${total}</span></div></div>
+        <div class="t-char"><div class="fig ${done ? "joy" : ""}">${figureSVG(ch.gender, mood)}</div>
+          <div><div class="t-name">${esc(ch.name)}</div><div class="muted">${ch.age ? esc(ch.age) + " years old" : ""}</div>
+          <details ${step === 0 ? "open" : ""}><summary>Medical situation</summary><p>${esc(ch.situation)}</p></details></div></div>
+        ${done ? `<div class="t-big"><span class="emoji">🎉</span><b>You've answered all of ${esc(ch.name)}'s questions!</b><br><span class="muted">Look at the main screen to see how the other teams are doing.</span></div>`
+        : status !== "live" ? `<div class="t-big"><span class="emoji">${status === "paused" ? "⏸️" : "⏳"}</span>${status === "paused" ? "The game is paused." : "Get your bill ready — waiting for the facilitator to start the game…"}</div>`
+        : `<div class="t-bubble"><div class="qlabel">Question ${step + 1} of ${total}</div><div class="qtext">${esc(qs[step].q)}</div></div>
+           <form class="t-form" id="ansForm" autocomplete="off">
+             <input id="ans" name="ans" ${expectNum ? 'inputmode="decimal"' : ""} enterkeyhint="send" placeholder="${expectNum ? "e.g. 1234.50" : "Type your answer"}" aria-label="Your answer" required>
+             <button class="btn primary" id="sendBtn">Submit</button>
+           </form>`}
+        <div id="fb"></div>`;
+      const form = $("#ansForm");
+      if (form) form.onsubmit = e => { e.preventDefault(); submit($("#ans").value); };
+    }
+    renderFeedback();
+  }
+
+  function renderFeedback() {
+    const el = $("#fb"); if (!el) return;
+    const { qs, step, done } = info();
+    let h = "";
+    if (fb?.type === "correct" || (fb?.type === "advanced")) h = `<div class="t-note ok">✅ <b>Correct!</b> ${done ? "" : "Here's the next question."}</div>`;
+    if (fb?.type === "stale") h = `<div class="t-note info">A teammate already answered that one — here's the current question.</div>`;
+    if (fb?.type === "notlive") h = `<div class="t-note info">The game isn't running right now.</div>`;
+    if (!done && p?.hintStep === step && game?.status === "live") {
+      const tries = (p.history || []).filter(x => x.step === step && !x.ok).length;
+      h = `<div class="t-note wrong">🤔 <b>Hmm… are you sure?</b> ${fb?.type === "wrong" ? `“${esc(fb.answer)}” isn't quite right.` : "That wasn't quite right."} Try again!
+            ${qs[step]?.hint ? `<div class="hint">💡 <b>Hint:</b> ${esc(qs[step].hint)}</div>` : ""}
+            <div class="muted" style="font-size:13px;margin-top:6px">${plural(tries, "wrong attempt")} on this question</div></div>`;
+    }
+    el.innerHTML = h;
+  }
+
+  async function submit(raw) {
+    const ans = String(raw || "").trim();
+    if (!ans || busy) return;
+    busy = true; const btn = $("#sendBtn"); if (btn) btn.disabled = true;
+    const expectedStep = info().step;
+    try {
+      const res = await DB.tx(PROG(slot), cur => {
+        cur = cur || blankProgress();
+        const qs = game?.slots?.[slot]?.character?.questions || [];
+        if (game?.status !== "live") return { result: "notlive" };
+        if ((cur.step || 0) !== expectedStep || !qs[expectedStep]) return { result: "stale" };
+        const ok = checkAnswer(ans, qs[expectedStep]);
+        const history = [...(cur.history || []), { step: expectedStep, answer: ans.slice(0, 60), ok, at: Date.now() }].slice(-60);
+        const next = { ...blankProgress(), ...cur, attempts: (cur.attempts || 0) + 1, history, lastAnswer: ans.slice(0, 60), lastResult: ok ? "correct" : "wrong", lastAt: DB.now() };
+        if (ok) { next.step = expectedStep + 1; if (next.step >= qs.length) next.finishedAt = DB.now(); }
+        else { next.wrong = (cur.wrong || 0) + 1; next.hintStep = expectedStep; }
+        return { write: next, result: ok ? "correct" : "wrong" };
+      });
+      fb = { type: res, answer: ans };
+      if (res === "wrong") { const i = $("#ans"); if (i) { i.select(); } }
+      render();
+    } catch (e) { showError(e); }
+    finally { busy = false; const b = $("#sendBtn"); if (b) b.disabled = false; }
+  }
+
+  DB.watchDoc(GAME, g => { game = g; render(); });
+  DB.watchDoc(PROG(slot), x => {
+    const prev = p?.step;
+    p = x;
+    if (prev != null && (x?.step || 0) > prev && fb?.type !== "correct") fb = { type: "advanced" };
+    if (prev != null && (x?.step || 0) < prev) fb = null;
+    render();
+    if (fb && (fb.type === "correct" || fb.type === "advanced")) { const f = fb; setTimeout(() => { if (fb === f) { fb = null; renderFeedback(); } }, 4000); }
+  });
+}
+
+/* =====================================================================
+   6. ADMIN  (?view=admin)
+   ===================================================================== */
+function viewAdmin() {
+  app.innerHTML = `<div class="admin" id="admin"><p class="muted">Loading…</p></div>`;
+  let started = false;
+  DB.onAuth(user => {
+    if (!user) { started = false; renderLogin(); return; }
+    if (!started) { started = true; startAdmin(user); }
+  });
+
+  function renderLogin() {
+    $("#admin").innerHTML = `<form class="login" id="login">
+      <h1>Admin sign-in</h1>
+      <p class="muted" style="margin:0 0 6px">Use the admin account you created in Firebase Authentication.</p>
+      <input type="email" id="em" placeholder="Email" required autocomplete="username">
+      <input type="password" id="pw" placeholder="Password" required autocomplete="current-password">
+      <button class="btn primary">Sign in</button>
+      <a href="?view=display" class="muted" style="font-size:13px">← Back to main screen</a></form>`;
+    $("#login").onsubmit = async e => {
+      e.preventDefault();
+      try { await DB.signIn($("#em").value.trim(), $("#pw").value); }
+      catch (err) { toast("Sign-in failed: " + (err.code || err.message), true); }
+    };
+  }
+
+  function startAdmin(user) {
+    let game = null, lib = [];
+    const prog = Array(SLOTS).fill(null);
+    let draft = null;
+
+    $("#admin").innerHTML = `
+      <header class="adm-top">
+        <div><h1>Healthcare Bill Challenge — Admin</h1>
+          <div class="muted" style="font-size:13px">${DB.mode === "local" ? `<span class="badge warn">Demo mode: data is saved in this browser only. Add your Firebase config to play with phones.</span>` : `Signed in as ${esc(user.email)}`}</div></div>
+        <div class="row"><a class="btn primary" href="?view=display" target="_blank">Open main screen ↗</a>${DB.mode === "firebase" ? `<button class="btn" id="signOut">Sign out</button>` : ""}</div>
+      </header>
+      <section class="card">
+        <div class="sec-head"><h2>Live game</h2><div class="row" id="gameCtl"></div></div>
+        <div class="slots" id="slots"></div>
+      </section>
+      <section class="card">
+        <div class="sec-head"><h2>Character library</h2>
+          <div class="row">
+            <button class="btn primary" id="newChar">+ New character</button>
+            <button class="btn" id="seed">Add 4 sample characters</button>
+            <button class="btn" id="exp">Export</button>
+            <label class="btn">Import<input type="file" accept=".json,application/json" id="imp" hidden></label>
+          </div></div>
+        <p class="note">Characters saved here can be reused in future sessions. Pick one for each of the 4 slots above. Answers are checked against the <b>Correct answer(s)</b> field: numbers ignore “$” and commas; separate alternatives with <b>|</b> (e.g. <code>Yes|Y</code>). Sample characters use illustrative figures — update them to match your printed bills.</p>
+        <div class="lib" id="lib"></div>
+      </section>
+      <dialog class="editor" id="editor"></dialog>`;
+    if ($("#signOut")) $("#signOut").onclick = () => DB.signOut();
+
+    /* ----- game controls ----- */
+    function renderCtl() {
+      const st = game?.status || "waiting";
+      $("#gameCtl").innerHTML = `
+        <div class="row" role="group" aria-label="Game status">
+          <button class="btn sm ${st === "waiting" ? "on" : ""}" data-status="waiting">Get ready</button>
+          <button class="btn sm ${st === "live" ? "on" : ""}" data-status="live">▶ Live</button>
+          <button class="btn sm ${st === "paused" ? "on" : ""}" data-status="paused">⏸ Pause</button>
+        </div>
+        <label class="switch ${game?.reveal ? "on" : ""}"><input type="checkbox" id="reveal" ${game?.reveal ? "checked" : ""}> Reveal answers (debrief)</label>
+        <button class="btn sm" id="resync" title="Copy the latest version of each assigned character from the library into the game">↻ Re-sync characters</button>
+        <button class="btn sm danger" id="resetAll">Reset all progress</button>`;
+    }
+    $("#gameCtl").addEventListener("click", async e => {
+      const b = e.target.closest("[data-status]");
+      if (b) {
+        if (b.dataset.status === "live" && !game.slots.some(s => s.character)) return toast("Assign at least one character first.", true);
+        await DB.merge(GAME, { status: b.dataset.status }).catch(showError);
+      }
+      if (e.target.id === "resetAll") {
+        if (!confirm("Reset progress for all 4 teams? This cannot be undone.")) return;
+        await Promise.all(Array.from({ length: SLOTS }, (_, i) => DB.set(PROG(i), blankProgress()))).catch(showError);
+        toast("All progress reset.");
+      }
+      if (e.target.id === "resync") resync();
+    });
+    $("#gameCtl").addEventListener("change", e => {
+      if (e.target.id === "reveal") DB.merge(GAME, { reveal: e.target.checked }).catch(showError);
+    });
+
+    const snapshot = ch => ({
+      name: ch.name || "", age: ch.age ?? "", gender: ch.gender || "male", situation: ch.situation || "",
+      questions: (ch.questions || []).map(q => ({ q: q.q || "", answer: q.answer || "", hint: q.hint || "", explain: q.explain || "", tolerance: +q.tolerance || 0 })),
+      updatedAt: Date.now(),
+    });
+    async function resync(onlyId) {
+      const slots = game.slots.map(s => {
+        if (!s.characterId || (onlyId && s.characterId !== onlyId)) return s;
+        const ch = lib.find(c => c.id === s.characterId);
+        return ch ? { ...s, character: snapshot(ch) } : s;
+      });
+      await DB.merge(GAME, { slots }).catch(showError);
+      toast("Game updated with the latest character details.");
+    }
+
+    /* ----- slots ----- */
+    function renderSlots() {
+      const el = $("#slots");
+      const a = document.activeElement; const focusId = el.contains(a) ? a.id : null; const val = focusId ? a.value : null;
+      el.innerHTML = game.slots.map((s, i) => {
+        const inLib = s.characterId && lib.some(c => c.id === s.characterId);
+        return `<div class="slot">
+          <div class="slot-h"><b>Character ${i + 1}</b><span class="stat" id="stat${i}"></span></div>
+          <label>Team name<input id="team${i}" data-team="${i}" value="${esc(s.teamName)}" maxlength="40"></label>
+          <label>Character<select id="char${i}" data-char="${i}">
+            <option value="">— choose from library —</option>
+            ${lib.map(c => `<option value="${esc(c.id)}" ${c.id === s.characterId ? "selected" : ""}>${esc(c.name || "(unnamed)")}${c.age ? ", " + esc(c.age) : ""}</option>`).join("")}
+            ${s.characterId && !inLib ? `<option value="${esc(s.characterId)}" selected>${esc(s.character?.name)} (deleted from library)</option>` : ""}
+          </select></label>
+          <div class="mini-log" id="log${i}"></div>
+          <div class="row"><button class="btn sm" data-reset="${i}">Reset progress</button><a class="btn sm" href="${esc(teamUrl(i))}" target="_blank">Team page ↗</a></div>
+        </div>`;
+      }).join("");
+      if (focusId && $("#" + focusId)) { const f = $("#" + focusId); f.focus(); if (f.tagName === "INPUT") f.value = val; }
+      renderStats();
+    }
+    function renderStats() {
+      if (!game) return;
+      const ranks = finishRanks(prog);
+      game.slots.forEach((s, i) => {
+        const st = $(`#stat${i}`), lg = $(`#log${i}`); if (!st) return;
+        const p = prog[i] || {}; const total = s.character?.questions?.length || 0; const step = Math.min(p.step || 0, total);
+        st.innerHTML = !s.character ? `<span class="muted">empty</span>`
+          : step >= total && total ? `<span class="badge ok">${MEDAL[ranks[i]] || ""} Done ${step}/${total}</span>`
+          : `<span class="badge">${step}/${total}</span>`;
+        if (p.wrong) st.innerHTML += ` <span class="badge warn">${p.wrong} wrong</span>`;
+        lg.innerHTML = (p.history || []).slice(-3).reverse().map(h => `<div class="${h.ok ? "c" : "w"}">${h.ok ? "✓" : "✗"} Q${h.step + 1}: “${esc(h.answer)}”</div>`).join("") || "No answers yet";
+      });
+    }
+    $("#slots").addEventListener("change", async e => {
+      const t = e.target;
+      if (t.dataset.team != null) {
+        const i = +t.dataset.team;
+        const slots = game.slots.map((s, k) => k === i ? { ...s, teamName: t.value.trim() || `Team ${i + 1}` } : s);
+        DB.merge(GAME, { slots }).catch(showError);
+      }
+      if (t.dataset.char != null) {
+        const i = +t.dataset.char; const id = t.value;
+        const p = prog[i];
+        if ((p?.attempts || 0) > 0 && !confirm("This team has already started. Changing the character resets their progress. Continue?")) { renderSlots(); return; }
+        const ch = lib.find(c => c.id === id);
+        const slots = game.slots.map((s, k) => k === i ? { ...s, characterId: id || null, character: ch ? snapshot(ch) : null } : s);
+        await DB.merge(GAME, { slots }).catch(showError);
+        await DB.set(PROG(i), blankProgress()).catch(showError);
+      }
+    });
+    $("#slots").addEventListener("click", async e => {
+      const b = e.target.closest("[data-reset]"); if (!b) return;
+      const i = +b.dataset.reset;
+      if (!confirm(`Reset progress for ${game.slots[i].teamName}?`)) return;
+      await DB.set(PROG(i), blankProgress()).catch(showError);
+    });
+
+    /* ----- library ----- */
+    function renderLib() {
+      const used = id => game?.slots?.map((s, i) => s.characterId === id ? i + 1 : null).filter(Boolean) || [];
+      const sorted = [...lib].sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      $("#lib").innerHTML = sorted.length ? sorted.map(c => `
+        <div class="lcard"><div class="fig">${figureSVG(c.gender, "ok")}</div>
+          <div style="min-width:0;flex:1">
+            <h3>${esc(c.name || "(unnamed)")} <small>${c.age ? esc(c.age) + " · " : ""}${c.gender === "female" ? "Female" : "Male"}</small></h3>
+            <p>${esc(c.situation)}</p>
+            <div class="row"><span class="badge">${plural((c.questions || []).length, "question")}</span>${used(c.id).map(n => `<span class="badge ok">In slot ${n}</span>`).join("")}</div>
+            <div class="row"><button class="btn sm" data-edit="${esc(c.id)}">Edit</button><button class="btn sm" data-dup="${esc(c.id)}">Duplicate</button><button class="btn sm danger" data-del="${esc(c.id)}">Delete</button></div>
+          </div></div>`).join("")
+        : `<div class="empty-lib">No saved characters yet. Click <b>+ New character</b> or <b>Add 4 sample characters</b> to get started.</div>`;
+    }
+    $("#lib").addEventListener("click", async e => {
+      const b = e.target.closest("button"); if (!b) return;
+      const ch = lib.find(c => c.id === (b.dataset.edit || b.dataset.dup || b.dataset.del));
+      if (!ch) return;
+      if (b.dataset.edit) openEditor(ch);
+      if (b.dataset.dup) { const { id, ...rest } = ch; openEditor({ ...structuredClone(rest), name: rest.name + " (copy)" }); }
+      if (b.dataset.del) {
+        if (!confirm(`Delete "${ch.name}" from the library? (Any copy already in the live game stays until you replace it.)`)) return;
+        await DB.del(`${COL_CHARS}/${ch.id}`).catch(showError);
+      }
+    });
+    $("#newChar").onclick = () => openEditor(null);
+    $("#seed").onclick = async () => {
+      await Promise.all(sampleCharacters().map(c => DB.set(`${COL_CHARS}/${DB.newId(COL_CHARS)}`, { ...c, createdAt: Date.now(), updatedAt: Date.now() }))).catch(showError);
+      toast("4 sample characters added to the library.");
+    };
+    $("#exp").onclick = () => {
+      const data = JSON.stringify(lib.map(({ id, ...c }) => c), null, 2);
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+      a.download = `healthcare-characters-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    };
+    $("#imp").onchange = async e => {
+      const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+      try {
+        const arr = JSON.parse(await file.text());
+        const list = (Array.isArray(arr) ? arr : [arr]).filter(c => c && c.name && Array.isArray(c.questions));
+        await Promise.all(list.map(c => DB.set(`${COL_CHARS}/${DB.newId(COL_CHARS)}`, { ...snapshot(c), createdAt: Date.now() })));
+        toast(`Imported ${plural(list.length, "character")}.`);
+      } catch (err) { toast("Could not import: " + err.message, true); }
+    };
+
+    /* ----- character editor ----- */
+    const dlg = $("#editor");
+    function openEditor(ch) {
+      draft = ch ? structuredClone(ch) : { name: "", age: "", gender: "male", situation: "", questions: DEFAULT_QUESTIONS() };
+      if (!Array.isArray(draft.questions)) draft.questions = [];
+      dlg.innerHTML = `<form class="ed" id="edForm" method="dialog">
+        <div class="ed-head"><h2>${draft.id ? "Edit character" : "New character"}</h2><button type="button" class="btn sm" data-act="cancel">✕</button></div>
+        <div class="ed-body">
+          <div class="grid3">
+            <label>Name<input data-f="name" value="${esc(draft.name)}" placeholder="e.g. Mr Tan" required maxlength="40"></label>
+            <label>Age<input data-f="age" type="number" min="0" max="120" value="${esc(draft.age)}"></label>
+            <label>Gender<select data-f="gender"><option value="male" ${draft.gender !== "female" ? "selected" : ""}>Male</option><option value="female" ${draft.gender === "female" ? "selected" : ""}>Female</option></select></label>
+          </div>
+          <label>Medical situation (shown on the main screen)<textarea data-f="situation" rows="3" placeholder="e.g. Singapore Citizen, admitted 4 days in a B2 ward for pneumonia.">${esc(draft.situation)}</textarea></label>
+          <div class="sec-head" style="margin:6px 0 0"><h2>Questions</h2><button type="button" class="btn sm" data-act="addq">+ Add question</button></div>
+          <div id="qlist" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+        <div class="ed-foot"><span class="muted" style="font-size:13px">Saved characters can be reused in future sessions.</span>
+          <div class="row"><button type="button" class="btn" data-act="cancel">Cancel</button><button type="button" class="btn primary" data-act="save">Save character</button></div></div>
+      </form>`;
+      renderQList();
+      dlg.showModal();
+    }
+    function renderQList() {
+      const n = draft.questions.length;
+      $("#qlist").innerHTML = draft.questions.map((q, i) => `
+        <div class="qrow">
+          <div class="qrow-h"><b>Question ${i + 1}</b>
+            <div class="row"><button type="button" class="btn sm" data-up="${i}" ${i === 0 ? "disabled" : ""} title="Move up">↑</button>
+            <button type="button" class="btn sm" data-down="${i}" ${i === n - 1 ? "disabled" : ""} title="Move down">↓</button>
+            <button type="button" class="btn sm danger" data-delq="${i}" title="Remove">Remove</button></div></div>
+          <label>Question the character asks<input data-qi="${i}" data-qf="q" value="${esc(q.q)}" placeholder="e.g. How much is MediShield Life covering?"></label>
+          <div class="grid2">
+            <label>Correct answer(s) — use | for alternatives<input data-qi="${i}" data-qf="answer" value="${esc(q.answer)}" placeholder="e.g. 1200   or   Yes|Y"></label>
+            <label>Allowed ± margin<input data-qi="${i}" data-qf="tolerance" type="number" min="0" step="0.01" value="${esc(q.tolerance || 0)}"></label>
+          </div>
+          <label>Hint (shown when a team answers wrongly)<textarea data-qi="${i}" data-qf="hint" rows="2">${esc(q.hint)}</textarea></label>
+          <label>Debrief explanation (shown when answers are revealed — optional)<textarea data-qi="${i}" data-qf="explain" rows="2">${esc(q.explain)}</textarea></label>
+        </div>`).join("") || `<div class="empty-lib">No questions yet.</div>`;
+    }
+    dlg.addEventListener("input", e => {
+      const t = e.target;
+      if (t.dataset.f) draft[t.dataset.f] = t.dataset.f === "age" ? (t.value === "" ? "" : +t.value) : t.value;
+      if (t.dataset.qf) draft.questions[+t.dataset.qi][t.dataset.qf] = t.dataset.qf === "tolerance" ? (+t.value || 0) : t.value;
+    });
+    dlg.addEventListener("click", async e => {
+      const b = e.target.closest("button"); if (!b) return;
+      const qs = draft.questions;
+      if (b.dataset.up) { const i = +b.dataset.up; [qs[i - 1], qs[i]] = [qs[i], qs[i - 1]]; renderQList(); }
+      if (b.dataset.down) { const i = +b.dataset.down; [qs[i + 1], qs[i]] = [qs[i], qs[i + 1]]; renderQList(); }
+      if (b.dataset.delq) { if (confirm("Remove this question?")) { qs.splice(+b.dataset.delq, 1); renderQList(); } }
+      if (b.dataset.act === "addq") { qs.push({ q: "", answer: "", hint: "", explain: "", tolerance: 0 }); renderQList(); $("#qlist").lastElementChild?.scrollIntoView({ behavior: "smooth" }); }
+      if (b.dataset.act === "cancel") dlg.close();
+      if (b.dataset.act === "save") await saveDraft();
+    });
+    async function saveDraft() {
+      if (!String(draft.name).trim()) return toast("Please enter a name.", true);
+      if (!draft.questions.length) return toast("Add at least one question.", true);
+      const bad = draft.questions.findIndex(q => !String(q.q).trim() || !String(q.answer).trim());
+      if (bad >= 0) return toast(`Question ${bad + 1} needs both a question and a correct answer.`, true);
+      const id = draft.id || DB.newId(COL_CHARS);
+      const data = { ...snapshot(draft), createdAt: draft.createdAt || Date.now() };
+      try { await DB.set(`${COL_CHARS}/${id}`, data); } catch (err) { return showError(err); }
+      dlg.close();
+      toast(`Saved “${data.name}”.`);
+      if (draft.id && game?.slots?.some(s => s.characterId === id) && confirm(`“${data.name}” is in the current game. Update the game with these changes now?`)) {
+        lib = lib.map(c => c.id === id ? { ...data, id } : c);
+        resync(id);
+      }
+    }
+
+    /* ----- subscriptions ----- */
+    DB.watchDoc(GAME, g => {
+      if (!g) { DB.set(GAME, defaultGame()).catch(showError); return; }
+      game = g; renderCtl(); renderSlots(); renderLib();
+    });
+    DB.watchCol(COL_CHARS, list => { lib = list; if (game) renderSlots(); renderLib(); });
+    for (let i = 0; i < SLOTS; i++) DB.watchDoc(PROG(i), p => {
+      if (!p) { DB.set(PROG(i), blankProgress()).catch(showError); return; }
+      prog[i] = p; renderStats();
+    });
+  }
+}
+
+/* =====================================================================
+   7. BOOT
+   ===================================================================== */
+const app = $("#app");
+let DB;
+try {
+  DB = USE_FIREBASE ? await makeFirebaseStore() : makeLocalStore();
+} catch (e) {
+  app.innerHTML = `<div class="admin"><h2>Could not connect to Firebase</h2><p>${esc(e.message)}</p></div>`;
+  throw e;
+}
+const view = params.get("view") || (params.get("slot") ? "team" : "display");
+({ display: viewDisplay, team: viewTeam, admin: viewAdmin }[view] || viewDisplay)();
+if (DB.mode === "local") {
+  const b = document.createElement("div");
+  b.className = "demo-banner";
+  b.textContent = "Demo mode — not connected to Firebase. Data stays in this browser only. (click to hide)";
+  b.style.cursor = "pointer"; b.onclick = () => b.remove();
+  document.body.appendChild(b);
+}
+</script>
+</body>
+</html>
