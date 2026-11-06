@@ -129,6 +129,24 @@
   .intro-qr .qr-box { padding: 5%; border-radius: var(--r-lg); box-shadow: var(--sh-2); }
   .intro-qr b { font-size: min(2.2vh, 1.35vw); color: var(--ink); text-align: center; line-height: 1.3; }
   .intro-qr small { font-size: min(1.5vh, .95vw); color: var(--muted); word-break: break-all; text-align: center; }
+  /* team calculator */
+  .calc-btn { width: 100%; height: 46px; margin-top: 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--brand-700); font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: var(--sh-1); }
+  .calc-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(15, 23, 42, .35); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .calc-scrim.show { opacity: 1; pointer-events: auto; }
+  .calc { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; transform: translateY(105%); visibility: hidden; transition: transform .3s var(--spring), visibility 0s linear .3s; }
+  .calc.show { transform: none; visibility: visible; transition: transform .3s var(--spring); }
+  .calc-in { max-width: 520px; margin: 0 auto; background: var(--surface); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -10px 40px rgba(15, 23, 42, .2); padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); }
+  .calc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-weight: 800; color: var(--ink); }
+  .calc-disp { background: var(--ink); color: #fff; border-radius: var(--r); padding: 10px 14px; text-align: right; font-family: ui-monospace, Menlo, Consolas, monospace; min-height: 76px; }
+  .calc-disp .expr { font-size: 15px; color: #94a3b8; min-height: 20px; word-break: break-all; }
+  .calc-disp .val { font-size: 30px; font-weight: 700; word-break: break-all; }
+  .calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  .calc-keys button { height: 54px; border: none; border-radius: 14px; background: #fff; box-shadow: 0 2px 0 var(--line); font-size: 21px; font-weight: 700; color: var(--ink); cursor: pointer; }
+  .calc-keys button:active { transform: translateY(2px); box-shadow: none; }
+  .calc-keys .op { background: var(--brand-50); color: var(--brand-700); }
+  .calc-keys .eq { background: var(--brand); color: #fff; box-shadow: 0 2px 0 var(--brand-700); }
+  .calc-keys .fn { background: var(--surface-2); color: var(--muted); font-size: 17px; }
+  .calc-use { width: 100%; margin-top: 10px; }
   .t-link { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-1); color: var(--brand-700); font-weight: 700; text-decoration: none; }
   .t-link .i { flex: 0 0 auto; }
   .t-link span { min-width: 0; flex: 1; }
@@ -1483,6 +1501,67 @@ function viewTeam() {
     const qs = ch?.questions || []; const total = qs.length; const step = Math.min(p?.step || 0, total);
     return { s, ch, qs, total, step, done: total > 0 && step >= total };
   }
+  /* ----- calculator (only when the admin allows it) ----- */
+  document.body.insertAdjacentHTML("beforeend", `
+    <div class="calc-scrim" id="calcScrim"></div>
+    <div class="calc" id="calc" role="dialog" aria-label="Calculator"><div class="calc-in">
+      <div class="calc-top"><span>🧮 Calculator</span><button class="btn sm ghost icon" id="calcClose" aria-label="Close calculator">${icon("x")}</button></div>
+      <div class="calc-disp"><div class="expr" id="calcExpr"></div><div class="val" id="calcVal">0</div></div>
+      <div class="calc-keys" id="calcKeys">${["C", "(", ")", "÷", "7", "8", "9", "×", "4", "5", "6", "−", "1", "2", "3", "+", "%", "0", ".", "="].map(k =>
+        `<button type="button" data-k="${k}" class="${"÷×−+".includes(k) ? "op" : k === "=" ? "eq" : "C()%".includes(k) ? "fn" : ""}">${k}</button>`).join("")}</div>
+      <button type="button" class="btn-3d calc-use" id="calcUse">Use this answer</button>
+    </div></div>`);
+  let cExpr = "", cLast = null;
+  const fmtNum = n => (Math.round(n * 100) / 100).toLocaleString("en-SG", { maximumFractionDigits: 2 });
+  function calcEval(src) {   // safe arithmetic parser: + − × ÷ ( ) % and decimals, no eval()
+    const t = src.replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-").match(/\d*\.?\d+|[-+*/()%]/g) || [];
+    let i = 0;
+    const peek = () => t[i], next = () => t[i++];
+    const prim = () => {
+      const x = next();
+      if (x === "-") return -prim();
+      if (x === "+") return prim();
+      if (x === "(") { const v = add(); if (next() !== ")") throw 0; return v; }
+      const n = parseFloat(x); if (isNaN(n)) throw 0;
+      if (peek() === "%") { next(); return n / 100; }
+      return n;
+    };
+    const mul = () => { let v = prim(); while (peek() === "*" || peek() === "/") { const o = next(), w = prim(); v = o === "*" ? v * w : v / w; } return v; };
+    const add = () => { let v = mul(); while (peek() === "+" || peek() === "-") { const o = next(), w = mul(); v = o === "+" ? v + w : v - w; } return v; };
+    const v = add(); if (i !== t.length || !isFinite(v)) throw 0; return v;
+  }
+  function calcShow(final) {
+    let v = null; try { v = cExpr ? calcEval(cExpr) : 0; } catch {}
+    $("#calcExpr").textContent = final ? cExpr + " =" : cExpr;
+    $("#calcVal").textContent = v === null ? (final ? "Error" : $("#calcVal").textContent) : fmtNum(v);
+    cLast = v;
+  }
+  $("#calcKeys").addEventListener("click", e => {
+    const k = e.target.closest("[data-k]")?.dataset.k; if (!k) return;
+    if (k === "C") cExpr = "";
+    else if (k === "=") { calcShow(true); if (cLast !== null) cExpr = String(Math.round(cLast * 100) / 100); return; }
+    else cExpr += k;
+    calcShow(false);
+  });
+  document.addEventListener("keydown", e => {
+    if (!$("#calc").classList.contains("show")) return;
+    const map = { "*": "×", "/": "÷", "-": "−", Enter: "=", "=": "=", Escape: "esc", Backspace: "bs", c: "C", C: "C" };
+    const k = map[e.key] || ("0123456789.+()%".includes(e.key) ? e.key : null); if (!k) return;
+    e.preventDefault();
+    if (k === "esc") return closeCalc();
+    if (k === "bs") { cExpr = cExpr.slice(0, -1); return calcShow(false); }
+    $(`#calcKeys [data-k="${k}"]`)?.click();
+  });
+  $("#calcUse").onclick = () => {
+    calcShow(false);
+    const inp = $("#ans");
+    if (inp && cLast !== null) { inp.value = String(Math.round(cLast * 100) / 100); }
+    closeCalc(); inp?.focus();
+  };
+  $("#calcClose").onclick = closeCalc; $("#calcScrim").onclick = closeCalc;
+  function openCalc() { if (!game?.calculator) return; $("#calc").classList.add("show"); $("#calcScrim").classList.add("show"); calcShow(false); }
+  function closeCalc() { $("#calc")?.classList.remove("show"); $("#calcScrim")?.classList.remove("show"); }
+
   function showSheet(type, html, autoHide) {
     clearTimeout(sheetTimer);
     const sh = $("#sheet");
@@ -1503,7 +1582,7 @@ function viewTeam() {
     }
     const status = game.status || "waiting";
     const confused = p?.hintStep === step && !done;
-    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null), JSON.stringify(game.intro?.url ? [game.intro.url, game.intro.urlLabel] : null)].join("|");
+    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null), JSON.stringify(game.intro?.url ? [game.intro.url, game.intro.urlLabel] : null), !!game.calculator].join("|");
     if (k === key) return;
     const wasDone = key && key.split("|")[3] === "true";
     key = k;
@@ -1531,11 +1610,14 @@ function viewTeam() {
          <form class="answer" id="ansForm" autocomplete="off">
            <div class="field">${numeric ? `<span class="prefix">$</span>` : ""}<input id="ans" ${numeric ? 'inputmode="decimal" placeholder="0.00"' : 'placeholder="Type your answer"'} enterkeyhint="send" aria-label="Your answer" required></div>
            <button class="btn-3d" id="sendBtn">Check answer</button>
-         </form>`}
+         </form>
+         ${game.calculator ? `<button type="button" class="calc-btn" id="calcBtn">🧮 Calculator</button>` : ""}`}
       ${ch.bill && ch.bill.show !== false ? `<details class="t-bill" id="billBox" ${billOpen ? "open" : ""}><summary><span>📄 ${esc(ch.name)}'s bill</span><span class="chev">${icon("chev")}</span></summary>${billHTML(ch)}</details>` : ""}
       ${(() => { const u = cleanUrl(introCard(game).url); return u ? `<a class="t-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${icon("link")}<span>${esc(introCard(game).urlLabel || "Useful link")}<small>${esc(u.replace(/^https?:\/\//, ""))}</small></span>${icon("ext")}</a>` : ""; })()}`;
     $("#billBox")?.addEventListener("toggle", e => { billOpen = e.target.open; });
     $("#sitBtn").onclick = () => { sitOpen = !sitOpen; $("#sit").hidden = !sitOpen; $("#sitBtn").setAttribute("aria-expanded", sitOpen); };
+    $("#calcBtn")?.addEventListener("click", openCalc);
+    if (!game.calculator) closeCalc();
     const form = $("#ansForm");
     if (form) form.onsubmit = e => { e.preventDefault(); submit($("#ans").value); };
     if (done && !wasDone) confetti($("#doneCard"), 60);
@@ -1693,6 +1775,7 @@ function viewAdmin() {
           <button data-status="paused" class="${st === "paused" ? "on" : ""}">${icon("pause")}Pause</button>
         </div>
         <label class="switch"><input type="checkbox" id="reveal" ${game?.reveal ? "checked" : ""}><span class="track"></span>Reveal answers</label>
+        <label class="switch" title="Show a calculator on team phones"><input type="checkbox" id="allowCalc" ${game?.calculator ? "checked" : ""}><span class="track"></span>Allow calculator</label>
         <div class="spacer"></div>
         <button class="btn sm ghost" id="resync" title="Copy the latest version of each assigned character from the library">${icon("refresh")}Re-sync</button>
         <button class="btn sm danger" id="resetAll">${icon("rotate")}Reset all progress</button>`;
@@ -1711,6 +1794,7 @@ function viewAdmin() {
       if (e.target.closest("#resync")) resync();
     });
     $("#gameCtl").addEventListener("change", e => {
+      if (e.target.id === "allowCalc") DB.merge(GAME, { calculator: e.target.checked }).then(() => toast(e.target.checked ? "Calculator is now available on team phones." : "Calculator removed from team phones.", "info")).catch(showError);
       if (e.target.id === "reveal") DB.merge(GAME, { reveal: e.target.checked }).then(() => toast(e.target.checked ? "Answers revealed on the main screen." : "Answers hidden.", "info")).catch(showError);
     });
 
