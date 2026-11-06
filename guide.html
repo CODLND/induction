@@ -77,7 +77,7 @@
 </head>
 <body>
 <header><div class="hd">
-  <div class="logo">🏥</div><b>Admin guide</b><span>Healthcare Bill Challenge</span>
+  <div class="logo">🏥</div><b>Admin guide</b><span data-game-title>Healthcare Bill Challenge</span>
   <div class="sp"></div>
   <a class="btn ghost" href="healthcare.html?view=display" target="_blank">Main screen ↗</a>
   <a class="btn" href="healthcare.html?view=admin">Back to admin</a>
@@ -101,7 +101,7 @@
 
   <main>
     <div class="hero">
-      <h1>Running the Healthcare Bill Challenge</h1>
+      <h1>Running <span data-game-title>the Healthcare Bill Challenge</span></h1>
       <p>Everything a facilitator needs: preparing characters and bills, running the game on the projector, and walking the class through the answers.</p>
       <div class="links">
         <a href="https://codlnd.github.io/induction/healthcare.html?view=admin">⚙️ Admin page</a>
@@ -305,8 +305,33 @@
       </table>
     </section>
 
-    <footer>Healthcare Bill Challenge · Admin guide · <a href="healthcare.html?view=admin">Back to admin</a></footer>
+    <footer><span data-game-title>Healthcare Bill Challenge</span> · Admin guide · <a href="healthcare.html?view=admin">Back to admin</a></footer>
   </main>
 </div>
+<script type="module">
+/* Show the game title set in admin (Main screen heading) instead of the default. Read-only. */
+const firebaseConfig = {
+  apiKey: "AIzaSyARCoY6TQUKDghViUafeNMpxIPD_ZyzekA",
+  authDomain: "induction-5725a.firebaseapp.com",
+  projectId: "induction-5725a",
+  storageBucket: "induction-5725a.firebasestorage.app",
+  messagingSenderId: "538687322070",
+  appId: "1:538687322070:web:f64d09f0c8f8903b29d677"
+};
+const DEFAULT_TITLE = "Healthcare Bill Challenge";
+function applyTitle(t) {
+  t = String(t || "").trim() || DEFAULT_TITLE;
+  document.querySelectorAll("[data-game-title]").forEach(el => {
+    el.textContent = el.closest("h1") ? (t === DEFAULT_TITLE ? "the " + t : t) : t;
+  });
+  document.title = "Admin Guide · " + t;
+}
+try {
+  const base = "https://www.gstatic.com/firebasejs/10.12.2/";
+  const [{ initializeApp }, fs] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-firestore.js")]);
+  const db = fs.getFirestore(initializeApp(firebaseConfig));
+  fs.onSnapshot(fs.doc(db, "hc_game/state"), snap => applyTitle(snap.exists() ? snap.data().title : ""), () => {});
+} catch (e) { console.warn("Couldn't load the game title; showing the default.", e); }
+</script>
 </body>
 </html>
