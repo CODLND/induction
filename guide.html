@@ -70,6 +70,13 @@
   .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; align-items: start; }
   .shots.phone { grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); justify-content: center; }
   .shots figure.shot { margin: 6px 0; }
+  .tl { list-style: none; padding: 0; margin: 10px 0; border-left: 3px solid var(--brand-100); }
+  .tl li { position: relative; padding: 2px 0 12px 20px; margin: 0; }
+  .tl li::before { content: ""; position: absolute; left: -8px; top: 7px; width: 13px; height: 13px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 3px var(--surface); }
+  .tl b.when { display: inline-block; min-width: 92px; color: var(--brand-700); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+  td code { word-break: break-all; }
+  .prompt { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 10px; padding: 12px 14px; margin: 10px 0; font-size: 14px; color: var(--text); white-space: pre-line; }
+  .prompt small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
   footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
   @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } nav.toc { position: static; } .hd span { display: none; } section { padding: 18px; } .hero { padding: 22px; } .hero h1 { font-size: 24px; } }
   @media print { header, nav.toc { display: none; } .wrap { display: block; } section, .hero { box-shadow: none; break-inside: avoid; } body { background: #fff; } }
@@ -97,6 +104,7 @@
     <a href="#shortcuts">Hidden controls</a>
     <a href="#after">After the session</a>
     <a href="#trouble">Troubleshooting</a>
+    <a href="#built">How this app was built</a>
   </nav>
 
   <main>
@@ -303,6 +311,87 @@
         <tr><td>The main screen shows "No game has been set up yet"</td><td>Open admin once; it creates the game automatically. Then assign characters.</td></tr>
         <tr><td>Something looks stuck</td><td>Refresh the page. All progress is saved online, so nothing is lost.</td></tr>
       </table>
+    </section>
+
+
+    <section id="built">
+      <h2><span class="n">🛠</span>How this app was built</h2>
+      <p class="lead">This app was built over two days by a non-programmer working with AI assistants. Nobody wrote the code by hand: it came from describing what was needed, testing it, and giving feedback. This section explains the process so you can build something similar.</p>
+
+      <h3>The toolkit</h3>
+      <div class="grid">
+        <div class="card"><b>🤖 Claude Code</b><p>An AI coding assistant. It wrote all the code from plain-English requests, tested every change in a hidden browser, took the screenshots in this guide, researched the MOH/CPF figures and published each update.</p></div>
+        <div class="card"><b>🎨 Gemini</b><p>Google's AI image generator. It drew the pixel-art characters and their animation frames from written prompts.</p></div>
+        <div class="card"><b>🔥 Firebase (Firestore)</b><p>A free Google database that syncs instantly. It keeps the projector, phones and admin page in step.</p></div>
+        <div class="card"><b>🐙 GitHub</b><p>Stores the code with its full history and hosts the website for free (GitHub Pages). Every saved change goes live automatically.</p></div>
+      </div>
+      <p>The whole app is <b>one HTML file</b>, <code>healthcare.html</code>, with no special software or build steps. That makes it easy to host anywhere and easy for an AI assistant to read and change.</p>
+
+      <h3>From sketch to today</h3>
+      <div class="shots"><figure class="shot"><a href="guide-img/build-sketch.jpg" target="_blank" title="Open full size"><img src="guide-img/build-sketch.jpg" alt="1 · The starting point: a PowerPoint sketch of the main screen." loading="lazy"></a><figcaption>1 · The starting point: a PowerPoint sketch of the main screen.</figcaption></figure><figure class="shot"><a href="guide-img/build-v1.jpg" target="_blank" title="Open full size"><img src="guide-img/build-v1.jpg" alt="2 · Version 1, a few hours later: working game, simple drawn figures." loading="lazy"></a><figcaption>2 · Version 1, a few hours later: working game, simple drawn figures.</figcaption></figure></div>
+      <div class="shots"><figure class="shot"><a href="guide-img/build-v2.jpg" target="_blank" title="Open full size"><img src="guide-img/build-v2.jpg" alt="3 · Pixel-art characters and the redesigned interface." loading="lazy"></a><figcaption>3 · Pixel-art characters and the redesigned interface.</figcaption></figure><figure class="shot"><a href="guide-img/screen-live.jpg" target="_blank" title="Open full size"><img src="guide-img/screen-live.jpg" alt="4 · Today: backgrounds, softer colours, medals and live progress." loading="lazy"></a><figcaption>4 · Today: backgrounds, softer colours, medals and live progress.</figcaption></figure></div>
+
+      <h3>The journey, step by step</h3>
+      <ul class="tl">
+        <li><b class="when">Day 1 am</b> <b>Idea and first version.</b> Described the game in a few paragraphs, attached the sketch, and asked for one HTML file. Claude Code built the main screen, team phone page and admin page, plus answer checking, hints and a debrief switch.</li>
+        <li><b class="when">Day 1 am</b> <b>Going online.</b> Created a free Firebase project (database and security rules), connected GitHub, and set up automatic publishing. Dropped the admin login in favour of a hidden admin shortcut.</li>
+        <li><b class="when">Day 1 am</b> <b>Characters, round 1.</b> Added a 5-level skin tone picker. Wrote detailed Gemini prompts for 6 pixel-art characters (teen, adult and elderly; male and female), each with 16 animation frames.</li>
+        <li><b class="when">Day 1 mid</b> <b>Characters, round 2.</b> Gemini's sheets needed clean-up, so a small script was written to remove the background and repair the frames. Then the whole interface was redesigned using ideas from popular apps: Kahoot-style game cards, Duolingo-style phone feedback, and a Notion/Linear-style admin page.</li>
+        <li><b class="when">Day 1 pm</b> <b>Facilitator features.</b> Editable opening and thank-you lines; 8 Singapore backgrounds; the flip-card answer walkthrough; an editable heading; per-character medical bills; animations that no longer move in sync; softer colour themes; and the intro card.</li>
+        <li><b class="when">Day 2</b> <b>Polish and real data.</b> Wrote this guide and added screenshots. Moved the site to GitHub Pages after the org blocked the original address. Rebuilt the sample patients from official MOH and CPF figures.</li>
+      </ul>
+
+      <h3>How the graphics evolved</h3>
+      <ol>
+        <li><b>Drawn figures:</b> simple silhouettes drawn in code, with faces that change from worried to happy.</li>
+        <li><b>Skin tones:</b> a 5-level picker, so characters can reflect Singapore's diversity.</li>
+        <li><b>Pixel-art sprites:</b> Gemini drew each character as a 4×4 sheet of frames: talking, impatient, emotions and celebrating. The prompts asked for:
+          <ul>
+            <li>a fixed style description, repeated in every prompt</li>
+            <li><b>two exact skin colours</b>, so the app can recolour skin</li>
+            <li>a <b>solid magenta background</b>, so it can be removed</li>
+          </ul>
+          The full prompts are in <a href="https://github.com/CODLND/induction/blob/main/CHARACTER_ART_PROMPTS.md" target="_blank">CHARACTER_ART_PROMPTS.md</a>.</li>
+        <li><b>Clean-up script:</b> AI images are never perfect. Some frames were cut off at the waist, overlapped their neighbours, or were drawn at slightly different sizes. A script (<code>tools/build_sprites.py</code>):
+          <ul>
+            <li>removes the background</li>
+            <li>separates the frames</li>
+            <li>gives cut-off frames their legs back</li>
+            <li>lines every frame up on the same baseline</li>
+          </ul></li>
+        <li><b>Animation:</b> frames play as loops: talking when a question appears, foot-tapping when idle, head-scratching after a wrong answer, cheering at the end. Later, random timing was added so characters don't move in sync.</li>
+        <li><b>Backgrounds:</b> 8 local scenes (hospital ward, polyclinic, HDB flat, void deck, park, hawker centre, MRT platform and HDB estate), drawn in code in the same pixel style.</li>
+        <li><b>Colours:</b> the bright white look was toned down to a softer "Mist" theme, which is easier on the eyes on a projector.</li>
+      </ol>
+      <div class="shots"><figure class="shot"><a href="guide-img/build-gemini-raw.jpg" target="_blank" title="Open full size"><img src="guide-img/build-gemini-raw.jpg" alt="Gemini's raw sprite sheet: magenta background, with some rows cut off at the waist." loading="lazy"></a><figcaption>Gemini's raw sprite sheet: magenta background, with some rows cut off at the waist.</figcaption></figure><figure class="shot"><a href="guide-img/build-sprites-clean.jpg" target="_blank" title="Open full size"><img src="guide-img/build-sprites-clean.jpg" alt="After the clean-up script: transparent, aligned, with every frame complete." loading="lazy"></a><figcaption>After the clean-up script: transparent, aligned, with every frame complete.</figcaption></figure></div>
+
+      <h3>Build your own: a starter recipe</h3>
+      <ol class="steps">
+        <li><b>Sketch it first.</b> Draw the main screen in PowerPoint or on paper. Decide who uses it (facilitator, participants) and on which device (projector, phones).</li>
+        <li><b>Describe it in plain words.</b> Tell an AI coding assistant what happens on each screen, attach your sketch, and ask for <b>one simple HTML file</b> to start with.</li>
+        <li><b>Test early, then give small, specific feedback.</b> For example, "the admin title doesn't change when I change the main screen title". One or two changes at a time works best, and a screenshot helps.</li>
+        <li><b>Add a database only when you need live updates.</b> A free Firebase project is enough for workshop-sized games.</li>
+        <li><b>Use GitHub from day one.</b> It keeps every version and can publish the site for free.</li>
+        <li><b>Make the art separately.</b> Use an image AI with strict, repeatable prompt rules, and expect to clean up the results.</li>
+        <li><b>Check the facts.</b> For anything official (policy figures, rates), ask the assistant to cite official sources, then have a subject expert review the result.</li>
+        <li><b>Write a guide</b> so other facilitators can run it without you.</li>
+      </ol>
+
+      <h3>Example prompts from this build</h3>
+      <div class="prompt"><small>The first request</small>"I want to create a game based on common healthcare scenarios in Singapore, played in an induction setting… Each team will be given a hardcopy bill for their character… Each character will have its own QR code… Help me create a healthcare.html file."</div>
+      <div class="prompt"><small>A feature request</small>"Below each character, make a way for the admin to click the progress bar 5 times, and that will flip the card to show the questions. Clicking the card reveals each answer one by one, with the calculation below."</div>
+      <div class="prompt"><small>A bug report</small>"Small bug: the admin page title doesn't change when I change the main screen title. Make it the same." (with a screenshot)</div>
+
+      <h3>Lessons learned</h3>
+      <ul>
+        <li><b>Specific feedback gets specific results.</b> Screenshots with the problem circled were the fastest way to fix things.</li>
+        <li><b>Check your organisation's network early.</b> The first web address (<code>web.app</code>) was blocked at work, so the site moved to <code>github.io</code>.</li>
+        <li><b>AI art needs rules and a clean-up step.</b> Exact colours, a solid background and a fixed grid made Gemini's output usable.</li>
+        <li><b>Verify numbers.</b> AI search summaries sometimes disagree. Only figures confirmed by both MOH and CPF pages were used, and a short list of assumptions was flagged for experts to check.</li>
+        <li><b>Keep it simple.</b> One file plus free services means no servers to maintain and nothing to install.</li>
+        <li><b>Mind the data.</b> With no login, anyone with the link could change the game, so it holds no personal or sensitive information.</li>
+      </ul>
+      <div class="tip">📂 The full source code, with its history of every change, is on GitHub: <a href="https://github.com/CODLND/induction" target="_blank">github.com/CODLND/induction</a>.</div>
     </section>
 
     <footer><span data-game-title>Healthcare Bill Challenge</span> · Admin guide · <a href="healthcare.html?view=admin">Back to admin</a></footer>
