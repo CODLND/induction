@@ -326,6 +326,9 @@
   .field { display: flex; align-items: center; background: var(--surface); border: 2px solid var(--line); border-radius: var(--r); padding: 0 16px; transition: border-color .15s, box-shadow .15s; }
   .field:focus-within { border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-100); }
   .field .prefix { font-size: 22px; font-weight: 800; color: var(--subtle); margin-right: 6px; }
+  .field .suffix { font-size: 18px; font-weight: 800; color: var(--subtle); margin-left: 8px; white-space: nowrap; }
+  .grid-ans { display: grid; grid-template-columns: 2fr 1.1fr 0.9fr 0.9fr; gap: 12px; }
+  @media (max-width: 640px) { .grid-ans { grid-template-columns: 1fr 1fr; } }
   .field input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 22px; font-weight: 700; height: 60px; color: var(--ink); }
   .field input::placeholder { color: var(--subtle); font-weight: 600; }
   .btn-3d { width: 100%; height: 56px; margin-top: 12px; border: none; border-radius: var(--r); font-size: 17px; font-weight: 800; letter-spacing: .02em; cursor: pointer; color: #fff; background: var(--brand); box-shadow: 0 4px 0 var(--brand-700); transition: transform .08s, box-shadow .08s, filter .15s; }
@@ -737,6 +740,9 @@ function toNum(s) {
 }
 const normText = s => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 function checkAnswer(input, q) {
+  const u = qUnit(q);
+  if (u) input = String(input ?? "").replace(new RegExp(u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*$", "i"), "").trim();
+  input = String(input ?? "").replace(/%\s*$/, "");
   const alts = String(q?.answer ?? "").split("|").map(s => s.trim()).filter(Boolean);
   const tol = Math.abs(parseFloat(q?.tolerance)) || 0;
   const n = toNum(input);
@@ -817,25 +823,34 @@ const DEFAULT_SUB = "Help each patient make sense of their hospital bill";
 const gameTitle = g => String(g?.title || "").trim() || DEFAULT_TITLE;
 const gameSub = g => { const t = String(g?.subtitle || "").trim(); return t === "-" ? "" : t || DEFAULT_SUB; };
 const isNumericQ = q => !!q && toNum(String(q.answer).split("|")[0]) !== null;
+/* Answer type per question: "money" ($ in front), "number" (optional unit after, e.g. % or days) or "text".
+   Questions saved before this setting existed: numeric answers count as money, everything else as text. */
+const ANSWER_TYPES = [["money", "Money ($)"], ["number", "Number"], ["text", "Text"]];
+const answerType = q => ["money", "number", "text"].includes(q?.type) ? q.type : (isNumericQ(q) ? "money" : "text");
+const qUnit = q => answerType(q) === "number" ? String(q?.unit || "").trim() : "";
 const displayAnswer = q => {
   const alts = String(q?.answer ?? "").split("|").map(s => s.trim()).filter(Boolean);
   if (!alts.length) return "—";
-  const first = alts[0], n = toNum(first);
-  return n !== null && !/[a-z]/i.test(first.replace(/sgd/i, "")) ? "$" + n.toLocaleString("en-SG", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) : first;
+  const first = alts[0], n = toNum(first), type = answerType(q);
+  if (n === null || type === "text") return first;
+  const num = n.toLocaleString("en-SG", { minimumFractionDigits: type === "money" && n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+  if (type === "money") return "$" + num;
+  const u = qUnit(q);
+  return u ? (/^[%°]/.test(u) ? num + u : num + " " + u) : num;
 };
 
 /* ---------- default questions & sample characters ---------- */
 const DEFAULT_QUESTIONS = () => [
-  { q: "Am I eligible for subsidies?", answer: "Yes|Y", tolerance: 0,
+  { q: "Am I eligible for subsidies?", answer: "Yes|Y", tolerance: 0, type: "text",
     hint: "Check the ward class and the patient's citizenship on the bill. Subsidies apply to Singapore Citizens and PRs in subsidised wards (B2/C) at public healthcare institutions.",
     explain: "" },
-  { q: "How much is MediShield Life covering?", answer: "", tolerance: 0,
+  { q: "How much is MediShield Life covering?", answer: "", tolerance: 0, type: "money",
     hint: "Look for the MediShield Life line in the payment breakdown. Remember the deductible and co-insurance are paid first.",
     explain: "" },
-  { q: "How much of my MediSave can I use?", answer: "", tolerance: 0,
+  { q: "How much of my MediSave can I use?", answer: "", tolerance: 0, type: "money",
     hint: "Find the MediSave line in the payment section. MediSave withdrawal limits depend on the length of stay and type of treatment.",
     explain: "" },
-  { q: "How much do I have to pay out of pocket?", answer: "", tolerance: 0,
+  { q: "How much do I have to pay out of pocket?", answer: "", tolerance: 0, type: "money",
     hint: "Out of pocket (cash) = bill after subsidy − MediShield Life − MediSave (− any other payments).",
     explain: "" },
 ];
@@ -856,7 +871,7 @@ function sampleBill(hospital, ward, admitted, discharged, lines) {
     lines: lines.map(([label, amount, kind = "item", note = ""]) => ({ label, amount, kind, note })) });
 }
 function sampleCharacters() {
-  const Q = (q, answer, hint, explain) => ({ q, answer, hint, explain, tolerance: 0.5 });
+  const Q = (q, answer, hint, explain) => ({ q, answer, hint, explain, tolerance: 0.5, type: /^(yes|no)\b/i.test(answer) ? "text" : "money", unit: "" });
   return [
     { name: "Mr Tan", age: 68, gender: "male", skin: 2, bg: "void-deck",
       situation: "Singapore Citizen, retired. 6 days in a B2 ward for severe pneumonia. Household income: $2,200 per person a month. No Integrated Shield Plan.",
@@ -1588,7 +1603,7 @@ function viewTeam() {
     key = k;
     const mood = done ? "joy" : confused ? "confused" : status !== "live" ? "talk" : moodByProgress(step, total);
     const q = qs[step];
-    const numeric = isNumericQ(q);
+    const aType = answerType(q), numeric = aType !== "text", unit = qUnit(q);
     root.innerHTML = `
       <header class="t-top">
         <div class="t-team">${esc(s.teamName || `Team ${slot + 1}`)}</div>
@@ -1608,7 +1623,7 @@ function viewTeam() {
       : status !== "live" ? `<div class="t-state"><span class="emoji">${status === "paused" ? "⏸️" : "📄"}</span><h2>${status === "paused" ? "Game paused" : "Get your bill ready"}</h2><p>${status === "paused" ? "Hang tight, the facilitator will resume shortly." : "The facilitator will start the game in a moment. Read your patient's bill while you wait."}</p></div>`
       : `<div class="q-card"><div class="q-label">Question ${step + 1} of ${total}</div><div class="q-text">${esc(q.q)}</div></div>
          <form class="answer" id="ansForm" autocomplete="off">
-           <div class="field">${numeric ? `<span class="prefix">$</span>` : ""}<input id="ans" ${numeric ? 'inputmode="decimal" placeholder="0.00"' : 'placeholder="Type your answer"'} enterkeyhint="send" aria-label="Your answer" required></div>
+           <div class="field">${aType === "money" ? `<span class="prefix">$</span>` : ""}<input id="ans" ${aType === "money" ? 'inputmode="decimal" placeholder="0.00"' : aType === "number" ? 'inputmode="decimal" placeholder="0"' : 'placeholder="Type your answer"'} enterkeyhint="send" aria-label="Your answer" required>${unit ? `<span class="suffix">${esc(unit)}</span>` : ""}</div>
            <button class="btn-3d" id="sendBtn">Check answer</button>
          </form>
          ${game.calculator ? `<button type="button" class="calc-btn" id="calcBtn">🧮 Calculator</button>` : ""}`}
@@ -1800,7 +1815,7 @@ function viewAdmin() {
 
     const snapshot = ch => ({
       name: ch.name || "", age: ch.age ?? "", gender: ch.gender || "male", skin: +ch.skin || DEFAULT_SKIN, situation: ch.situation || "", intro: ch.intro || "", outro: ch.outro || "", bg: SCENES[ch.bg] ? ch.bg : "", bill: cleanBill(ch.bill),
-      questions: (ch.questions || []).map(q => ({ q: q.q || "", answer: q.answer || "", hint: q.hint || "", explain: q.explain || "", tolerance: +q.tolerance || 0 })),
+      questions: (ch.questions || []).map(q => ({ q: q.q || "", answer: q.answer || "", hint: q.hint || "", explain: q.explain || "", tolerance: +q.tolerance || 0, type: answerType(q), unit: answerType(q) === "number" ? String(q.unit || "").trim() : "" })),
       updatedAt: Date.now(),
     });
     async function resync(onlyId) {
@@ -2155,7 +2170,8 @@ function viewAdmin() {
     }
     function qSummary(q) {
       const bits = [];
-      bits.push(q.answer ? `Answer: ${q.answer}` : "No answer yet");
+      bits.push(q.answer ? `Answer: ${displayAnswer(q)}` : "No answer yet");
+      bits.push({ money: "Money", number: "Number", text: "Text" }[answerType(q)]);
       if (q.hint) bits.push("hint ✓");
       if (q.explain) bits.push("debrief ✓");
       return bits.join(" · ");
@@ -2174,10 +2190,13 @@ function viewAdmin() {
           </div>
           <div class="q-body">
             <label class="flabel">Question the character asks<input class="input" data-qi="${i}" data-qf="q" value="${esc(q.q)}" placeholder="e.g. How much is MediShield Life covering?"></label>
-            <div class="grid2">
+            <div class="grid-ans">
               <label class="flabel">Correct answer(s)<input class="input" data-qi="${i}" data-qf="answer" value="${esc(q.answer)}" placeholder="e.g. 1200   or   Yes|Y"></label>
-              <label class="flabel">Allowed ± margin<input class="input" data-qi="${i}" data-qf="tolerance" type="number" min="0" step="0.01" value="${esc(q.tolerance || 0)}"></label>
+              <label class="flabel">Answer type<select class="select" data-qi="${i}" data-qf="type">${ANSWER_TYPES.map(([v, l]) => `<option value="${v}" ${answerType(q) === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+              <label class="flabel">Unit${answerType(q) === "number" ? "" : " (Number only)"}<input class="input" data-qi="${i}" data-qf="unit" value="${esc(q.unit || "")}" placeholder="e.g. % or days" ${answerType(q) === "number" ? "" : "disabled"}></label>
+              <label class="flabel">Allowed ± margin<input class="input" data-qi="${i}" data-qf="tolerance" type="number" min="0" step="0.01" value="${esc(q.tolerance || 0)}" ${answerType(q) === "text" ? "disabled" : ""}></label>
             </div>
+            <p class="help" style="margin:-4px 0 0">Money shows a <b>$</b> before the answer box. Number can show a unit after it, such as <b>%</b> or <b>days</b>. Text shows a normal keyboard, for answers like Yes/No or B2.</p>
             <label class="flabel">Hint (shown after a wrong answer)<textarea class="textarea" data-qi="${i}" data-qf="hint" rows="2">${esc(q.hint)}</textarea></label>
             <label class="flabel">Debrief explanation (optional)<textarea class="textarea" data-qi="${i}" data-qf="explain" rows="2" placeholder="Shown when you reveal answers">${esc(q.explain)}</textarea></label>
             <div class="row" style="justify-content:flex-end"><button type="button" class="btn sm danger" data-delq="${i}">${icon("trash")}Remove question</button></div>
@@ -2192,6 +2211,7 @@ function viewAdmin() {
       if (t.dataset.qf) {
         const i = +t.dataset.qi;
         draft.questions[i][t.dataset.qf] = t.dataset.qf === "tolerance" ? (+t.value || 0) : t.value;
+        if (t.dataset.qf === "type") { renderQList(); return; }
         const item = t.closest(".qitem");
         item.querySelector(".q-sum b").textContent = draft.questions[i].q || "New question";
         item.querySelector(".q-sum small").textContent = qSummary(draft.questions[i]);
@@ -2205,7 +2225,7 @@ function viewAdmin() {
       if (b.dataset.act === "close") return closeEditor();
       if (b.dataset.act === "save") return saveDraft();
       if (b.dataset.act === "addq") {
-        const q = { q: "", answer: "", hint: "", explain: "", tolerance: 0, _k: Math.random().toString(36).slice(2) };
+        const q = { q: "", answer: "", hint: "", explain: "", tolerance: 0, type: "money", unit: "", _k: Math.random().toString(36).slice(2) };
         qs.push(q); openQs.add(q._k); renderQList();
         const last = $("#qlist").lastElementChild; last?.scrollIntoView({ behavior: "smooth", block: "center" }); last?.querySelector("input")?.focus();
         return;

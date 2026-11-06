@@ -178,6 +178,13 @@
         <li><b>Numbers:</b> <code>$1,200</code>, <code>1200</code> and <code>1200.00</code> all match <code>1200</code>. The <b>± margin</b> accepts close answers; for example, a margin of 1 accepts anything from 1199 to 1201.</li>
         <li><b>Words:</b> case and punctuation are ignored.</li>
         <li><b>Several right answers:</b> separate them with <code>|</code>, for example <code>Yes|Y</code>.</li>
+        <li><b>Answer type</b> controls the answer box on the phone and how the answer shows in the debrief:
+          <ul>
+            <li><b>Money:</b> a <code>$</code> before the box, shown as $1,200.</li>
+            <li><b>Number:</b> no <code>$</code>, with an optional <b>Unit</b> after the box (for example <code>%</code> or <code>days</code>), shown as 34% or 6 days. Teams can type the unit or leave it out.</li>
+            <li><b>Text:</b> a normal keyboard, for answers like Yes/No or B2.</li>
+          </ul>
+          Questions made before this setting existed count as Money if the answer is a number, and Text otherwise.</li>
       </ul>
       <div class="tip">💡 Use <span class="ui">Duplicate</span> on a character card to make a variation quickly. Use <span class="ui">Export</span> and <span class="ui">Import</span> to back up your library or share it with another facilitator.</div>
     </section>
@@ -247,7 +254,7 @@
       <h2><span class="n">5</span>What teams see on their phones</h2>
       <ul>
         <li>A <b>step progress bar</b>, their character, and the <b>medical situation</b> (tap to expand).</li>
-        <li>The current question and a large answer box. Money questions show a <code>$</code> in front.</li>
+        <li>The current question and a large answer box. Money questions show a <code>$</code> in front, and Number questions can show a unit after it, such as <code>%</code>.</li>
         <li><b>Right answer:</b> a green "Correct!" panel slides up. <b>Wrong answer:</b> an amber "Hmm… are you sure?" panel shows with the <b>hint</b> and a <span class="ui">Try again</span> button.</li>
         <li>A <b>🧮 Calculator</b> button, if you've allowed it in admin.</li>
         <li>The <b>bill</b> below the answer box, and the intro card's <b>link button</b> if you set one.</li>
