@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1b6082">
+<title>Admin Guide · Healthcare Bill Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #1b6082; --brand-700: #0f3a50; --brand-50: #e3eff4; --brand-100: #d6eaf3;
+    --ink: #0f172a; --text: #1e293b; --muted: #5b6b7a;
+    --line: #cfdbe0; --bg: #dde7eb; --surface: #f6f9fa; --surface-2: #ecf2f4;
+    --ok: #16a34a; --ok-50: #ecfdf3; --warn: #b45309; --warn-50: #fffbeb;
+    --r: 16px; --sh: 0 2px 6px rgba(15,23,42,.05), 0 10px 30px rgba(15,23,42,.08);
+    --font: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); font-weight: 600; }
+  header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--surface) 85%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .hd { max-width: 1160px; margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--brand); display: grid; place-items: center; font-size: 18px; }
+  .hd b { color: var(--ink); font-size: 16px; } .hd span { color: var(--muted); font-size: 14px; }
+  .hd .sp { flex: 1; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; background: var(--brand); color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
+  .btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--line); }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 24px 20px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; }
+  nav.toc { position: sticky; top: 76px; align-self: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; box-shadow: var(--sh); font-size: 14px; }
+  nav.toc b { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px 6px; }
+  nav.toc a { display: block; padding: 6px 8px; border-radius: 8px; color: var(--text); text-decoration: none; font-weight: 600; }
+  nav.toc a:hover { background: var(--brand-50); color: var(--brand-700); }
+  main { min-width: 0; }
+  .hero { background: linear-gradient(135deg, var(--brand) 0%, #2a7aa1 100%); color: #fff; border-radius: 22px; padding: 28px 30px; box-shadow: var(--sh); margin-bottom: 22px; }
+  .hero h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -.02em; line-height: 1.15; }
+  .hero p { margin: 0; opacity: .92; font-size: 16px; max-width: 720px; }
+  .links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .links a { background: rgba(255,255,255,.16); color: #fff; padding: 8px 12px; border-radius: 10px; text-decoration: none; font-size: 14px; }
+  .links a:hover { background: rgba(255,255,255,.26); }
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px 26px; margin-bottom: 18px; box-shadow: var(--sh); }
+  h2 { margin: 0 0 4px; font-size: 21px; color: var(--ink); letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
+  h2 .n { width: 30px; height: 30px; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-size: 14px; flex: 0 0 auto; }
+  h3 { margin: 18px 0 6px; font-size: 16px; color: var(--ink); }
+  .lead { color: var(--muted); margin: 0 0 12px; }
+  ol, ul { padding-left: 22px; margin: 8px 0; } li { margin: 4px 0; }
+  kbd { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: #fff; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+  .ui { font-weight: 700; color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--surface-2); }
+  .tip, .warn { border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 14px; }
+  .tip { background: var(--brand-50); border: 1px solid var(--brand-100); color: var(--brand-700); }
+  .warn { background: var(--warn-50); border: 1px solid #fde4b0; color: #7c4a03; }
+  .steps { counter-reset: s; list-style: none; padding: 0; }
+  .steps > li { counter-increment: s; position: relative; padding: 2px 0 10px 42px; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .card b { display: block; color: var(--ink); margin-bottom: 4px; }
+  .card p { margin: 0; font-size: 14px; color: var(--muted); }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } nav.toc { position: static; } .hd span { display: none; } section { padding: 18px; } .hero { padding: 22px; } .hero h1 { font-size: 24px; } }
+  @media print { header, nav.toc { display: none; } .wrap { display: block; } section, .hero { box-shadow: none; break-inside: avoid; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<header><div class="hd">
+  <div class="logo">🏥</div><b>Admin guide</b><span>Healthcare Bill Challenge</span>
+  <div class="sp"></div>
+  <a class="btn ghost" href="healthcare.html?view=display" target="_blank">Main screen ↗</a>
+  <a class="btn" href="healthcare.html?view=admin">Back to admin</a>
+</div></header>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents">
+    <b>Contents</b>
+    <a href="#overview">Overview</a>
+    <a href="#quick">Quick start</a>
+    <a href="#characters">Characters</a>
+    <a href="#bill">Medical bill</a>
+    <a href="#live">Setting up a session</a>
+    <a href="#screen">Main screen</a>
+    <a href="#teams">What teams see</a>
+    <a href="#debrief">Debrief</a>
+    <a href="#shortcuts">Hidden controls</a>
+    <a href="#after">After the session</a>
+    <a href="#trouble">Troubleshooting</a>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>Running the Healthcare Bill Challenge</h1>
+      <p>Everything a facilitator needs: preparing characters and bills, running the game on the projector, and walking the class through the answers.</p>
+      <div class="links">
+        <a href="healthcare.html?view=admin">⚙️ Admin page</a>
+        <a href="healthcare.html?view=display" target="_blank">📺 Main screen</a>
+        <a href="#shortcuts">⌨️ Hidden controls</a>
+      </div>
+    </div>
+
+    <section id="overview">
+      <h2><span class="n">i</span>Overview</h2>
+      <p class="lead">The game has three screens. They all update live, within about a second.</p>
+      <div class="grid">
+        <div class="card"><b>📺 Main screen</b><p>Projected for the room. Shows the 4 patient characters, their questions, each team's progress and a QR code per team.</p></div>
+        <div class="card"><b>📱 Team page</b><p>Opened on phones by scanning a character's QR code. Teams read the bill and type answers here.</p></div>
+        <div class="card"><b>⚙️ Admin</b><p>For the facilitator: create characters, assign them to teams, start or pause the game, and reveal answers.</p></div>
+      </div>
+      <h3>How a round works</h3>
+      <ol>
+        <li>Each team gets a patient character (and usually a printed bill).</li>
+        <li>The character asks questions, for example "How much is MediShield Life covering?".</li>
+        <li>A <b>right answer</b> moves the team to the next question, and the character gets happier.</li>
+        <li>A <b>wrong answer</b> makes the character confused ("Hmm… are you sure?") and shows a hint.</li>
+        <li>The first team to answer everything gets 🥇. Then you go through the answers with the class.</li>
+      </ol>
+    </section>
+
+    <section id="quick">
+      <h2><span class="n">⚡</span>Quick start (5 minutes)</h2>
+      <ol class="steps">
+        <li>Open the <a href="healthcare.html?view=admin">admin page</a>. From the main screen, triple-click the 🏥 icon or press <kbd>Shift</kbd>+<kbd>A</kbd>.</li>
+        <li>Go to the <span class="ui">Characters</span> tab. Click <span class="ui">Add samples</span> to get 4 ready-made patients, or click <span class="ui">New character</span> to make your own.</li>
+        <li>Go to the <span class="ui">Live game</span> tab. Pick a character and type a team name for each of the 4 teams.</li>
+        <li>Open the <span class="ui">Main screen</span> on the projector, then press <kbd>F</kbd> for full screen.</li>
+        <li>When everyone is ready, click <span class="ui">▶ Live</span>. Teams scan their QR code and start answering.</li>
+        <li>At the end, flip each card to go through the answers (see <a href="#debrief">Debrief</a>). Then click <span class="ui">Reset all progress</span> before the next class.</li>
+      </ol>
+      <div class="warn">⚠️ The sample characters use <b>illustrative figures</b>. Before a real session, update the answers and bills to match the printed bills you hand out.</div>
+    </section>
+
+    <section id="characters">
+      <h2><span class="n">1</span>Characters</h2>
+      <p class="lead">Characters are saved in a library, so you can reuse them in future sessions. Open <span class="ui">Characters</span> and click a card to edit it.</p>
+      <table>
+        <tr><th style="width:28%">Field</th><th>What it does</th></tr>
+        <tr><td><b>Name, age, gender</b></td><td>The character's sprite is picked from gender and age: <b>under 20</b> is a teen, <b>20–59</b> an adult, <b>60+</b> elderly.</td></tr>
+        <tr><td><b>Skin tone</b></td><td>Five levels; the sprite is recoloured to match.</td></tr>
+        <tr><td><b>Background</b></td><td>A scene behind the character: hospital ward, polyclinic, HDB flat, void deck, park, hawker centre, MRT platform, HDB estate, or plain.</td></tr>
+        <tr><td><b>Opening line</b></td><td>What the character says before the game starts. <code>{name}</code> is replaced with the name. Leave it blank for the default.</td></tr>
+        <tr><td><b>Thank-you line</b></td><td>What the character says once the team finishes. <code>{name}</code> works here too.</td></tr>
+        <tr><td><b>Medical situation</b></td><td>A short description shown under the character on the main screen.</td></tr>
+        <tr><td><b>Medical bill</b></td><td>The bill teams see on their phones. See <a href="#bill">Medical bill</a>.</td></tr>
+        <tr><td><b>Questions</b></td><td>Each question has the <b>question</b>, the <b>correct answer(s)</b>, an optional <b>± margin</b>, a <b>hint</b> (shown after a wrong answer) and a <b>debrief explanation</b> (shown when you reveal answers). Drag the ⠿ handle or use ↑ ↓ to reorder, and use <span class="ui">Add question</span> for more.</td></tr>
+      </table>
+      <h3>How answers are checked</h3>
+      <ul>
+        <li><b>Numbers:</b> <code>$1,200</code>, <code>1200</code> and <code>1200.00</code> all match <code>1200</code>. The <b>± margin</b> accepts close answers; for example, a margin of 1 accepts anything from 1199 to 1201.</li>
+        <li><b>Words:</b> case and punctuation are ignored.</li>
+        <li><b>Several right answers:</b> separate them with <code>|</code>, for example <code>Yes|Y</code>.</li>
+      </ul>
+      <div class="tip">💡 Use <span class="ui">Duplicate</span> on a character card to make a variation quickly. Use <span class="ui">Export</span> and <span class="ui">Import</span> to back up your library or share it with another facilitator.</div>
+    </section>
+
+    <section id="bill">
+      <h2><span class="n">2</span>Medical bill</h2>
+      <p class="lead">Each character can have a sample bill. Teams see it on their phones, below the answer box.</p>
+      <ul>
+        <li><b>Issuing hospital:</b> choose a parody name (for example "Singapore Generous Hospital"), or pick <span class="ui">Custom name…</span>.</li>
+        <li><b>Bill details:</b> bill no., ward/class, admitted and discharged dates. All optional.</li>
+        <li><b>Line items:</b> a description, an amount and a style:
+          <ul>
+            <li><b>Item:</b> a normal line</li>
+            <li><b>Deduction:</b> the amount shows in green</li>
+            <li><b>Total:</b> bold, with lines above and below</li>
+            <li><b>Note:</b> a small italic remark</li>
+          </ul></li>
+        <li><b>Amounts</b> show exactly as typed, for example <code>-$1,200.00</code>. Type <code>?</code> for a figure teams must work out; it shows as a highlighted box.</li>
+        <li><span class="ui">Show to teams</span> turns the bill on or off. <span class="ui">Reset to template</span> restores the standard lines.</li>
+        <li>The <b>Preview</b> at the bottom of the section shows exactly what teams will see.</li>
+      </ul>
+    </section>
+
+    <section id="live">
+      <h2><span class="n">3</span>Setting up a session (Live game tab)</h2>
+      <h3>Teams and characters</h3>
+      <p>Each of the 4 team cards has a <b>team name</b> (click it to edit) and a <b>character</b> dropdown. A card also shows that team's progress, their last answers (✓ right, ✗ wrong), and buttons to <span class="ui">Reset</span> the team, open their <span class="ui">Team page</span>, or copy their link 🔗.</p>
+      <div class="tip">💡 If you edit a character that's already assigned, click <span class="ui">Update game</span> when asked after saving, or click <span class="ui">↻ Re-sync</span> later. Otherwise the game keeps the old version.</div>
+      <h3>Game status</h3>
+      <table>
+        <tr><th style="width:22%">Status</th><th>What happens</th></tr>
+        <tr><td><b>Get ready</b></td><td>Characters say their opening line, and the intro card shows (if it's on). Teams can open their page and read the bill but can't answer yet.</td></tr>
+        <tr><td><b>▶ Live</b></td><td>Questions appear, and teams can submit answers.</td></tr>
+        <tr><td><b>⏸ Pause</b></td><td>Freezes the game. Teams see "Game paused".</td></tr>
+      </table>
+      <h3>Main screen heading and background</h3>
+      <p>Change the <b>title</b> and <b>subtitle</b> shown at the top of the main screen. The admin header follows the title. Leave a box empty for the default, or type <code>-</code> as the subtitle to hide it. <b>Background colour</b> offers Mist (default), Sand, Sage and Bright, and applies to every screen.</p>
+      <h3>Intro card</h3>
+      <p>Turn on <span class="ui">Show while on "Get ready"</span> to cover the main screen with a welcome card before the game starts. Edit its <b>header</b> and <b>text</b>, and optionally add a <b>link</b>, for example a CPF calculator page. The link becomes a QR code on the card and a button on every team's phone. The card disappears automatically when you go Live.</p>
+    </section>
+
+    <section id="screen">
+      <h2><span class="n">4</span>The main screen during play</h2>
+      <ul>
+        <li><b>Characters react</b> to each team's progress:
+          <ul>
+            <li>worried at the start</li>
+            <li>happier as questions are answered</li>
+            <li>head-scratching ("Hmm… are you sure?") after a wrong answer, with the hint shown for about 12 seconds</li>
+            <li>impatient after about 45 seconds without an answer</li>
+            <li>cheering with confetti when the team finishes</li>
+          </ul></li>
+        <li>The <b>progress bar</b> under each character fills in one segment per question. Finishing teams get 🥇🥈🥉 in order.</li>
+        <li>The <b>"🏁 X of 4 finished"</b> counter at the top tracks the race.</li>
+      </ul>
+    </section>
+
+    <section id="teams">
+      <h2><span class="n">5</span>What teams see on their phones</h2>
+      <ul>
+        <li>A <b>step progress bar</b>, their character, and the <b>medical situation</b> (tap to expand).</li>
+        <li>The current question and a large answer box. Money questions show a <code>$</code> in front.</li>
+        <li><b>Right answer:</b> a green "Correct!" panel slides up. <b>Wrong answer:</b> an amber "Hmm… are you sure?" panel shows with the <b>hint</b> and a <span class="ui">Try again</span> button.</li>
+        <li>The <b>bill</b> below the answer box, and the intro card's <b>link button</b> if you set one.</li>
+        <li>Several phones can join the same team; they share one progress. If two people answer at once, only the first answer counts.</li>
+      </ul>
+      <div class="tip">💡 If a team can't scan, open <span class="ui">Live game</span>, click 🔗 on their card to copy the link, and send it to them.</div>
+    </section>
+
+    <section id="debrief">
+      <h2><span class="n">6</span>Debrief: going through the answers</h2>
+      <h3>Option A: one character at a time (recommended)</h3>
+      <ol class="steps">
+        <li>On the main screen, <b>click the progress bar under a character 5 times</b> within 3 seconds. The card flips over.</li>
+        <li>The back shows that character's questions with the answers hidden.</li>
+        <li><b>Click the card</b> to reveal the next answer and its calculation. Talk the class through it, then click again for the next one.</li>
+        <li><span class="ui">Reveal all</span> shows every answer at once. <span class="ui">Hide all</span> hides them again. <span class="ui">✕</span> flips the card back.</li>
+      </ol>
+      <p>Each card flips on its own, so other teams can keep playing. The flip only affects the screen you click on.</p>
+      <h3>Option B: everything at once</h3>
+      <p>In admin, switch on <span class="ui">Reveal answers</span>. The main screen shows a full-screen debrief with all four characters' answers and explanations. Switch it off to return to the game.</p>
+      <div class="tip">💡 The calculation shown under each answer is the question's <b>Debrief explanation</b>. Write out the working there, for example "$2,000 − $1,200 − $650 = $150 cash".</div>
+    </section>
+
+    <section id="shortcuts">
+      <h2><span class="n">⌨</span>Hidden controls</h2>
+      <p class="lead">These are deliberately hidden so the class doesn't see them.</p>
+      <table>
+        <tr><th style="width:38%">Where / what</th><th>Action</th></tr>
+        <tr><td>Main screen: triple-click the 🏥 icon</td><td>Opens admin in a new tab</td></tr>
+        <tr><td>Main screen: <kbd>Shift</kbd>+<kbd>A</kbd></td><td>Opens admin in a new tab</td></tr>
+        <tr><td>Main screen: <kbd>F</kbd></td><td>Full screen on/off</td></tr>
+        <tr><td>Main screen: <kbd>Q</kbd></td><td>Show/hide the QR codes</td></tr>
+        <tr><td>Main screen: <kbd>I</kbd></td><td>Hide/show the intro card on this screen only</td></tr>
+        <tr><td>Main screen: click a progress bar 5×</td><td>Flip that character's card to the answers</td></tr>
+        <tr><td>Admin page link</td><td><code>healthcare.html?view=admin</code></td></tr>
+      </table>
+      <div class="tip">💡 Want a PIN on the admin page? Ask whoever maintains the code to set <code>ADMIN_PIN</code> in <code>healthcare.html</code>. It keeps casual visitors out but isn't real security.</div>
+    </section>
+
+    <section id="after">
+      <h2><span class="n">✓</span>After the session</h2>
+      <ol>
+        <li>Switch off <span class="ui">Reveal answers</span> if it's on.</li>
+        <li>Click <span class="ui">Reset all progress</span> so every team starts again from question 1.</li>
+        <li>Set the status back to <span class="ui">Get ready</span>.</li>
+        <li>Optional: click <span class="ui">Export</span> on the Characters tab to keep a backup of your library.</li>
+      </ol>
+    </section>
+
+    <section id="trouble">
+      <h2><span class="n">?</span>Troubleshooting</h2>
+      <table>
+        <tr><th style="width:36%">Problem</th><th>Fix</th></tr>
+        <tr><td>Teams' answers aren't accepted</td><td>Check the game is <b>Live</b>, not Get ready or Paused.</td></tr>
+        <tr><td>A correct answer is marked wrong</td><td>Check the character's <b>Correct answer(s)</b>. Add alternatives with <code>|</code>, or set a <b>± margin</b>. Then save and click <span class="ui">Update game</span>.</td></tr>
+        <tr><td>Character edits don't show in the game</td><td>Click <span class="ui">↻ Re-sync</span> on the Live game tab.</td></tr>
+        <tr><td>The QR code won't scan</td><td>Press <kbd>Q</kbd> twice to redraw it, make the screen bigger, or share the team link from admin (🔗).</td></tr>
+        <tr><td>A team picked the wrong character</td><td>They can rescan the right QR code; each code opens that team's own page.</td></tr>
+        <tr><td>The main screen shows "No game has been set up yet"</td><td>Open admin once; it creates the game automatically. Then assign characters.</td></tr>
+        <tr><td>Something looks stuck</td><td>Refresh the page. All progress is saved online, so nothing is lost.</td></tr>
+      </table>
+    </section>
+
+    <footer>Healthcare Bill Challenge · Admin guide · <a href="healthcare.html?view=admin">Back to admin</a></footer>
+  </main>
+</div>
+</body>
+</html>

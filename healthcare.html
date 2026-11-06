@@ -1529,6 +1529,7 @@ function viewAdmin() {
         </nav>
         <div class="spacer"></div>
         <span class="conn ${DB.mode === "local" ? "local" : ""}"><span class="dot"></span>${DB.mode === "local" ? "Demo mode (this browser only)" : `Connected · ${esc(firebaseConfig.projectId)}`}</span>
+        <a class="btn" href="guide.html" target="_blank" title="How to use this site">${icon("info")}Guide</a>
         <a class="btn primary" href="?view=display" target="_blank">${icon("ext")}Main screen</a>
       </div></header>
       <main class="adm-main">
