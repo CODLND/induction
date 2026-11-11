@@ -133,8 +133,8 @@
   .calc-btn { width: 100%; height: 46px; margin-top: 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--brand-700); font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: var(--sh-1); }
   .calc-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(15, 23, 42, .35); opacity: 0; pointer-events: none; transition: opacity .2s; }
   .calc-scrim.show { opacity: 1; pointer-events: auto; }
-  .calc { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; transform: translateY(105%); visibility: hidden; transition: transform .3s var(--spring), visibility 0s linear .3s; }
-  .calc.show { transform: none; visibility: visible; transition: transform .3s var(--spring); }
+  .calcpad { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; transform: translateY(105%); visibility: hidden; transition: transform .3s var(--spring), visibility 0s linear .3s; }
+  .calcpad.show { transform: none; visibility: visible; transition: transform .3s var(--spring); }
   .calc-in { max-width: 520px; margin: 0 auto; background: var(--surface); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: 0 -10px 40px rgba(15, 23, 42, .2); padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); }
   .calc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-weight: 800; color: var(--ink); }
   .calc-disp { background: var(--ink); color: #fff; border-radius: var(--r); padding: 10px 14px; text-align: right; font-family: ui-monospace, Menlo, Consolas, monospace; min-height: 76px; }
@@ -821,6 +821,9 @@ const cleanUrl = u => { u = String(u || "").trim(); if (!u) return ""; if (!/^ht
 const DEFAULT_TITLE = "Healthcare Bill Challenge";
 const DEFAULT_SUB = "Help each patient make sense of their hospital bill";
 const gameTitle = g => String(g?.title || "").trim() || DEFAULT_TITLE;
+/* Label for the character's situation box (main screen, team phones, editor). Editable in admin. */
+const DEFAULT_SIT_LABEL = "Medical situation";
+const sitLabel = g => String(g?.sitLabel || "").trim() || DEFAULT_SIT_LABEL;
 const gameSub = g => { const t = String(g?.subtitle || "").trim(); return t === "-" ? "" : t || DEFAULT_SUB; };
 const isNumericQ = q => !!q && toNum(String(q.answer).split("|")[0]) !== null;
 /* Answer type per question: "money" ($ in front), "number" (optional unit after, e.g. % or days) or "text".
@@ -1397,7 +1400,7 @@ function viewDisplay() {
     const showHint = confused && qs[step]?.hint;
     const sitHtml = showHint
       ? `<h3>💡 Hint</h3><div class="sit-text">${esc(qs[step].hint)}</div>`
-      : `<h3>${icon("info")} Medical situation</h3><div class="sit-text">${esc(ch?.situation || "")}</div>`;
+      : `<h3>${icon("info")} ${esc(sitLabel(game))}</h3><div class="sit-text">${esc(ch?.situation || "")}</div>`;
     if (sit.dataset.h !== sitHtml) { sit.dataset.h = sitHtml; sit.innerHTML = sitHtml; sit.className = "situation" + (showHint ? " hint" : ""); }
 
     // progress
@@ -1519,7 +1522,7 @@ function viewTeam() {
   /* ----- calculator (only when the admin allows it) ----- */
   document.body.insertAdjacentHTML("beforeend", `
     <div class="calc-scrim" id="calcScrim"></div>
-    <div class="calc" id="calc" role="dialog" aria-label="Calculator"><div class="calc-in">
+    <div class="calcpad" id="calc" role="dialog" aria-label="Calculator"><div class="calc-in">
       <div class="calc-top"><span>🧮 Calculator</span><button class="btn sm ghost icon" id="calcClose" aria-label="Close calculator">${icon("x")}</button></div>
       <div class="calc-disp"><div class="expr" id="calcExpr"></div><div class="val" id="calcVal">0</div></div>
       <div class="calc-keys" id="calcKeys">${["C", "(", ")", "÷", "7", "8", "9", "×", "4", "5", "6", "−", "1", "2", "3", "+", "%", "0", ".", "="].map(k =>
@@ -1597,7 +1600,7 @@ function viewTeam() {
     }
     const status = game.status || "waiting";
     const confused = p?.hintStep === step && !done;
-    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null), JSON.stringify(game.intro?.url ? [game.intro.url, game.intro.urlLabel] : null), !!game.calculator].join("|");
+    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null), JSON.stringify(game.intro?.url ? [game.intro.url, game.intro.urlLabel] : null), !!game.calculator, sitLabel(game)].join("|");
     if (k === key) return;
     const wasDone = key && key.split("|")[3] === "true";
     key = k;
@@ -1615,7 +1618,7 @@ function viewTeam() {
         <div class="t-id">
           <div class="t-name">${esc(ch.name)}</div>
           <div class="row">${ch.age ? `<span class="chip brand">${esc(ch.age)} years old</span>` : ""}</div>
-          <button class="t-sit-btn" id="sitBtn" aria-expanded="${sitOpen}">Medical situation ${icon("chev")}</button>
+          <button class="t-sit-btn" id="sitBtn" aria-expanded="${sitOpen}">${esc(sitLabel(game))} ${icon("chev")}</button>
         </div>
       </section>
       <div class="t-sit" id="sit" ${sitOpen ? "" : "hidden"}>${esc(ch.situation)}</div>
@@ -1734,6 +1737,8 @@ function viewAdmin() {
               <label class="flabel">Subtitle<input class="input" id="hSub" maxlength="120" placeholder="${esc(DEFAULT_SUB)}"></label>
             </div>
             <p class="help" style="margin:8px 0 0">Shown at the top of the main screen. Leave a box empty to use the default. Type a single <b>-</b> as the subtitle to hide it. Saves when you press Enter or click away.</p>
+            <label class="flabel" style="margin-top:12px;max-width:420px">Situation label<input class="input" id="hSit" maxlength="40" placeholder="${esc(DEFAULT_SIT_LABEL)}"></label>
+            <p class="help" style="margin:6px 0 0">The heading of the box under each character on the main screen and on team phones, for example “Patient profile” or “Background”.</p>
             <div class="sec-title" style="margin-top:16px">Background colour</div>
             <div class="pills theme-pick" role="radiogroup" aria-label="Background colour" id="themePick">
               ${THEMES.map(([id, name, desc, bg, card]) => `<label title="${esc(desc)}"><input type="radio" name="theme" value="${id}"><span><i class="tsw" style="background:linear-gradient(135deg, ${bg} 50%, ${card} 50%)"></i>${esc(name)}</span></label>`).join("")}
@@ -1868,18 +1873,19 @@ function viewAdmin() {
       const t = $("#hTitle"), sb = $("#hSub");
       if (document.activeElement !== t) t.value = game?.title || "";
       if (document.activeElement !== sb) sb.value = game?.subtitle || "";
+      if (document.activeElement !== $("#hSit")) $("#hSit").value = game?.sitLabel || "";
     }
     async function saveHeading() {
-      const title = $("#hTitle").value.trim(), subtitle = $("#hSub").value.trim();
-      if (title === (game?.title || "") && subtitle === (game?.subtitle || "")) return;
-      await DB.merge(GAME, { title, subtitle }).catch(showError);
+      const title = $("#hTitle").value.trim(), subtitle = $("#hSub").value.trim(), sitLabel = $("#hSit").value.trim();
+      if (title === (game?.title || "") && subtitle === (game?.subtitle || "") && sitLabel === (game?.sitLabel || "")) return;
+      await DB.merge(GAME, { title, subtitle, sitLabel }).catch(showError);
       toast("Main screen heading updated.");
     }
-    ["#hTitle", "#hSub"].forEach(sel => {
+    ["#hTitle", "#hSub", "#hSit"].forEach(sel => {
       $(sel).addEventListener("change", saveHeading);
       $(sel).addEventListener("keydown", e => { if (e.key === "Enter") e.target.blur(); });
     });
-    $("#headReset").onclick = async () => { $("#hTitle").value = ""; $("#hSub").value = ""; await saveHeading(); };
+    $("#headReset").onclick = async () => { $("#hTitle").value = ""; $("#hSub").value = ""; $("#hSit").value = ""; await saveHeading(); };
 
     /* ----- slots ----- */
     function renderSlots() {
@@ -2070,7 +2076,7 @@ function viewAdmin() {
             <div class="sec-title">Thank-you line</div>
             <textarea class="textarea" data-f="outro" rows="2" placeholder="${esc(DEFAULT_OUTRO)}">${esc(draft.outro || "")}</textarea>
             <p class="help" style="margin:6px 0 16px">What the character says once the team has answered every question. Leave blank for the default. <b>{name}</b> works here too.</p>
-            <div class="sec-title">Medical situation</div>
+            <div class="sec-title">${esc(sitLabel(game))}</div>
             <textarea class="textarea" data-f="situation" rows="3" placeholder="e.g. Singapore Citizen, admitted 4 days in a B2 ward for pneumonia.">${esc(draft.situation)}</textarea>
             <p class="help" style="margin:6px 0 0">Shown on the main screen under the character.</p>
           </div>
