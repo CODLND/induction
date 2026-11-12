@@ -250,6 +250,31 @@
   .pc-stats { display: flex; justify-content: space-between; margin-top: .9vh; font-size: min(1.55vh, .95vw); font-weight: 700; color: var(--muted); }
   .pc-stats .wrong { color: var(--warn-600); }
 
+  /* shared-patient layout: one patient on the left, teams on the right */
+  .stage.single { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 1.6vw; }
+  .sp-card { grid-template-rows: 17vh minmax(0, 1fr) auto 17vh auto; }
+  .sp-card .bubble { font-size: min(2.6vh, 1.5vw); margin: 0 3vw 0 4vw; }
+  .sp-card .pc-mid { justify-content: center; }
+  .sp-card .spot { flex: 0 1 auto; width: 100%; }
+  .sp-card .situation .sit-text { font-size: min(2vh, 1.15vw); }
+  .teams { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 1.4vh; min-height: 0; }
+  .trow { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 1.4vw; min-height: 0; background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--sh-2); border: 1px solid rgba(15, 23, 42, .06); padding: 1.4vh 1.4vw; overflow: hidden; transition: box-shadow .3s; }
+  .trow .qr-box { height: 100%; max-height: 17vh; width: auto; aspect-ratio: 1; }
+  .trow.confused { box-shadow: 0 0 0 3px var(--warn), var(--sh-2); animation: shake .45s ease-in-out 2; }
+  .trow.done { box-shadow: 0 0 0 3px var(--ok), var(--sh-2); }
+  .trow.empty { opacity: .45; }
+  .tr-main { min-width: 0; display: flex; flex-direction: column; gap: 1vh; }
+  .tr-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tr-head .team-chip { font-size: min(2.3vh, 1.35vw); height: 4.4vh; }
+  .tr-say { font-size: min(1.9vh, 1.1vw); font-weight: 700; color: var(--muted); min-height: 2.4vh; }
+  .trow.confused .tr-say { color: var(--warn-600); } .trow.done .tr-say { color: var(--ok-600); }
+  .trow .steps { margin-top: .4vh; height: 1.4vh; }
+  .trow.done .steps .seg i { background: var(--ok); }
+  .hide-qr .trow .qr-box { display: none; }
+  .debrief-grid.single { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  .db-teams { padding: 1.2vh 1vw; display: flex; flex-direction: column; gap: 1vh; }
+  .db-trow { display: flex; justify-content: space-between; gap: 10px; padding: 1.2vh 1vw; border-radius: var(--r); background: var(--surface-2); border: 1px solid var(--line); font-size: min(1.9vh, 1.15vw); font-weight: 700; }
+  .db-trow small { color: var(--muted); font-weight: 600; }
   .center-msg { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; color: var(--muted); font-size: 18px; }
   .center-msg .big { font-size: 56px; }
 
@@ -292,6 +317,8 @@
     .d-title { font-size: 18px; } .d-sub { font-size: 12px; } .d-pill { height: 32px; font-size: 13px; padding: 0 12px; } .d-tool { width: 32px; height: 32px; font-size: 15px; }
     .intro { position: fixed; top: 70px; left: 12px; right: 12px; bottom: 12px; } .intro-card { grid-template-columns: 1fr; padding: 24px; gap: 20px; text-align: center; }
     .intro-card h2 { font-size: 26px; } .intro-body { font-size: 16px; } .intro-kicker { font-size: 12px; padding: 4px 10px; } .intro-qr { width: 200px; margin: 0 auto; } .intro-qr b { font-size: 15px; } .intro-qr small { font-size: 11px; }
+    .stage.single { grid-template-columns: 1fr; } .sp-card { grid-template-rows: auto 260px auto 170px auto; } .pwrap.sp { height: 720px; }
+    .teams { grid-template-rows: none; } .trow { padding: 14px; } .trow .qr-box { height: 96px; } .tr-head .team-chip { font-size: 14px; height: 30px; } .tr-say { font-size: 13px; } .debrief-grid.single { grid-template-columns: 1fr; } .db-trow { font-size: 14px; }
     .debrief-grid { grid-template-columns: 1fr; flex: none; } .db-col { overflow: visible; } .debrief-head { flex-wrap: wrap; gap: 8px; } .debrief-head h2 { font-size: 20px; }
     .db-head h3 { font-size: 17px; } .db-head .meta, .db-sit, .db-q, .db-team { font-size: 14px; } .db-head .fig { height: 64px; } .db-q .n { width: 24px; height: 24px; }
   }
@@ -821,6 +848,12 @@ const cleanUrl = u => { u = String(u || "").trim(); if (!u) return ""; if (!/^ht
 const DEFAULT_TITLE = "Healthcare Bill Challenge";
 const DEFAULT_SUB = "Help each patient make sense of their hospital bill";
 const gameTitle = g => String(g?.title || "").trim() || DEFAULT_TITLE;
+/* Game mode: "multi" = each team has its own patient (default); "single" = all teams help one shared patient. */
+const isSingle = g => g?.mode === "single";
+const slotChar = (g, i) => isSingle(g) ? (g?.featured?.character || null) : (g?.slots?.[i]?.character || null);
+const slotCharId = (g, i) => isSingle(g) ? (g?.featured?.characterId || null) : (g?.slots?.[i]?.characterId || null);
+const anyChar = g => Array.from({ length: SLOTS }, (_, i) => slotChar(g, i)).some(Boolean);
+
 /* Label for the character's situation box (main screen, team phones, editor). Editable in admin. */
 const DEFAULT_SIT_LABEL = "Medical situation";
 const sitLabel = g => String(g?.sitLabel || "").trim() || DEFAULT_SIT_LABEL;
@@ -1233,6 +1266,9 @@ function viewDisplay() {
   const IMPATIENT_AFTER = 45000;   // ms without an answer before the character gets impatient
   /* Facilitator walkthrough: click a card's progress bar 5 times to flip it; click the back to reveal answers one by one. */
   const flips = Array.from({ length: SLOTS }, () => ({ flipped: false, shown: 0, clicks: [] }));
+  flips.P = { flipped: false, shown: 0, clicks: [] };
+  const pfx = { ev: null, talkUntil: 0, prevBub: "", wasAllDone: null };   // shared patient reactions: ev = { type, team, until }
+  const fid = v => v === "P" ? "P" : +v;
   let prevStatus = null, structKey = "", hideQR = false, introHidden = false, introKey = "";
 
   app.innerHTML = `
@@ -1267,18 +1303,18 @@ function viewDisplay() {
     if (e.key === "A" && e.shiftKey) openAdmin();
     if (e.key === "i" || e.key === "I") { introHidden = !introHidden; renderIntro(); }   // hide/show the intro card on this screen
   });
-  setInterval(() => { if (game) for (let i = 0; i < SLOTS; i++) renderSlot(i); }, 1000);
+  setInterval(() => { if (game) { for (let i = 0; i < SLOTS; i++) renderSlot(i); if (isSingle(game)) renderPatient(); } }, 1000);
   $("#stage").addEventListener("click", e => {
     const foot = e.target.closest("[data-flip]");
     if (foot) {
-      const i = +foot.dataset.flip, f = flips[i], now = Date.now();
+      const i = fid(foot.dataset.flip), f = flips[i], now = Date.now();
       f.clicks = f.clicks.filter(t => now - t < 3000).concat(now);
       if (f.clicks.length >= 5 && info(i).ch) { f.clicks = []; setFlip(i, true); }
       return;
     }
     const back = e.target.closest("[data-back]");
     if (!back) return;
-    const i = +back.dataset.back, f = flips[i], total = info(i).total;
+    const i = fid(back.dataset.back), f = flips[i], total = info(i).total;
     const act = e.target.closest("[data-act]")?.dataset.act;
     if (act === "flip") return setFlip(i, false);
     if (act === "all") f.shown = total;
@@ -1298,7 +1334,7 @@ function viewDisplay() {
     el.innerHTML = `
       <div class="bk-head">
         <div class="fig">${charFigure(ch, f.shown >= total ? "joy" : "talk")}</div>
-        <div class="bk-who"><b>${esc(ch.name)}</b><small>${esc(s?.teamName || "")} · answers</small></div>
+        <div class="bk-who"><b>${esc(ch.name)}</b><small>${esc(i === "P" ? "Answers" : (s?.teamName || "") + " · answers")}</small></div>
         <button class="bk-btn" data-act="${f.shown >= total ? "hide" : "all"}">${icon(f.shown >= total ? "rotate" : "eye")}${f.shown >= total ? "Hide all" : "Reveal all"}</button>
         <button class="bk-btn icon" data-act="flip" title="Back to the game" aria-label="Flip back to the game">${icon("x")}</button>
       </div>
@@ -1314,7 +1350,11 @@ function viewDisplay() {
   }
 
   const info = i => {
-    const s = game?.slots?.[i]; const ch = s?.character; const p = prog[i] || {};
+    if (i === "P") {   // the shared patient (single mode)
+      const ch = game?.featured?.character || null, qs = ch?.questions || [];
+      return { s: { teamName: "All teams" }, ch, p: {}, qs, total: qs.length, step: 0, done: false };
+    }
+    const s = game?.slots?.[i]; const ch = slotChar(game, i); const p = prog[i] || {};
     const qs = ch?.questions || []; const total = qs.length; const step = Math.min(p.step || 0, total);
     return { s, ch, p, qs, total, step, done: total > 0 && step >= total };
   };
@@ -1325,6 +1365,8 @@ function viewDisplay() {
       stage.innerHTML = `<div class="center-msg"><div class="big">🩺</div><div>No game has been set up yet.</div><a class="btn primary" href="?view=admin">Set up characters</a></div>`;
       return;
     }
+    stage.classList.toggle("single", isSingle(game));
+    if (isSingle(game)) return buildSingle();
     stage.innerHTML = Array.from({ length: SLOTS }, (_, i) => `
       <div class="pwrap" id="wrap${i}"><div class="flipper">
       <section class="pcard" id="col${i}">
@@ -1351,7 +1393,103 @@ function viewDisplay() {
     }
   }
 
+  function buildSingle() {
+    $("#stage").innerHTML = `
+      <div class="pwrap sp" id="wrapP"><div class="flipper">
+        <section class="pcard sp-card" id="colP">
+          <div class="bubble" id="bubP"></div>
+          <div class="pc-mid" id="midP"><div class="pc-scene" id="bgP"></div><div class="spot"><div class="fig" id="figP"></div></div></div>
+          <div class="pc-name" id="nmP"></div>
+          <div class="situation" id="sitP"></div>
+          <div class="pc-foot" data-flip="P"><div class="steps" id="trkP"></div><div class="pc-stats" id="tlP"></div></div>
+        </section>
+        <section class="pcard back" id="backP" data-back="P" aria-label="Answers"></section>
+      </div></div>
+      <div class="teams">${Array.from({ length: SLOTS }, (_, i) => `
+        <section class="trow" id="col${i}">
+          <div class="qr-box" id="qr${i}"></div>
+          <div class="tr-main">
+            <div class="tr-head"><span class="team-chip">${icon("users")}<span id="tn${i}"></span></span><span class="rank" id="rk${i}"></span></div>
+            <div class="tr-say" id="say${i}"></div>
+            <div class="steps" id="trk${i}"></div>
+            <div class="pc-stats" id="tl${i}"></div>
+          </div>
+        </section>`).join("")}</div>`;
+    flips.P.flipped = false; flips.P.shown = 0; flips.P.clicks = [];
+    const ch = game.featured?.character;
+    for (let i = 0; i < SLOTS; i++) { if (ch) makeQR($(`#qr${i}`), teamUrl(i)); else $(`#col${i}`).classList.add("empty"); }
+  }
+
+  /* Shared patient: reacts to whichever team just answered */
+  function renderPatient() {
+    if (!game || !$("#colP")) return;
+    const { ch, qs, total } = info("P"), now = Date.now(), status = game.status || "waiting";
+    const teams = Array.from({ length: SLOTS }, (_, i) => info(i));
+    const allDone = !!ch && teams.every(t => t.done);
+    const nDone = teams.filter(t => t.done).length;
+    const ev = pfx.ev && pfx.ev.until > now ? pfx.ev : null;
+    const card = $("#colP");
+    card.classList.toggle("done", allDone);
+    card.classList.toggle("confused", ev?.type === "wrong");
+    if (pfx.wasAllDone === false && allDone) confetti(card, 90);
+    pfx.wasAllDone = allDone;
+
+    const bub = $("#bubP");
+    let html, cls = "bubble";
+    if (!ch) { html = `<span>Waiting for a patient…</span>`; cls += " idle"; }
+    else if (allDone) { html = `<span>${esc(closingLine(ch))}</span>`; cls += " done"; }
+    else if (status === "waiting") html = `<span>${esc(openingLine(ch))}</span>`;
+    else if (ev?.type === "wrong") { html = `<span class="qnum">${esc(ev.team)}</span><span>Hmm… are you sure? 🤔</span>`; cls += " confused"; }
+    else if (ev?.type === "finish") { html = `<span class="qnum">${esc(ev.team)}</span><span>You've answered everything! Thank you! 🏆</span>`; cls += " done"; }
+    else if (ev?.type === "right") { html = `<span class="qnum">${esc(ev.team)}</span><span>Yes, that's right! 🎉</span>`; cls += " done"; }
+    else html = `<span class="qnum">${plural(total, "question")}</span><span>Can you help me understand my bill? Scan your team's QR code to answer.</span>`;
+    if (bub.dataset.h !== html + cls) {
+      if (bub.dataset.h && !ev && !allDone) pfx.talkUntil = now + 2600;
+      bub.dataset.h = html + cls; bub.className = cls; bub.innerHTML = html;
+      bub.style.animation = "none"; void bub.offsetWidth; bub.style.animation = "";
+    }
+    const lastAct = Math.max(...fx.map(f => f.lastActivity));
+    const avgStep = total ? teams.reduce((a, t) => a + t.step, 0) / SLOTS : 0;
+    const mood = !ch ? "ok" : allDone ? "joy" : ev?.type === "wrong" ? "confused" : ev ? "happy" : pfx.talkUntil > now ? "talk"
+      : status === "live" && now - lastAct > IMPATIENT_AFTER ? "impatient" : moodByProgress(Math.floor(avgStep), total);
+    const fig = $("#figP"), figKey = [ch?.gender, ch?.age, ch?.skin, mood, ev?.until].join("|");
+    if (fig.dataset.k !== figKey) {
+      fig.dataset.k = figKey;
+      fig.className = "fig " + (ev?.type === "wrong" ? "confused" : allDone ? "joy" : ev ? "cheer" : "");
+      fig.innerHTML = ch ? charFigure(ch, mood) : "";
+    }
+    const bgEl = $("#bgP"), bgId = ch && SCENES[ch.bg] ? ch.bg : "";
+    if (bgEl.dataset.k !== bgId) { bgEl.dataset.k = bgId; bgEl.innerHTML = bgId ? sceneSVG(bgId) : ""; $("#midP").classList.toggle("has-bg", !!bgId); }
+    $("#nmP").innerHTML = ch ? `<b>${esc(ch.name)}</b>${ch.age ? `<small>${esc(ch.age)} years old</small>` : ""}` : `<b>—</b>`;
+    const sitHtml = `<h3>${icon("info")} ${esc(sitLabel(game))}</h3><div class="sit-text">${esc(ch?.situation || "")}</div>`;
+    const sit = $("#sitP"); if (sit.dataset.h !== sitHtml) { sit.dataset.h = sitHtml; sit.innerHTML = sitHtml; }
+    const trk = $("#trkP");
+    if (trk.dataset.n !== String(SLOTS)) { trk.dataset.n = SLOTS; trk.innerHTML = stepsHTML(0, SLOTS); }
+    trk.querySelectorAll(".seg").forEach((sg, k) => sg.classList.toggle("on", k < nDone));
+    $("#tlP").innerHTML = ch ? `<span>${nDone} of ${SLOTS} teams finished</span><span>${plural(total, "question")}</span>` : "";
+  }
+  function renderTeamRow(i) {
+    if (!game || !$(`#col${i}`)) return;
+    const { s, ch, p, total, step, done } = info(i), f = fx[i], now = Date.now();
+    const confused = f.confusedUntil > now && !done, cheer = f.cheerUntil > now;
+    const row = $(`#col${i}`);
+    row.classList.toggle("confused", confused); row.classList.toggle("done", done);
+    if (f.wasDone === false && done) confetti(row, 40);
+    f.wasDone = done;
+    $(`#tn${i}`).textContent = s?.teamName || `Team ${i + 1}`;
+    const rank = finishRanks(prog)[i];
+    $(`#rk${i}`).textContent = done && rank ? MEDAL[rank] : "";
+    const status = game.status || "waiting";
+    $(`#say${i}`).textContent = !ch ? "" : done ? `Finished ${rank ? ordinal(rank) : ""} 🎉` : confused ? "Hmm… are you sure? 🤔" : cheer ? "Correct! ✓"
+      : status === "live" ? `On question ${step + 1} of ${total}` : "Scan the QR code to join";
+    const trk = $(`#trk${i}`);
+    if (trk.dataset.n !== String(total)) { trk.dataset.n = total; trk.innerHTML = stepsHTML(0, total); }
+    trk.querySelectorAll(".seg").forEach((sg, k) => sg.classList.toggle("on", k < step));
+    $(`#tl${i}`).innerHTML = !ch ? "" : `<span>${step} of ${total} answered</span>${p.wrong ? `<span class="wrong">${plural(p.wrong, "wrong try")}</span>` : "<span></span>"}`;
+  }
+
   function renderSlot(i) {
+    if (isSingle(game)) return renderTeamRow(i);
     if (!game || !$(`#col${i}`)) return;
     const { s, ch, p, qs, total, step, done } = info(i);
     const f = fx[i]; const now = Date.now();
@@ -1421,6 +1559,22 @@ function viewDisplay() {
     if (!game?.reveal) { d.hidden = true; return; }
     d.hidden = false;
     const ranks = finishRanks(prog);
+    if (isSingle(game)) {
+      const { ch, qs } = info("P");
+      d.innerHTML = `<div class="debrief-head"><h2>📋 Debrief: the answers</h2><span class="d-pill">${icon("eye")} Revealed by facilitator</span></div>
+        <div class="debrief-grid single">${!ch ? `<div class="db-col"><div class="db-head"><h3>No featured patient</h3></div></div>` : `
+          <div class="db-col">
+            <div class="db-head"><div class="fig">${charFigure(ch, "joy")}</div><div><h3>${esc(ch.name)}</h3><div class="meta">${ch.age ? esc(ch.age) + " yrs · " : ""}shared patient</div></div></div>
+            <div class="db-sit">${esc(ch.situation)}</div>
+            ${qs.map((q, k) => `<div class="db-q"><span class="n">${k + 1}</span><div class="q">${esc(q.q)}</div><div class="a">${esc(displayAnswer(q))}</div>${q.explain ? `<div class="e">${esc(q.explain)}</div>` : ""}</div>`).join("")}
+          </div>
+          <div class="db-col"><div class="db-head"><h3>🏁 Team results</h3></div><div class="db-teams">${Array.from({ length: SLOTS }, (_, i) => {
+            const { s, p, total, step, done } = info(i);
+            return `<div class="db-trow"><span>${done && ranks[i] ? MEDAL[ranks[i]] + " " : ""}${esc(s?.teamName || `Team ${i + 1}`)}</span><small>${step}/${total} answered · ${plural(p.wrong || 0, "wrong try")}</small></div>`;
+          }).join("")}</div></div>`}
+        </div>`;
+      return;
+    }
     d.innerHTML = `<div class="debrief-head"><h2>📋 Debrief: the answers</h2><span class="d-pill">${icon("eye")} Revealed by facilitator</span></div>
       <div class="debrief-grid">${Array.from({ length: SLOTS }, (_, i) => {
         const { s, ch, p, qs, total, step, done } = info(i);
@@ -1443,9 +1597,10 @@ function viewDisplay() {
     $("#dTitle").textContent = gameTitle(game); $("#dSub").textContent = gameSub(game); $("#dSub").hidden = !gameSub(game);
     document.title = gameTitle(game);
     pill.lastElementChild.textContent = { waiting: "Get ready", live: "Live", paused: "Paused" }[st] || st;
-    const key = game ? game.slots.map(s => (s.characterId || "") + ":" + (s.character?.questions?.length || 0) + ":" + (s.character?.updatedAt || "")).join("|") : "none";
+    const key = !game ? "none" : (game.mode || "multi") + "#" + Array.from({ length: SLOTS }, (_, i) => (slotCharId(game, i) || "") + ":" + (slotChar(game, i)?.questions?.length || 0) + ":" + (slotChar(game, i)?.updatedAt || "")).join("|");
     if (key !== structKey) { structKey = key; buildStage(); }
     for (let i = 0; i < SLOTS; i++) renderSlot(i);
+    if (isSingle(game)) renderPatient();
     renderFinished();
     renderIntro();
     renderDebrief();
@@ -1468,7 +1623,7 @@ function viewDisplay() {
     if (url) makeQR($("#introQR"), url);
   }
   function renderFinished() {
-    const used = (game?.slots || []).filter(s => s.character).length;
+    const used = Array.from({ length: SLOTS }, (_, i) => slotChar(game, i)).filter(Boolean).length;
     const n = Object.keys(finishRanks(prog)).length;
     const el = $("#finishedPill");
     el.hidden = !used || game?.status === "waiting";
@@ -1481,13 +1636,14 @@ function viewDisplay() {
       const f = fx[i]; const step = p?.step || 0; const wrong = p?.wrong || 0;
       if (f.prevStep !== null) {
         if (step !== f.prevStep || wrong !== f.prevWrong) f.lastActivity = Date.now();
-        if (step > f.prevStep) { f.confusedUntil = 0; f.cheerUntil = Date.now() + 2600; }
-        else if (step < f.prevStep) { f.confusedUntil = 0; f.cheerUntil = 0; f.wasDone = null; }
-        else if (wrong > f.prevWrong) { f.confusedUntil = Date.now() + 12000; }
+        const team = game?.slots?.[i]?.teamName || `Team ${i + 1}`, total = slotChar(game, i)?.questions?.length || 0;
+        if (step > f.prevStep) { f.confusedUntil = 0; f.cheerUntil = Date.now() + 2600; pfx.ev = { type: total && step >= total ? "finish" : "right", team, until: Date.now() + 3500 }; }
+        else if (step < f.prevStep) { f.confusedUntil = 0; f.cheerUntil = 0; f.wasDone = null; pfx.wasAllDone = null; }
+        else if (wrong > f.prevWrong) { f.confusedUntil = Date.now() + (isSingle(game) ? 5000 : 12000); pfx.ev = { type: "wrong", team, until: Date.now() + 4000 }; }
       }
       f.prevStep = step; f.prevWrong = wrong;
       prog[i] = p;
-      if (game) { for (let k = 0; k < SLOTS; k++) renderSlot(k); renderFinished(); renderDebrief(); }
+      if (game) { for (let k = 0; k < SLOTS; k++) renderSlot(k); if (isSingle(game)) renderPatient(); renderFinished(); renderDebrief(); }
     });
   }
 }
@@ -1503,8 +1659,8 @@ function viewTeam() {
   if (!(slot >= 0 && slot < SLOTS)) {
     app.innerHTML = `<div class="team"><div class="t-name" style="margin-top:20px">Which patient is your team helping?</div><p class="muted">Pick the character named on your team's printed bill.</p><div class="chooser" id="chooser">Loading…</div></div>`;
     DB.watchDoc(GAME, g => {
-      $("#chooser").innerHTML = (g?.slots || []).map((s, i) => s.character
-        ? `<a href="?view=team&slot=${i + 1}"><div class="fig">${charFigure(s.character, "ok")}</div><div><b>${esc(s.character.name)}</b><div class="muted">${esc(s.teamName)}</div></div></a>` : "").join("")
+      $("#chooser").innerHTML = (g?.slots || []).map((s, i) => slotChar(g, i)
+        ? `<a href="?view=team&slot=${i + 1}"><div class="fig">${charFigure(slotChar(g, i), "ok")}</div><div><b>${esc(isSingle(g) ? s.teamName : slotChar(g, i).name)}</b><div class="muted">${esc(isSingle(g) ? "Helping " + slotChar(g, i).name : s.teamName)}</div></div></a>` : "").join("")
         || `<p class="muted">No characters have been set up yet.</p>`;
     });
     return;
@@ -1515,7 +1671,7 @@ function viewTeam() {
   const root = $("#team");
 
   function info() {
-    const s = game?.slots?.[slot]; const ch = s?.character;
+    const s = game?.slots?.[slot]; const ch = slotChar(game, slot);
     const qs = ch?.questions || []; const total = qs.length; const step = Math.min(p?.step || 0, total);
     return { s, ch, qs, total, step, done: total > 0 && step >= total };
   }
@@ -1600,7 +1756,7 @@ function viewTeam() {
     }
     const status = game.status || "waiting";
     const confused = p?.hintStep === step && !done;
-    const k = [status, step, total, done, s.characterId, confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null), JSON.stringify(game.intro?.url ? [game.intro.url, game.intro.urlLabel] : null), !!game.calculator, sitLabel(game)].join("|");
+    const k = [status, step, total, done, slotCharId(game, slot), confused, ch.skin, ch.age, ch.gender, ch.bg, s.teamName, JSON.stringify(ch.bill || null), JSON.stringify(game.intro?.url ? [game.intro.url, game.intro.urlLabel] : null), !!game.calculator, sitLabel(game)].join("|");
     if (k === key) return;
     const wasDone = key && key.split("|")[3] === "true";
     key = k;
@@ -1656,7 +1812,7 @@ function viewTeam() {
     try {
       const res = await DB.tx(PROG(slot), cur => {
         cur = cur || blankProgress();
-        const qs = game?.slots?.[slot]?.character?.questions || [];
+        const qs = slotChar(game, slot)?.questions || [];
         if (game?.status !== "live") return { result: "notlive" };
         if ((cur.step || 0) !== expectedStep || !qs[expectedStep]) return { result: "stale" };
         const ok = checkAnswer(ans, qs[expectedStep]);
@@ -1730,6 +1886,7 @@ function viewAdmin() {
         <section id="tab-live">
           <div class="page-head"><div><h1>Live game</h1><p>Assign a character to each team, then go live. Changes appear on the main screen instantly.</p></div></div>
           <div class="toolbar" id="gameCtl"></div>
+          <div class="sec" id="modeSec" style="margin-bottom:16px"></div>
           <div class="sec heading-ed" style="margin-bottom:16px">
             <div class="sec-title"><span>Main screen heading</span><button class="btn sm ghost" id="headReset">${icon("rotate")}Use default</button></div>
             <div class="grid2" style="grid-template-columns:1fr 1.4fr">
@@ -1803,7 +1960,7 @@ function viewAdmin() {
     $("#gameCtl").addEventListener("click", async e => {
       const b = e.target.closest("[data-status]");
       if (b) {
-        if (b.dataset.status === "live" && !game.slots.some(s => s.character)) return toast("Assign at least one character first.", "err");
+        if (b.dataset.status === "live" && !anyChar(game)) return toast(isSingle(game) ? "Choose the featured patient first." : "Assign at least one character first.", "err");
         await DB.merge(GAME, { status: b.dataset.status }).catch(showError);
       }
       if (e.target.closest("#resetAll")) {
@@ -1829,7 +1986,10 @@ function viewAdmin() {
         const ch = lib.find(c => c.id === s.characterId);
         return ch ? { ...s, character: snapshot(ch) } : s;
       });
-      await DB.merge(GAME, { slots }).catch(showError);
+      const upd = { slots };
+      const fid = game.featured?.characterId;
+      if (fid && (!onlyId || fid === onlyId)) { const ch = lib.find(c => c.id === fid); if (ch) upd.featured = { characterId: fid, character: snapshot(ch) }; }
+      await DB.merge(GAME, upd).catch(showError);
       toast("Live game updated with the latest character details.");
     }
 
@@ -1887,18 +2047,60 @@ function viewAdmin() {
     });
     $("#headReset").onclick = async () => { $("#hTitle").value = ""; $("#hSub").value = ""; $("#hSit").value = ""; await saveHeading(); };
 
+    /* ----- game mode: 4 patients, or 1 shared patient ----- */
+    function renderMode() {
+      const single = isSingle(game), fid = game.featured?.characterId || "";
+      const inLib = fid && lib.some(c => c.id === fid);
+      $("#modeSec").innerHTML = `
+        <div class="sec-title">Game mode</div>
+        <div class="row" style="gap:16px;align-items:flex-end">
+          <div class="seg-ctl" role="group" aria-label="Game mode">
+            <button data-mode="multi" class="${single ? "" : "on"}">${icon("users")}4 patients</button>
+            <button data-mode="single" class="${single ? "on" : ""}">${icon("sparkles")}1 shared patient</button>
+          </div>
+          ${single ? `<label class="flabel" style="min-width:260px;flex:1;max-width:420px">Featured patient
+            <select class="select" id="featSel">
+              <option value="">Choose from library…</option>
+              ${lib.map(c => `<option value="${esc(c.id)}" ${c.id === fid ? "selected" : ""}>${esc(c.name || "(unnamed)")}${c.age ? ", " + esc(c.age) : ""}</option>`).join("")}
+              ${fid && !inLib ? `<option value="${esc(fid)}" selected>${esc(game.featured?.character?.name)} (deleted from library)</option>` : ""}
+            </select></label>` : ""}
+        </div>
+        <p class="help" style="margin:8px 0 0">${single
+          ? "All four teams help the same patient. Each team still has its own QR code, name and progress, and answers at its own pace."
+          : "Each team helps its own patient. Pick a character on each team card below."}</p>`;
+    }
+    const startedAny = () => prog.some(p => (p?.attempts || 0) > 0);
+    const resetAllProg = () => Promise.all(Array.from({ length: SLOTS }, (_, i) => DB.set(PROG(i), blankProgress())));
+    $("#modeSec").addEventListener("click", async e => {
+      const b = e.target.closest("[data-mode]"); if (!b) return;
+      const mode = b.dataset.mode; if ((game.mode || "multi") === mode) return;
+      if (startedAny() && !await ask("Switch game mode?", "Teams have already started. Switching resets all progress.", { ok: "Switch & reset", danger: true })) return;
+      await DB.merge(GAME, { mode }).catch(showError);
+      if (startedAny()) await resetAllProg().catch(showError);
+      toast(mode === "single" ? "Shared patient mode. Choose the featured patient." : "Four patients mode.");
+    });
+    $("#modeSec").addEventListener("change", async e => {
+      if (e.target.id !== "featSel") return;
+      const id = e.target.value;
+      if (startedAny() && !await ask("Change the featured patient?", "Teams have already started. Changing the patient resets all progress.", { ok: "Change & reset", danger: true })) { renderMode(); return; }
+      const ch = lib.find(c => c.id === id);
+      await DB.merge(GAME, { featured: { characterId: id || null, character: ch ? snapshot(ch) : null } }).catch(showError);
+      if (startedAny()) await resetAllProg().catch(showError);
+    });
+
     /* ----- slots ----- */
     function renderSlots() {
+      renderMode();
       const el = $("#slots");
       const a = document.activeElement; const focusId = el.contains(a) ? a.id : null; const val = focusId ? a.value : null;
       el.innerHTML = game.slots.map((s, i) => {
         const inLib = s.characterId && lib.some(c => c.id === s.characterId);
         return `<div class="slot">
           <div class="slot-top">
-            <div class="avatar fig ${s.character ? "" : "empty"}">${s.character ? sceneHTML(s.character) + charFigure(s.character, "ok") : icon("users")}</div>
+            <div class="avatar fig ${slotChar(game, i) ? "" : "empty"}">${slotChar(game, i) ? sceneHTML(slotChar(game, i)) + charFigure(slotChar(game, i), "ok") : icon("users")}</div>
             <div class="slot-id"><div class="slot-n">Team ${i + 1}</div><input class="inline-input" id="team${i}" data-team="${i}" value="${esc(s.teamName)}" maxlength="40" aria-label="Team ${i + 1} name"></div>
           </div>
-          <label class="flabel">Character
+          <label class="flabel" ${isSingle(game) ? "hidden" : ""}>Character
             <select class="select" id="char${i}" data-char="${i}">
               <option value="">Choose from library…</option>
               ${lib.map(c => `<option value="${esc(c.id)}" ${c.id === s.characterId ? "selected" : ""}>${esc(c.name || "(unnamed)")}${c.age ? ", " + esc(c.age) : ""}</option>`).join("")}
@@ -1921,11 +2123,11 @@ function viewAdmin() {
       const ranks = finishRanks(prog);
       game.slots.forEach((s, i) => {
         const mini = $(`#mini${i}`), lg = $(`#log${i}`); if (!mini) return;
-        const p = prog[i] || {}; const total = s.character?.questions?.length || 0; const step = Math.min(p.step || 0, total);
+        const p = prog[i] || {}; const total = slotChar(game, i)?.questions?.length || 0; const step = Math.min(p.step || 0, total);
         const done = total && step >= total;
-        mini.innerHTML = s.character
+        mini.innerHTML = slotChar(game, i)
           ? `<div class="bar ${done ? "done" : ""}"><i style="width:${total ? step / total * 100 : 0}%"></i></div><span>${done ? (MEDAL[ranks[i]] || "✓") + " " : ""}${step}/${total}</span>${p.wrong ? `<span class="chip warn">${p.wrong} wrong</span>` : ""}`
-          : `<span class="muted" style="font-weight:600">No character yet</span>`;
+          : `<span class="muted" style="font-weight:600">${isSingle(game) ? "No featured patient yet" : "No character yet"}</span>`;
         const h = (p.history || []).slice(-3).reverse();
         lg.innerHTML = h.length ? h.map(x => `<li class="${x.ok ? "c" : "w"}"><span class="tag">${x.ok ? "✓" : "✗"}</span><span class="muted">Q${x.step + 1}</span><span class="ans">${esc(x.answer)}</span></li>`).join("")
           : `<li class="empty">No answers yet</li>`;
@@ -1963,7 +2165,7 @@ function viewAdmin() {
     /* ----- library ----- */
     function renderLib() {
       $("#libCount").textContent = lib.length;
-      const used = id => game?.slots?.map((s, i) => s.characterId === id ? i + 1 : null).filter(Boolean) || [];
+      const used = id => isSingle(game) ? [] : (game?.slots?.map((s, i) => s.characterId === id ? i + 1 : null).filter(Boolean) || []);
       const ql = query.trim().toLowerCase();
       const list = [...lib].filter(c => !ql || [c.name, c.situation, c.age].join(" ").toLowerCase().includes(ql))
         .sort((a, b) => String(a.name).localeCompare(String(b.name)));
@@ -1980,6 +2182,7 @@ function viewAdmin() {
               ${c.bill ? `<span class="chip">📄 ${esc(hospInitials(c.bill.hospital))} bill</span>` : ""}
               <span class="chip brand">${plural((c.questions || []).length, "question")}</span>
               ${used(c.id).map(n => `<span class="chip ok">Team ${n}</span>`).join("")}
+              ${isSingle(game) && game.featured?.characterId === c.id ? `<span class="chip ok">Featured patient</span>` : ""}
             </div>
             <p>${esc(c.situation)}</p>
           </div>
@@ -2294,7 +2497,7 @@ function viewAdmin() {
       const wasExisting = !!draft.id;
       closeEditor();
       toast(`Saved “${data.name}”.`);
-      if (wasExisting && game?.slots?.some(s => s.characterId === id) &&
+      if (wasExisting && (game?.slots?.some(s => s.characterId === id) || game?.featured?.characterId === id) &&
           await ask("Update the live game too?", `“${data.name}” is assigned to a team. Apply these changes to the running game now?`, { ok: "Update game", cancel: "Not now" })) {
         lib = lib.map(c => c.id === id ? { ...data, id } : c);
         resync(id);
