@@ -6,7 +6,7 @@
 |---|---|---|
 | Main screen | `healthcare.html` | Projected for the room: the 4 characters, live progress, the debrief |
 | Team page | `healthcare.html?view=team&slot=1` to `slot=4` | Team phones, opened by scanning the QR code on the main screen |
-| Admin | `healthcare.html?view=admin`, or triple-click the 🏥 icon on the main screen, or press Shift+A | Facilitator: character library, slot setup, start/pause, reveal answers |
+| Admin | `healthcare.html?view=admin`, or the ⚙ button on the main screen, or press Shift+A | Facilitator: character library, slot setup, start/pause, reveal answers |
 
 Until you paste a Firebase config, the page runs in **demo mode**. Demo mode stores everything in the current
 browser, so you can try it on one computer using several tabs. Phones only work once Firebase is connected.
@@ -52,7 +52,7 @@ firebase deploy
 
 Run these from this folder. `firebase use --add` asks you to pick the project you created. `firebase deploy`
 publishes the page and the rules (see `firebase.json`). The site is then at
-`https://<project-id>.web.app/` (main screen). Open admin from the main screen (triple-click 🏥) or at `https://<project-id>.web.app/healthcare.html?view=admin`.
+`https://<project-id>.web.app/` (main screen). Open admin from the main screen (⚙ button, top right) or at `https://<project-id>.web.app/healthcare.html?view=admin`.
 
 **Option B: GitHub Pages.** Enable Pages for this repo under **Settings → Pages**, using the default branch and
 the root folder. Then open `https://<org>.github.io/induction/healthcare.html`. Only do this if the repo can be
@@ -62,7 +62,7 @@ The QR codes are generated automatically from whatever URL the main screen was o
 
 ## 3. Running a session
 
-1. Open **Admin**: triple-click the 🏥 icon on the main screen, press **Shift+A**, or go to `?view=admin`.
+1. Open **Admin**: click the ⚙ button on the main screen, press **Shift+A**, or go to `?view=admin`.
    To keep casual visitors out, set `ADMIN_PIN` near the top of `healthcare.html`.
 2. **Character library:** click **+ New character**, or **Add 4 sample characters** to start from examples.
    For each character, set the name, age, gender, medical situation, and the questions. Each question has:
