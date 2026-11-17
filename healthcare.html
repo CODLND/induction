@@ -181,6 +181,11 @@
   .pwrap.flipped .flipper > .pcard:not(.back) { pointer-events: none; }
   .pcard.back { transform: rotateY(180deg); display: flex; flex-direction: column; gap: 1.2vh; cursor: pointer; background: linear-gradient(180deg, var(--surface) 0, var(--surface-2) 100%); }
   .pc-foot { cursor: default; user-select: none; }
+  .flip-btn { flex: 0 0 auto; width: 3.6vh; height: 3.6vh; min-width: 26px; min-height: 26px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--muted); display: grid; place-items: center; cursor: pointer; opacity: .45; transition: opacity .2s, transform .3s var(--spring), color .2s; padding: 0; }
+  .flip-btn:hover, .flip-btn:focus-visible { opacity: 1; color: var(--brand); transform: rotate(-30deg); }
+  .flip-btn svg { width: 55%; height: 55%; }
+  .pc-head .flip-btn { margin-left: .4vw; }
+  .sp-card > .flip-btn { position: absolute; top: 1.4vh; right: 1vw; z-index: 3; }
   .bk-head { display: flex; align-items: center; gap: .8vw; }
   .bk-head .fig { height: 7.5vh; flex: 0 0 auto; }
   .bk-who { min-width: 0; flex: 1; }
@@ -1264,7 +1269,7 @@ function viewDisplay() {
   const prog = Array(SLOTS).fill(null);
   const fx = Array.from({ length: SLOTS }, () => ({ prevStep: null, prevWrong: null, confusedUntil: 0, cheerUntil: 0, talkUntil: 0, lastActivity: Date.now(), wasDone: null, timer: null }));
   const IMPATIENT_AFTER = 45000;   // ms without an answer before the character gets impatient
-  /* Facilitator walkthrough: click a card's progress bar 5 times to flip it; click the back to reveal answers one by one. */
+  /* Facilitator walkthrough: the small ↻ button on a card flips it; click the back to reveal answers one by one. */
   const flips = Array.from({ length: SLOTS }, () => ({ flipped: false, shown: 0, clicks: [] }));
   flips.P = { flipped: false, shown: 0, clicks: [] };
   const pfx = { ev: null, talkUntil: 0, prevBub: "", wasAllDone: null };   // shared patient reactions: ev = { type, team, until }
@@ -1305,13 +1310,8 @@ function viewDisplay() {
   });
   setInterval(() => { if (game) { for (let i = 0; i < SLOTS; i++) renderSlot(i); if (isSingle(game)) renderPatient(); } }, 1000);
   $("#stage").addEventListener("click", e => {
-    const foot = e.target.closest("[data-flip]");
-    if (foot) {
-      const i = fid(foot.dataset.flip), f = flips[i], now = Date.now();
-      f.clicks = f.clicks.filter(t => now - t < 3000).concat(now);
-      if (f.clicks.length >= 5 && info(i).ch) { f.clicks = []; setFlip(i, true); }
-      return;
-    }
+    const fb = e.target.closest("[data-flipbtn]");
+    if (fb) { const i = fid(fb.dataset.flipbtn); if (info(i).ch) setFlip(i, true); return; }
     const back = e.target.closest("[data-back]");
     if (!back) return;
     const i = fid(back.dataset.back), f = flips[i], total = info(i).total;
@@ -1370,7 +1370,7 @@ function viewDisplay() {
     stage.innerHTML = Array.from({ length: SLOTS }, (_, i) => `
       <div class="pwrap" id="wrap${i}"><div class="flipper">
       <section class="pcard" id="col${i}">
-        <div class="pc-head"><span class="team-chip">${icon("users")}<span id="tn${i}"></span></span><span class="rank" id="rk${i}"></span></div>
+        <div class="pc-head"><span class="team-chip">${icon("users")}<span id="tn${i}"></span></span><span class="spacer"></span><span class="rank" id="rk${i}"></span><button class="flip-btn" data-flipbtn="${i}" title="Flip to the answers" aria-label="Flip to the answers">${icon("rotate")}</button></div>
         <div class="bubble" id="bub${i}"></div>
         <div class="pc-mid" id="mid${i}">
           <div class="pc-scene" id="bg${i}"></div>
@@ -1379,7 +1379,7 @@ function viewDisplay() {
         </div>
         <div class="pc-name" id="nm${i}"></div>
         <div class="situation" id="sit${i}"></div>
-        <div class="pc-foot" data-flip="${i}">
+        <div class="pc-foot">
           <div class="steps" id="trk${i}"></div>
           <div class="pc-stats" id="tl${i}"></div>
         </div>
@@ -1397,11 +1397,12 @@ function viewDisplay() {
     $("#stage").innerHTML = `
       <div class="pwrap sp" id="wrapP"><div class="flipper">
         <section class="pcard sp-card" id="colP">
+          <button class="flip-btn" data-flipbtn="P" title="Flip to the answers" aria-label="Flip to the answers">${icon("rotate")}</button>
           <div class="bubble" id="bubP"></div>
           <div class="pc-mid" id="midP"><div class="pc-scene" id="bgP"></div><div class="spot"><div class="fig" id="figP"></div></div></div>
           <div class="pc-name" id="nmP"></div>
           <div class="situation" id="sitP"></div>
-          <div class="pc-foot" data-flip="P"><div class="steps" id="trkP"></div><div class="pc-stats" id="tlP"></div></div>
+          <div class="pc-foot"><div class="steps" id="trkP"></div><div class="pc-stats" id="tlP"></div></div>
         </section>
         <section class="pcard back" id="backP" data-back="P" aria-label="Answers"></section>
       </div></div>
