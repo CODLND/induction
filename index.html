@@ -103,6 +103,8 @@
   .swatches input { position: absolute; opacity: 0; pointer-events: none; }
   .swatches input:checked + label { box-shadow: 0 0 0 2px var(--brand); }
   .swatches input:focus-visible + label { outline: 2px solid var(--brand); outline-offset: 2px; }
+  label.nw { display: flex; align-items: center; gap: 8px; margin: -6px 0 12px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; width: fit-content; }
+  label.nw input { width: 16px; height: 16px; accent-color: var(--brand); margin: 0; }
   .foot { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
   .foot .sp { flex: 1; }
 
@@ -161,7 +163,9 @@
     </div>
     <label class="f">Short description<textarea class="input" name="desc" maxlength="300" placeholder="What the app is for and when it's used"></textarea></label>
     <label class="f">App link<input class="input" name="url" required maxlength="500" placeholder="healthcare.html or https://…"></label>
+    <label class="nw" title="Opens in a new browser window or tab, so the hub stays open"><input type="checkbox" name="newTab">Open app in a new window</label>
     <label class="f">Guide link <small>(optional)</small><input class="input" name="guide" maxlength="500" placeholder="guide.html or https://…"></label>
+    <label class="nw" title="Opens in a new browser window or tab, so the hub stays open"><input type="checkbox" name="guideNewTab">Open guide in a new window</label>
     <div class="row">
       <label class="f">Status
         <select class="input" name="status">
@@ -304,7 +308,8 @@ function render() {
   const tiles = shown.map(a => {
     const [bg, fg] = COLORS[a.color] || COLORS.teal;
     const url = safeUrl(a.url), guide = safeUrl(a.guide);
-    const tgt = u => isExternal(u) ? ` target="_blank" rel="noopener"` : "";
+    // Each link opens in a new window if the tile says so; tiles saved before that option follow the old rule (other sites open in a new window).
+    const tgt = (u, nw) => (nw ?? isExternal(u)) ? ` target="_blank" rel="noopener"` : "";
     const st = STATUS[a.status] ? a.status : "live";
     const n = list.indexOf(a);
     return `<article class="tile ${st === "retired" ? "retired" : ""}" data-id="${esc(a.id)}" style="border-top:4px solid ${fg}">
@@ -317,8 +322,8 @@ function render() {
       </div>
       <p>${esc(a.desc)}</p>
       <div class="acts">
-        ${url ? `<a class="btn primary" href="${esc(url)}"${tgt(url)}>Open app ↗</a>` : `<span class="btn" aria-disabled="true" style="opacity:.5">No link yet</span>`}
-        ${guide ? `<a class="btn ghost" href="${esc(guide)}"${tgt(guide)}>📘 Guide</a>` : ""}
+        ${url ? `<a class="btn primary" href="${esc(url)}"${tgt(url, a.newTab)}>Open app ↗</a>` : `<span class="btn" aria-disabled="true" style="opacity:.5">No link yet</span>`}
+        ${guide ? `<a class="btn ghost" href="${esc(guide)}"${tgt(guide, a.guideNewTab)}>📘 Guide</a>` : ""}
       </div>
     </article>`;
   }).join("");
@@ -340,6 +345,8 @@ function openEditor(id) {
   $("#dlgTitle").textContent = id ? "Edit app" : "Add an app";
   for (const k of ["title", "icon", "desc", "url", "guide", "status"]) form.elements[k].value = a[k] ?? (k === "status" ? "live" : "");
   form.elements.color.value = COLORS[a.color] ? a.color : "teal";
+  form.elements.newTab.checked = a.newTab ?? (id ? isExternal(a.url) : false);
+  form.elements.guideNewTab.checked = a.guideNewTab ?? (id ? isExternal(a.guide) : false);
   const list = sorted(), i = list.findIndex(x => x.id === id);
   $("#del").hidden = $("#left").hidden = $("#right").hidden = !id;
   $("#left").disabled = i <= 0; $("#right").disabled = i < 0 || i >= list.length - 1;
@@ -387,6 +394,7 @@ form.addEventListener("submit", async e => {
   const d = {
     title: f.title.value.trim(), icon: f.icon.value.trim(), desc: f.desc.value.trim(),
     url: f.url.value.trim(), guide: f.guide.value.trim(), status: f.status.value, color: f.color.value || "teal",
+    newTab: f.newTab.checked, guideNewTab: f.guideNewTab.checked,
   };
   if (!d.title) return f.title.focus();
   if (!safeUrl(d.url)) { toast("App link must be a web address (https://…) or a page on this site.", "err"); return f.url.focus(); }
