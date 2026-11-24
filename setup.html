@@ -121,10 +121,15 @@
   .sess.flag.done { border-color: var(--ok); background: var(--ok-50); }
   .sess.flag.done:hover { box-shadow: 0 0 0 4px var(--ok-100); }
   .sess .badge { display: flex; margin-top: 8px; }
+  .pre-box { background: var(--brand-50); border: 1px solid var(--brand-100); border-radius: 14px; padding: 8px 12px 8px; margin-top: 12px; }
+  .pre-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; font-weight: 800; color: var(--ink); }
+  .pre-head .btn { height: 28px; color: var(--brand); }
+  .pre-box .mini label:hover { background: rgba(255,255,255,.8); }
   .mini { list-style: none; margin: 8px -6px 0; padding: 0; display: grid; gap: 1px; }
   .mini label { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; font-weight: 600; color: var(--text); padding: 4px 6px; border-radius: 8px; cursor: pointer; }
   .mini label:hover { background: rgba(255,255,255,.75); }
   .mini input { width: 16px; height: 16px; margin: 1px 0 0; accent-color: var(--ok); flex: 0 0 auto; cursor: pointer; }
+  .mini small.mnote { font-style: italic; white-space: pre-line; }
   .mini small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); }
   .mini .done .mt { text-decoration: line-through; color: var(--muted); }
   .sess-edit { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 6px; }
@@ -580,6 +585,8 @@ function dayTasks(day) {
 }
 /* A task with no names of its own is done by its agenda item's lead(s). */
 const effWho = (t, x) => t.who.length ? t.who : (x?.who || []);
+/* Heading for a day's general list: "Before Day 1", or the day's own name if it already starts with "Before". */
+const preTitle = d => /^before\b/i.test(d.name.trim()) ? d.name.trim() : `Before ${d.name}`;
 const count = ts => ({ done: ts.filter(t => t.done).length, total: ts.length });
 const monthTasks = m => m.days.flatMap(dayTasks);
 /* Every assignment in a month: [{ pid, kind: "lead"|"task", day, slot, sess, task }] */
@@ -735,8 +742,13 @@ function renderAgenda(m) {
           <button class="btn sm" data-act="slot-add" ${A({ d: d.id })}>${icon("plus")}Time block</button>
           <button class="btn sm danger" data-act="day-del" ${A({ d: d.id })}>${icon("trash")}Delete day</button></div>
       </div></div>`
-      : `<div class="day-head"><h2>${esc(d.name)}</h2>${d.date ? `<span class="date">${esc(d.date)}</span>` : ""}
-          <button class="pre" data-act="goto" ${A({ k: "pre-" + d.id })}>${pre.done === pre.total && pre.total ? icon("check") : icon("flag")}Before ${esc(d.name)}: ${pre.done}/${pre.total}</button></div>`;
+      : `<div class="day-head"><h2>${esc(d.name)}</h2>${d.date ? `<span class="date">${esc(d.date)}</span>` : ""}</div>`;
+    // The day's general setup list, shown (and tickable) at the top of the day.
+    const preBox = d.pre.length ? `<div class="pre-box">
+        <div class="pre-head">${pre.done === pre.total ? icon("check") : icon("flag")}<span>${esc(preTitle(d))} · general setup</span><span class="chip ${pre.done === pre.total ? "ok" : "brand"}">${pre.done}/${pre.total}</span>
+          <div class="spacer"></div><button class="btn sm ghost" data-act="goto" ${A({ k: "pre-" + d.id })}>${ui.edit ? "Edit in Checklist" : "Open in Checklist"} ${icon("right")}</button></div>
+        ${miniTasks({ d: d.id }, d.pre, null, true)}</div>`
+      : ui.edit ? `<p class="hint" style="margin:12px 0 0">No general setup tasks for this day. Add them on the Checklist tab.</p>` : "";
     const slots = d.slots.map((sl, si) => `<div class="slot">
       <div class="pill">${ui.edit ? `<input class="input" data-edit="slot" ${A({ d: d.id, s: sl.id })} data-f="label" value="${esc(sl.label)}" placeholder="AM / PM / 9am">
           <button class="btn sm icon ghost" data-act="slot-move" ${A({ d: d.id, s: sl.id, v: -1 })} ${si === 0 ? "disabled" : ""} title="Move left">${icon("left")}</button>
@@ -746,8 +758,8 @@ function renderAgenda(m) {
         ${sl.sessions.map((x, xi) => ui.edit ? sessEdit(d, sl, x, xi) : sessCard(d, sl, x)).join("") || (ui.edit ? "" : `<div class="empty-slot">Nothing scheduled</div>`)}
         ${ui.edit ? `<button class="btn sm dashed" data-act="sess-add" ${A({ d: d.id, s: sl.id })}>${icon("plus")}Add agenda item</button>` : ""}
       </div></div>`).join("");
-    return `<section class="day" style="--day:${esc(d.color)}">${head}
-      <div class="slots" style="--n:${Math.max(1, Math.min(d.slots.length, 3))}">${slots || `<p class="muted">No time blocks yet.</p>`}</div></section>`;
+    return `<section class="day" style="--day:${esc(d.color)}">${head}${preBox}
+      <div class="slots" style="--n:${Math.max(1, Math.min(d.slots.length, 3))}">${slots || (ui.edit || !d.pre.length ? `<p class="muted">No time blocks yet.</p>` : "")}</div></section>`;
   }).join("");
   return legend + `<div class="agenda">${days || `<p class="muted">This month has no days yet. Click Edit, then Add a day.</p>`}${ui.edit ? `<button class="add-day" data-act="day-add"><span class="row">${icon("plus")}Add a day</span></button>` : ""}</div>`;
 }
@@ -763,13 +775,13 @@ function sessCard(d, sl, x) {
 /* The item's setup tasks, listed on its agenda card. They can be ticked right here.
    They are not drop targets: a name dropped anywhere on the card makes it the item's lead,
    which then covers every task that has no name of its own. */
-function miniTasks(ids, tasks, x) {
+function miniTasks(ids, tasks, x, dropTargets = false) {
   if (!tasks.length) return "";
   const names = t => effWho(t, x).map(person).filter(Boolean).map(p => p.name).join(", ");
   return `<ul class="mini">${tasks.map(t => {
     const a = { ...ids, t: t.id }, meta = [t.when, names(t)].filter(Boolean).map(esc).join(" · ");
-    return `<li class="${t.done ? "done" : ""}"><label><input type="checkbox" data-act="tick" ${A(a)} ${t.done ? "checked" : ""}>
-      <span><span class="mt">${esc(t.text) || "<i>(untitled)</i>"}</span>${meta ? `<small>${meta}</small>` : ""}</span></label></li>`;
+    return `<li class="${t.done ? "done" : ""}"${dropTargets ? ` data-drop="task" ${A(a)}` : ""}><label><input type="checkbox" data-act="tick" ${A(a)} ${t.done ? "checked" : ""}>
+      <span><span class="mt">${esc(t.text) || "<i>(untitled)</i>"}</span>${t.note ? `<small class="mnote">${esc(t.note)}</small>` : ""}${meta ? `<small>${meta}</small>` : ""}</span></label></li>`;
   }).join("")}</ul>`;
 }
 function sessEdit(d, sl, x, xi) {
@@ -817,7 +829,7 @@ function block(d, sl, x, tasks, visible) {
   const lead = x && (x.who.length || ui.team) ? `<span class="who"><span class="who-label">Lead</span>${whoChips(x.who, "sess", ids)}${x.who.length ? "" : dropHint("Drop a lead here")}</span>` : "";
   const head = x
     ? `<div class="block-head ev" data-drop="sess" ${A(ids)}><span class="slot-tag">${esc(sl.label)}</span><h3>${esc(x.title)}</h3>${x.time || x.venue ? `<span class="muted" style="font-size:13px;font-weight:600">${[x.time, x.venue].filter(Boolean).map(esc).join(" · ")}</span>` : ""}${lead}<div class="spacer"></div>${progChip(c)}</div>`
-    : `<div class="block-head pre">${icon("flag")}<h3>Before ${esc(d.name)} · general setup</h3><div class="spacer"></div><span class="chip ${c.total && c.done === c.total ? "ok" : "brand"}">${c.done}/${c.total}</span></div>`;
+    : `<div class="block-head pre">${icon("flag")}<h3>${esc(preTitle(d))} · general setup</h3><div class="spacer"></div><span class="chip ${c.total && c.done === c.total ? "ok" : "brand"}">${c.done}/${c.total}</span></div>`;
   const rows = list.map((t, i) => ui.edit ? taskEdit(ids, t, i, tasks.length, x) : taskRow(ids, t, x)).join("")
     || `<div class="empty">${ui.edit ? "No tasks yet." : "No setup tasks listed yet. Click Edit to add some."}</div>`;
   return `<div class="block" id="${x ? "ev-" + x.id : "pre-" + d.id}">${head}<ul class="tasks">${rows}</ul>
@@ -942,7 +954,7 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
   const days = m.days.map(d => {
     const groups = [];
     const pre = d.pre.filter(keep);
-    if (pre.length) groups.push({ title: `Before ${d.name}`, sub: "", lead: "", tasks: pre, sess: null });
+    if (pre.length) groups.push({ title: preTitle(d), sub: "", lead: "", tasks: pre, sess: null });
     d.slots.forEach(sl => sl.sessions.forEach(x => {
       if (!x.setup) return;
       const ts = x.tasks.filter(keep);
