@@ -144,8 +144,8 @@ their own setup, and who is doing what. Full instructions are in [`setup-guide.h
   Past months stay as a history.
 - **Namelist (👥 Team):** one list of people for all months. Drag names onto agenda items (as the lead) or tasks;
   on phones, tap a name and then the target.
-- **Email draft:** builds the month's setup as an email to copy into Outlook, or downloads it as an Outlook
-  draft (`.eml`).
+- **Email draft:** builds the month's setup as a formatted email. **Copy email** copies it; **Open in email app**
+  copies it and opens a new message with To and Subject filled in, ready to paste the body into.
 - Set `EDIT_PIN` near the top of the `<script>` to ask for a PIN before Edit mode (not real security).
 
 Everything (all months and the namelist) is stored in one Firestore document, `su_setup/main`, covered by the

@@ -978,24 +978,29 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
 
   const F = "font-family:Arial,Helvetica,sans-serif;";
   const para = s => esc(s).replace(/\n/g, "<br>");
-  const td = "border:1px solid #cfdbe0;padding:6px 8px;vertical-align:top;font-size:14px;";
-  let html = `<div style="${F}font-size:14px;color:#1e293b;line-height:1.5">`;
-  if (intro.trim()) html += `<p>${para(intro.trim())}</p>`;
+  const td = "border:1px solid #cfdbe0;padding:7px 9px;vertical-align:top;font-size:14px;line-height:1.5;";
+  // Spacing uses empty paragraphs as well as margins: Outlook ignores most CSS margins (on tables in particular).
+  const PS = "margin:0;line-height:1.6;";
+  const SP = `<p style="${PS}">&nbsp;</p>`;
+  const H = `${F}font-size:18px;color:#0f3a50;margin:0 0 6px;line-height:1.4;`;
+  let html = `<div style="${F}font-size:14px;color:#1e293b;line-height:1.6">`;
+  if (intro.trim()) html += `<p style="${PS}">${para(intro.trim())}</p>` + SP;
   for (const d of days) {
-    html += `<h2 style="${F}font-size:18px;color:#0f3a50;margin:22px 0 8px">${esc(d.title)}</h2>`;
+    html += SP + `<h2 style="${H}">${esc(d.title)}</h2>`;
     for (const g of d.groups) {
-      html += `<p style="margin:14px 0 6px"><b>${esc(g.title)}</b>${g.sub ? ` <span style="color:#64748b">(${esc(g.sub)})</span>` : ""}${g.lead ? `<br><span style="color:#64748b">Lead: ${esc(g.lead)}</span>` : ""}</p>`;
-      if (g.tasks.length) html += `<table style="border-collapse:collapse;width:100%;${F}"><tr style="background:#eef6fa"><th style="${td}text-align:left">Task</th><th style="${td}text-align:left;width:22%">When</th><th style="${td}text-align:left;width:22%">Who</th></tr>${g.tasks.map(t =>
+      html += `<p style="${PS}margin-top:8px"><b>${esc(g.title)}</b>${g.sub ? ` <span style="color:#64748b">(${esc(g.sub)})</span>` : ""}${g.lead ? `<br><span style="color:#64748b">Lead: ${esc(g.lead)}</span>` : ""}</p>`;
+      if (g.tasks.length) html += `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin-top:4px;${F}"><tr style="background:#eef6fa"><th style="${td}text-align:left">Task</th><th style="${td}text-align:left;width:22%">When</th><th style="${td}text-align:left;width:22%">Who</th></tr>${g.tasks.map(t =>
         `<tr><td style="${td}">${esc(t.text)}${t.note ? `<br><span style="color:#64748b;font-size:13px">${para(t.note)}</span>` : ""}</td><td style="${td}">${esc(t.when) || "&nbsp;"}</td><td style="${td}">${esc(names(effWho(t, g.sess))) || `<span style="color:#b45309">To be assigned</span>`}</td></tr>`).join("")}</table>`;
+      html += SP;
     }
   }
-  if (!days.length) html += `<p><i>No setup tasks ${todoOnly ? "left " : ""}for this month.</i></p>`;
+  if (!days.length) html += `<p style="${PS}"><i>No setup tasks ${todoOnly ? "left " : ""}for this month.</i></p>` + SP;
   if (ppl.length) {
-    html += `<h2 style="${F}font-size:18px;color:#0f3a50;margin:22px 0 8px">Who's doing what</h2>`;
-    for (const { p, items } of ppl) html += `<p style="margin:10px 0 4px"><b>${esc(p.name)}</b></p><ul style="margin:0 0 0 18px;padding:0">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`;
+    html += SP + `<h2 style="${H}">Who's doing what</h2>`;
+    for (const { p, items } of ppl) html += `<p style="${PS}margin-top:8px"><b>${esc(p.name)}</b></p><ul style="margin:2px 0 0 20px;padding:0">${items.map(i => `<li style="line-height:1.6;margin:0 0 2px">${esc(i)}</li>`).join("")}</ul>` + SP;
   }
-  html += `<p style="margin-top:20px">Live checklist (tick tasks off as you finish them): <a href="${esc(link)}">${esc(link)}</a></p>`;
-  if (outro.trim()) html += `<p>${para(outro.trim())}</p>`;
+  html += SP + `<p style="${PS}">Live checklist (tick tasks off as you finish them): <a href="${esc(link)}">${esc(link)}</a></p>`;
+  if (outro.trim()) html += SP + `<p style="${PS}">${para(outro.trim())}</p>`;
   html += `</div>`;
 
   let text = intro.trim() ? intro.trim() + "\n\n" : "";
@@ -1033,13 +1038,6 @@ async function copyText(t) {
   try { await navigator.clipboard.writeText(t); return true; }
   catch { const a = document.createElement("textarea"); a.value = t; document.body.appendChild(a); a.select(); let ok = false; try { ok = document.execCommand("copy"); } catch {} a.remove(); return ok; }
 }
-/* An .eml file with X-Unsent: 1 opens in Outlook as a new, editable, unsent message. */
-function emlFile(to, subject, html) {
-  const b64 = s => btoa(unescape(encodeURIComponent(s)));
-  const body = b64(`<!doctype html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`).replace(/.{76}/g, "$&\r\n");
-  return ["X-Unsent: 1", `To: ${to}`, `Subject: =?UTF-8?B?${b64(subject)}?=`, "MIME-Version: 1.0",
-    "Content-Type: text/html; charset=UTF-8", "Content-Transfer-Encoding: base64", "", body, ""].join("\r\n");
-}
 function download(name, content, type) {
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob([content], { type }));
@@ -1074,10 +1072,9 @@ function emailDialog(mid) {
     <div class="dlg-foot">
       <button type="button" class="btn" data-act="em-to">${icon("copy")}Copy To addresses</button>
       <button type="button" class="btn" data-act="em-mailto">Open in email app</button>
-      <button type="button" class="btn" data-act="em-eml">⬇ Outlook draft (.eml)</button>
       <button type="button" class="btn primary" data-act="em-copy">${icon("copy")}Copy email</button>
     </div>
-    <p class="hint" style="margin:0 22px 18px;text-align:right">Copy email, then paste it into a new Outlook message. Or download the Outlook draft and open it: Outlook opens it as a new email, ready to send.</p>
+    <p class="hint" style="margin:0 22px 18px;text-align:right"><b>Open in email app</b> copies the formatted email and opens a new message with To and Subject filled in: click in the body and press Ctrl+V (⌘V on a Mac).</p>
   </form>`);
   const f = d.querySelector("form");
   let em = first;
@@ -1095,11 +1092,12 @@ function emailDialog(mid) {
     if (!act?.startsWith("em-")) return;
     if (act === "em-copy") { const ok = await copyRich(em.html, em.text); toast(ok ? "Email copied. Paste it into a new message." : "Couldn't copy. Select the preview and copy it instead.", ok ? "ok" : "err"); }
     if (act === "em-to") toast(await copyText(toStr()) ? "Addresses copied." : "Couldn't copy.", "ok");
-    if (act === "em-eml") { download(`Induction setup ${m.ym}.eml`, emlFile(toStr(), f.subject.value, em.html), "message/rfc822"); toast("Downloaded. Open the file to get a new Outlook message."); }
     if (act === "em-mailto") {
-      const url = `mailto:${encodeURIComponent(toStr()).replace(/%40/g, "@").replace(/%3B%20/g, ";")}?subject=${encodeURIComponent(f.subject.value)}&body=${encodeURIComponent(em.text)}`;
-      if (url.length > 1900) toast("This email is long, so some email apps may cut it short. If that happens, use Copy email instead.", "info", 6000);
-      location.href = url;
+      // Email links can only carry plain text, so copy the formatted email first and open
+      // a new message with just To and Subject. The user pastes the body in.
+      const ok = await copyRich(em.html, em.text);
+      location.href = `mailto:${encodeURIComponent(toStr()).replace(/%40/g, "@").replace(/%3B%20/g, ";")}?subject=${encodeURIComponent(f.subject.value)}`;
+      toast(ok ? "Formatted email copied. In the new message, click in the body and press Ctrl+V (⌘V on a Mac)." : "Couldn't copy the email. Use Copy email, then paste it into the new message.", ok ? "ok" : "err", 9000);
     }
   });
 }
