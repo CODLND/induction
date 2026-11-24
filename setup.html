@@ -75,7 +75,8 @@
   .tabs button.on { background: var(--surface); color: var(--ink); box-shadow: var(--sh-1); }
   .btn.editing { background: var(--warn); border-color: var(--warn); color: #fff; }
   .menu { position: relative; }
-  .menu-pop { position: absolute; right: 0; top: 44px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); box-shadow: var(--sh-3); padding: 6px; min-width: 240px; z-index: 30; }
+  .menu-pop { position: absolute; right: 0; top: 44px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); box-shadow: var(--sh-3); padding: 6px; min-width: 280px; z-index: 30; }
+  .menu-pop button { white-space: nowrap; }
   .menu-pop button { display: flex; width: 100%; gap: 10px; align-items: center; padding: 9px 10px; border: none; background: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; text-align: left; }
   .menu-pop button:hover { background: var(--surface-2); }
   .menu-pop hr { border: none; border-top: 1px solid var(--line); margin: 4px 0; }
@@ -182,7 +183,7 @@
 
   @media (max-width: 720px) {
     .hd { padding: 10px 16px; flex-wrap: wrap; }
-    .hd .title-txt { display: none; }
+    .hd .title-txt, .hd a.btn.ghost { display: none; }
     main { padding: 16px 16px 60px; }
     .hero { grid-template-columns: 1fr; padding: 20px; }
     .hero h1 { font-size: 23px; }
@@ -213,12 +214,14 @@
     <button data-act="tab" data-v="agenda">Agenda</button>
     <button data-act="tab" data-v="checklist">Checklist</button>
   </div>
+  <a class="btn ghost" href="setup-guide.html" title="How to use this page">📘 Guide</a>
   <button class="btn" id="editBtn" data-act="edit"></button>
   <div class="menu">
     <button class="btn icon" data-act="menu" title="More" aria-label="More options"></button>
     <div class="menu-pop" id="menu" hidden>
       <button data-act="untick">↺ Untick everything (new intake)</button>
       <button data-act="print">🖨 Print checklist</button>
+      <button data-act="guide">📘 How to use this page</button>
       <hr>
       <button data-act="export">⬇ Export to file (backup)</button>
       <button data-act="import">⬆ Import from file</button>
@@ -650,6 +653,7 @@ document.addEventListener("click", async e => {
       if (!await ask("Untick everything?", "Clears every tick on every day so the checklist is ready for the next intake. Tasks and the agenda stay as they are.", { ok: "Untick all" })) return;
       mutate(s => s.days.forEach(d => { d.pre.forEach(t => t.done = false); d.slots.forEach(sl => sl.sessions.forEach(x => x.tasks.forEach(t => t.done = false))); }));
       toast("All ticks cleared."); break;
+    case "guide": location.href = "setup-guide.html"; break;
     case "print": $("#menu").hidden = true; ui.tab = "checklist"; ui.edit = false; ui.filter = "all"; ui.owner = ""; render(); setTimeout(() => print(), 50); break;
     case "export": {
       $("#menu").hidden = true;

@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1b6082">
+<title>Guide · Induction Setup Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #1b6082; --brand-700: #0f3a50; --brand-50: #e3eff4; --brand-100: #d6eaf3;
+    --ink: #0f172a; --text: #1e293b; --muted: #5b6b7a;
+    --line: #cfdbe0; --bg: #dde7eb; --surface: #f6f9fa; --surface-2: #ecf2f4;
+    --ok: #16a34a; --ok-50: #ecfdf3; --warn: #b45309; --warn-50: #fffbeb;
+    --r: 16px; --sh: 0 2px 6px rgba(15,23,42,.05), 0 10px 30px rgba(15,23,42,.08);
+    --font: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); font-weight: 600; }
+  header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--surface) 85%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .hd { max-width: 1160px; margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--brand); display: grid; place-items: center; font-size: 18px; }
+  .hd b { color: var(--ink); font-size: 16px; } .hd span { color: var(--muted); font-size: 14px; }
+  .hd .sp { flex: 1; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; background: var(--brand); color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
+  .btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--line); }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 24px 20px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; }
+  nav.toc { position: sticky; top: 76px; align-self: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; box-shadow: var(--sh); font-size: 14px; }
+  nav.toc b { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px 6px; }
+  nav.toc a { display: block; padding: 6px 8px; border-radius: 8px; color: var(--text); text-decoration: none; font-weight: 600; }
+  nav.toc a:hover { background: var(--brand-50); color: var(--brand-700); }
+  main { min-width: 0; }
+  .hero { background: linear-gradient(135deg, var(--brand) 0%, #2a7aa1 100%); color: #fff; border-radius: 22px; padding: 28px 30px; box-shadow: var(--sh); margin-bottom: 22px; }
+  .hero h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -.02em; line-height: 1.15; }
+  .hero p { margin: 0; opacity: .92; font-size: 16px; max-width: 720px; }
+  .links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .links a { background: rgba(255,255,255,.16); color: #fff; padding: 8px 12px; border-radius: 10px; text-decoration: none; font-size: 14px; }
+  .links a:hover { background: rgba(255,255,255,.26); }
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px 26px; margin-bottom: 18px; box-shadow: var(--sh); }
+  h2 { margin: 0 0 4px; font-size: 21px; color: var(--ink); letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
+  h2 .n { width: 30px; height: 30px; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-size: 14px; flex: 0 0 auto; }
+  h3 { margin: 18px 0 6px; font-size: 16px; color: var(--ink); }
+  .lead { color: var(--muted); margin: 0 0 12px; }
+  ol, ul { padding-left: 22px; margin: 8px 0; } li { margin: 4px 0; }
+  kbd { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: #fff; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+  .ui { font-weight: 700; color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--surface-2); }
+  .tip, .warn { border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 14px; }
+  .tip { background: var(--brand-50); border: 1px solid var(--brand-100); color: var(--brand-700); }
+  .warn { background: var(--warn-50); border: 1px solid #fde4b0; color: #7c4a03; }
+  .steps { counter-reset: s; list-style: none; padding: 0; }
+  .steps > li { counter-increment: s; position: relative; padding: 2px 0 10px 42px; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .card b { display: block; color: var(--ink); margin-bottom: 4px; }
+  .card p { margin: 0; font-size: 14px; color: var(--muted); }
+  figure.shot { margin: 14px 0 6px; }
+  figure.shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--sh); background: #fff; }
+  figure.shot a { display: block; cursor: zoom-in; }
+  figure.shot figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; text-align: center; }
+  figure.shot.narrow { max-width: 640px; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; align-items: start; }
+  .shots.phone { grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); justify-content: center; }
+  .shots figure.shot { margin: 6px 0; }
+  .tl { list-style: none; padding: 0; margin: 10px 0; border-left: 3px solid var(--brand-100); }
+  .tl li { position: relative; padding: 2px 0 12px 20px; margin: 0; }
+  .tl li::before { content: ""; position: absolute; left: -8px; top: 7px; width: 13px; height: 13px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 3px var(--surface); }
+  .tl b.when { display: inline-block; min-width: 92px; color: var(--brand-700); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+  td code { word-break: break-all; }
+  .prompt { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 10px; padding: 12px 14px; margin: 10px 0; font-size: 14px; color: var(--text); white-space: pre-line; }
+  .prompt small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } nav.toc { position: static; } .hd span { display: none; } section { padding: 18px; } .hero { padding: 22px; } .hero h1 { font-size: 24px; } }
+  @media print { header, nav.toc { display: none; } .wrap { display: block; } section, .hero { box-shadow: none; break-inside: avoid; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<header><div class="hd">
+  <div class="logo">🧰</div><b>Setup checklist guide</b><span>Induction Setup Checklist</span>
+  <div class="sp"></div>
+  <a class="btn ghost" href="index.html">Induction Hub</a>
+  <a class="btn" href="setup.html">Open the checklist</a>
+</div></header>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents">
+    <b>Contents</b>
+    <a href="#overview">Overview</a>
+    <a href="#quick">Quick start</a>
+    <a href="#agenda">Agenda tab</a>
+    <a href="#checklist">Checklist tab</a>
+    <a href="#edit-agenda">Editing the agenda</a>
+    <a href="#edit-tasks">Editing tasks</a>
+    <a href="#menu">The ⋯ menu</a>
+    <a href="#phone">On your phone</a>
+    <a href="#timeline">A typical intake</a>
+    <a href="#trouble">Troubleshooting</a>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>Using the Induction Setup Checklist</h1>
+      <p>One shared page for the induction team: what to set up before each day, which agenda items need setting up, and who is doing what. Everyone sees ticks and changes live.</p>
+      <div class="links">
+        <a href="https://codlnd.github.io/induction/setup.html">🧰 Open the checklist</a>
+        <a href="https://codlnd.github.io/induction/">🎓 Induction Hub</a>
+        <a href="#quick">⚡ Quick start</a>
+      </div>
+    </div>
+
+    <section id="overview">
+      <h2><span class="n">i</span>Overview</h2>
+      <p class="lead">The page has two tabs and an Edit mode. Anyone with the link can tick tasks and edit.</p>
+      <div class="grid">
+        <div class="card"><b>📅 Agenda</b><p>The programme laid out like the agenda slide. Items that need setup are highlighted, so you can see at a glance what's ready.</p></div>
+        <div class="card"><b>✅ Checklist</b><p>The setup tasks for each day, grouped into "Before Day N" and one list per highlighted agenda item. Tick them off as you go.</p></div>
+        <div class="card"><b>✏️ Edit</b><p>Change anything: days, dates, time blocks, agenda items, tasks, who does them and when. Changes save as you type.</p></div>
+      </div>
+      <div class="tip">🔗 <b>Address:</b> <a href="https://codlnd.github.io/induction/setup.html">codlnd.github.io/induction/setup.html</a>. It's also a tile on the <a href="https://codlnd.github.io/induction/">Induction Hub</a>. The dot at the top says <b>Live · shared with the team</b> when everything is saving to the shared database.</div>
+    </section>
+
+    <section id="quick">
+      <h2><span class="n">⚡</span>Quick start</h2>
+      <ol class="steps">
+        <li>Open the <a href="setup.html">checklist</a> and click <span class="ui">Edit</span> at the top right.</li>
+        <li>On the <span class="ui">Agenda</span> tab, type in the <b>dates</b> for Day 1 and Day 2, and check the agenda items match this intake's programme.</li>
+        <li>Tick <span class="ui">Needs setup</span> on every agenda item that needs something prepared (props, stations, a speaker, a vendor…). Untick any that don't.</li>
+        <li>Switch to the <span class="ui">Checklist</span> tab. For each list, add the tasks, <b>who</b> is doing each one, and <b>when</b> it needs to be done.</li>
+        <li>Click <span class="ui">Done editing</span> and share the link with the team. Everyone ticks their own tasks as they finish them.</li>
+        <li>After the intake, open the <span class="ui">⋯</span> menu and choose <span class="ui">Untick everything</span>, so the checklist is ready for the next one.</li>
+      </ol>
+      <div class="warn">⚠️ The tasks that came with the page (venue, name tags, Amazing Race clues and so on) are <b>examples</b>. Replace them with your team's real setup tasks.</div>
+    </section>
+
+    <section id="agenda">
+      <h2><span class="n">1</span>Agenda tab</h2>
+      <p class="lead">The days side by side, each split into time blocks (AM and PM), with the agenda items underneath.</p>
+<figure class="shot"><a href="guide-img/setup-agenda.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-agenda.jpg" width="2600" height="1560" alt="The Agenda tab: Day 1 and Day 2 with AM and PM blocks. Items needing setup have an orange outline and a Setup count; a finished one is green." loading="lazy"></a><figcaption>Orange = needs setup, still to do. Green = all its setup tasks are ticked. White = no setup needed.</figcaption></figure>
+      <ul>
+        <li><b>Progress at the top:</b> tasks done out of the total, for all days and for each day.</li>
+        <li><b>Highlighted items</b> show a badge such as <span class="ui">Setup 1/3</span>. Click the item to jump straight to its checklist.</li>
+        <li><b>Before Day N</b> (the button in each day's coloured header) jumps to that day's general setup list.</li>
+        <li>An item's time and venue show under its name if you've filled them in.</li>
+      </ul>
+    </section>
+
+    <section id="checklist">
+      <h2><span class="n">2</span>Checklist tab</h2>
+      <p class="lead">For each day: first the general "Before Day N" list, then one list for each agenda item marked <b>Needs setup</b>, in agenda order.</p>
+<figure class="shot"><a href="guide-img/setup-checklist.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-checklist.jpg" width="2600" height="1800" alt="The Checklist tab: Day 1's general setup list with ticked tasks, then lists for Getting to Know CPFB and Journey Through Time." loading="lazy"></a><figcaption>Each task shows when it's due and who's doing it. Notes appear under the task.</figcaption></figure>
+      <h3>Ticking tasks</h3>
+      <p>Click the box or the task's name. The tick saves straight away and shows on everyone's screen within a second or two. Click again to untick. You don't need Edit mode to tick.</p>
+      <h3>Seeing just your tasks</h3>
+      <p>Use the filters above the lists:</p>
+      <ul>
+        <li><span class="ui">Still to do</span> hides ticked tasks.</li>
+        <li>Click a <b>name</b> to show only that person's tasks. The names come from the <b>Who</b> field on each task, so they appear once someone has been assigned.</li>
+      </ul>
+<figure class="shot"><a href="guide-img/setup-filter.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-filter.jpg" width="2600" height="1520" alt="The checklist filtered to Still to do and Ben: only Ben's unticked tasks are listed across both days." loading="lazy"></a><figcaption>"Still to do" + "Ben": everything Ben still has to do, across both days.</figcaption></figure>
+    </section>
+
+    <section id="edit-agenda">
+      <h2><span class="n">3</span>Editing the agenda</h2>
+      <p class="lead">Click <span class="ui">Edit</span>, then go to the <span class="ui">Agenda</span> tab. Every name and label turns into a box you can type in. Changes save when you click or tab out of a box, or press <kbd>Enter</kbd>.</p>
+<figure class="shot narrow"><a href="guide-img/setup-edit-agenda.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-edit-agenda.jpg" width="1182" height="1334" alt="Day 1 in Edit mode: boxes for the day name and date, colour dots, time block labels, and each agenda item's name, time, venue and Needs setup tick box." loading="lazy"></a><figcaption>Day 1 in Edit mode.</figcaption></figure>
+      <table>
+        <tr><th>To…</th><th>Do this</th></tr>
+        <tr><td>Rename a day or add its date</td><td>Type in the two boxes in the day's header.</td></tr>
+        <tr><td>Change a day's colour</td><td>Click one of the coloured dots.</td></tr>
+        <tr><td>Reorder days</td><td>Use <b>‹ ›</b> in the day's header.</td></tr>
+        <tr><td>Add or remove a day</td><td><span class="ui">Add a day</span> below the days; <span class="ui">Delete day</span> in the header. Deleting a day deletes its agenda items and tasks too.</td></tr>
+        <tr><td>Add a time block (e.g. "Lunch" or "9:00am")</td><td><span class="ui">+ Time block</span> in the day's header, then type its label in the orange bar. Reorder with <b>‹ ›</b>, delete with 🗑.</td></tr>
+        <tr><td>Add an agenda item</td><td><span class="ui">+ Add agenda item</span> under a time block. Time and venue are optional.</td></tr>
+        <tr><td>Move an item up or down</td><td>The <b>⌃ ⌄</b> arrows on the item.</td></tr>
+        <tr><td>Flag an item as needing setup</td><td>Tick <span class="ui">Needs setup</span>. It gets an orange outline and its own list on the Checklist tab.</td></tr>
+      </table>
+      <div class="tip">💡 Unticking <b>Needs setup</b> hides the item's list but keeps its tasks. Tick it again and they come back. Deleting the item deletes its tasks.</div>
+    </section>
+
+    <section id="edit-tasks">
+      <h2><span class="n">4</span>Editing tasks</h2>
+      <p class="lead">In Edit mode, go to the <span class="ui">Checklist</span> tab. Each task becomes a row of boxes.</p>
+<figure class="shot"><a href="guide-img/setup-edit-tasks.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-edit-tasks.jpg" width="2400" height="402" alt="A task in Edit mode with boxes for the task, who, when and notes, plus move and delete buttons and an Add task button." loading="lazy"></a><figcaption>A task in Edit mode.</figcaption></figure>
+      <div class="grid">
+        <div class="card"><b>What needs doing</b><p>A short instruction, e.g. "Print clue cards and station sheets".</p></div>
+        <div class="card"><b>Who</b><p>A name. Names you've used before are suggested, and each name becomes a filter button.</p></div>
+        <div class="card"><b>When</b><p>Free text: "1 week before", "Day before", "8:30am", "During lunch".</p></div>
+        <div class="card"><b>Notes</b><p>Optional: where things are kept, contacts, links, the number of copies…</p></div>
+      </div>
+      <p>Use <span class="ui">+ Add task</span> at the bottom of a list to add a task, <b>⌃ ⌄</b> to reorder, and 🗑 to delete. Press <kbd>Tab</kbd> to move between boxes.</p>
+      <p>To add tasks for an agenda item that has no list yet, first tick <b>Needs setup</b> on it in the Agenda tab.</p>
+    </section>
+
+    <section id="menu">
+      <h2><span class="n">5</span>The ⋯ menu</h2>
+<figure class="shot narrow"><a href="guide-img/setup-menu.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-menu.jpg" width="960" height="660" alt="The ⋯ menu: Untick everything, Print checklist, Export to file, Import from file, Replace with sample agenda." loading="lazy"></a></figure>
+      <table>
+        <tr><th>Option</th><th>What it does</th></tr>
+        <tr><td><span class="ui">Untick everything (new intake)</span></td><td>Clears every tick on every day. Tasks, names and the agenda stay as they are.</td></tr>
+        <tr><td><span class="ui">Print checklist</span></td><td>Prints all the lists (or saves them as PDF), without buttons or filters.</td></tr>
+        <tr><td><span class="ui">Export to file (backup)</span></td><td>Downloads everything, including ticks, as a <code>.json</code> file. Do this before big changes.</td></tr>
+        <tr><td><span class="ui">Import from file</span></td><td>Replaces everything with a file you exported earlier, for everyone.</td></tr>
+        <tr><td><span class="ui">Replace with sample agenda</span></td><td>Starts again from the agenda and example tasks the page came with. This overwrites your work, so export first.</td></tr>
+      </table>
+      <div class="tip">💡 Keeping a different setup for each intake? Export a file per intake (e.g. <code>March-intake.json</code>) and import the one you need.</div>
+    </section>
+
+    <section id="phone">
+      <h2><span class="n">6</span>On your phone</h2>
+      <p class="lead">The page works on phones, so the team can tick tasks while walking the room.</p>
+      <div class="shots phone">
+<figure class="shot"><a href="guide-img/setup-phone.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-phone.jpg" width="780" height="1560" alt="The checklist on a phone: filters at the top and the Before Day 1 list with ticked tasks." loading="lazy"></a><figcaption>The checklist on a phone.</figcaption></figure>
+      </div>
+      <p>Tip: bookmark the page or add it to your home screen. Filter to your own name to see just your list.</p>
+    </section>
+
+    <section id="timeline">
+      <h2><span class="n">7</span>A typical intake</h2>
+      <ul class="tl">
+        <li><b class="when">2 weeks out</b> Update the agenda and dates. Flag the items that need setup, add tasks and assign names.</li>
+        <li><b class="when">1 week out</b> Everyone filters to their name and starts on the "1 week before" tasks.</li>
+        <li><b class="when">Day before</b> Check the Agenda tab: anything still orange needs attention. Use <b>Still to do</b> to see what's left.</li>
+        <li><b class="when">On the day</b> Tick tasks off on your phone as stations and rooms are ready.</li>
+        <li><b class="when">After</b> Fix anything you'd do differently next time, export a backup, then <b>Untick everything</b>.</li>
+      </ul>
+    </section>
+
+    <section id="trouble">
+      <h2><span class="n">?</span>Troubleshooting</h2>
+      <table>
+        <tr><th>What you see</th><th>What to do</th></tr>
+        <tr><td>The dot at the top is orange and says <b>Demo mode</b></td><td>The page couldn't reach the shared database, so changes are only saved in your browser. Check your internet connection and reload. If it says <i>rules not published</i>, the Firestore rules need publishing again (see <code>FIREBASE_SETUP.md</code>).</td></tr>
+        <tr><td>Someone else's change isn't showing</td><td>Changes appear within a couple of seconds. If you're typing in a box, the page waits until you leave it before updating. Reload if it still doesn't show.</td></tr>
+        <tr><td>Two people edited the same thing</td><td>The last change saved wins. Ticks and edits to different tasks don't overwrite each other.</td></tr>
+        <tr><td>Something was deleted by mistake</td><td>There's no undo. Import your last export from the ⋯ menu, or re-add it by hand.</td></tr>
+        <tr><td>A name filter is missing</td><td>Filters only appear for names typed into a task's <b>Who</b> box. Check the spelling: "Ben" and "ben " count as different people.</td></tr>
+      </table>
+      <div class="warn">⚠️ There's no login: anyone with the link can tick and edit. Don't put personal or sensitive information in tasks or notes.</div>
+    </section>
+
+    <footer>Induction Setup Checklist · <a href="setup.html">Open the checklist</a> · <a href="index.html">Induction Hub</a></footer>
+  </main>
+</div>
+<script>
+/* Contents links: jump to the section, then correct the position if anything above it changed size. */
+document.querySelectorAll('nav.toc a, a[href^="#"]').forEach(a => a.addEventListener("click", e => {
+  const id = a.getAttribute("href"); if (!id || id.length < 2) return;
+  const el = document.querySelector(id); if (!el) return;
+  e.preventDefault(); history.replaceState(null, "", id);
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}));
+</script>
+</body>
+</html>
