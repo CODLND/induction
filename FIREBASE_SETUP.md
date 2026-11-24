@@ -94,11 +94,28 @@ You can also click **↻ Re-sync characters**.
 hc_characters/{id}   name, age, gender, situation, questions[{q, answer, tolerance, hint, explain}]   (admin only)
 hc_game/state        status: waiting|live|paused, reveal: bool,
                      slots[4]{teamName, characterId, character (copy of the character)}
-hc_progress/{0..3}   step, wrong, attempts, hintStep, lastAnswer, lastResult, lastAt, finishedAt, history[]
+hc_progress/{0..3}   step, wrong, attempts, hintStep, lastAnswer, lastResult, lastAt, finishedAt, history[],
+                     expireAt (14 days after the last change; see below)
 ```
 
 When you assign a character, it is copied into `hc_game/state`. Library edits therefore don't change a game
 that's already running unless you re-sync.
+
+### Automatic clean-up of team progress (14 days)
+
+Every write to a team's progress sets `expireAt` to 14 days later, so the date moves forward while a team is
+still playing. Progress that hasn't changed for 14 days is cleared in two ways:
+
+- **On the server (recommended, one-time setup):** a Firestore TTL policy deletes expired progress docs even if
+  nobody opens the game. In the Firebase console open **Firestore Database → Time-to-live (TTL)** (in some
+  consoles it's under the Google Cloud console's Firestore page), click **Create policy**, and enter collection
+  group `hc_progress` and timestamp field `expireAt`. Firestore usually deletes expired docs within a day of
+  their expiry. The admin page recreates blank progress docs when it next opens.
+- **In the app:** when the admin page or main screen opens, it resets any expired team progress it finds. This
+  works without the TTL policy.
+
+To change the window, edit `PROGRESS_KEEP_DAYS` near the top of the `<script>` in `healthcare.html`.
+Characters, team names and game settings are not affected.
 
 **Note:** there is no login. Anyone who has the page address could open the admin screen or change game data,
 and anyone who opens the browser developer tools could see the answers. That's fine for an induction
