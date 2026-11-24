@@ -121,6 +121,12 @@
   .sess.flag.done { border-color: var(--ok); background: var(--ok-50); }
   .sess.flag.done:hover { box-shadow: 0 0 0 4px var(--ok-100); }
   .sess .badge { display: flex; margin-top: 8px; }
+  .mini { list-style: none; margin: 8px -6px 0; padding: 0; display: grid; gap: 1px; }
+  .mini label { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; font-weight: 600; color: var(--text); padding: 4px 6px; border-radius: 8px; cursor: pointer; }
+  .mini label:hover { background: rgba(255,255,255,.75); }
+  .mini input { width: 16px; height: 16px; margin: 1px 0 0; accent-color: var(--ok); flex: 0 0 auto; cursor: pointer; }
+  .mini small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); }
+  .mini .done .mt { text-decoration: line-through; color: var(--muted); }
   .sess-edit { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 6px; }
   .sess-edit.flag { border: 2px solid var(--warn); background: var(--warn-50); }
   .sess-edit .row { flex-wrap: nowrap; gap: 2px; }
@@ -748,7 +754,17 @@ function sessCard(d, sl, x) {
   if (!x.setup) return `<div class="sess" data-drop="sess" ${A(ids)}>${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}${who}</div>`;
   const c = count(x.tasks);
   return `<div role="button" tabindex="0" class="sess flag ${c.total && c.done === c.total ? "done" : ""}" data-act="goto" data-drop="sess" ${A({ ...ids, k: "ev-" + x.id })}>
-    ${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}<span class="badge">${progChip(c)}</span>${who}</div>`;
+    ${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}<span class="badge">${progChip(c)}</span>${miniTasks(ids, x.tasks)}${who}</div>`;
+}
+/* The item's setup tasks, listed on its agenda card. They can be ticked right here. */
+function miniTasks(ids, tasks) {
+  if (!tasks.length) return "";
+  const names = t => t.who.map(person).filter(Boolean).map(p => p.name).join(", ");
+  return `<ul class="mini">${tasks.map(t => {
+    const a = { ...ids, t: t.id }, meta = [t.when, names(t)].filter(Boolean).map(esc).join(" · ");
+    return `<li class="${t.done ? "done" : ""}" data-drop="task" ${A(a)}><label><input type="checkbox" data-act="tick" ${A(a)} ${t.done ? "checked" : ""}>
+      <span><span class="mt">${esc(t.text) || "<i>(untitled)</i>"}</span>${meta ? `<small>${meta}</small>` : ""}</span></label></li>`;
+  }).join("")}</ul>`;
 }
 function sessEdit(d, sl, x, xi) {
   const ids = { d: d.id, s: sl.id, x: x.id };
@@ -1117,7 +1133,7 @@ document.addEventListener("click", async e => {
     case "filter": ui.filter = a.v; render(); break;
     case "owner": ui.owner = a.v; render(); break;
     case "goto": {
-      if (e.target.closest("[data-act='unassign']")) return;
+      if (e.target.closest("[data-act='unassign'], .mini")) return;
       ui.tab = "checklist"; store("tab", "checklist"); ui.filter = "all"; ui.owner = ""; render();
       const b = document.getElementById(el.dataset.k);
       if (b) { b.scrollIntoView({ behavior: "smooth", block: "start" }); b.classList.remove("hl"); void b.offsetWidth; b.classList.add("hl"); }
