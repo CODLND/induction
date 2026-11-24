@@ -222,6 +222,7 @@
   .who { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
   .sess .who, .sess-edit .who { margin-top: 8px; }
   .pchip { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px 0 3px; border-radius: 99px; background: #fff; border: 1px solid var(--line); font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .pchip.inh { background: transparent; border-style: dashed; border-color: var(--line-2); }
   .pchip.gone { color: var(--muted); font-style: italic; }
   .pchip button { border: none; background: none; color: var(--muted); cursor: pointer; padding: 0 0 0 2px; margin-right: -4px; font-size: 15px; line-height: 1; }
   .pchip button:hover { color: var(--bad); }
@@ -577,6 +578,8 @@ function dayTasks(day) {
   day.slots.forEach(sl => sl.sessions.forEach(x => { if (x.setup) out.push(...x.tasks); }));
   return out;
 }
+/* A task with no names of its own is done by its agenda item's lead(s). */
+const effWho = (t, x) => t.who.length ? t.who : (x?.who || []);
 const count = ts => ({ done: ts.filter(t => t.done).length, total: ts.length });
 const monthTasks = m => m.days.flatMap(dayTasks);
 /* Every assignment in a month: [{ pid, kind: "lead"|"task", day, slot, sess, task }] */
@@ -586,7 +589,7 @@ function assignments(m) {
     day.pre.forEach(t => t.who.forEach(pid => out.push({ pid, kind: "task", day, task: t })));
     for (const slot of day.slots) for (const sess of slot.sessions) {
       sess.who.forEach(pid => out.push({ pid, kind: "lead", day, slot, sess }));
-      if (sess.setup) sess.tasks.forEach(t => t.who.forEach(pid => out.push({ pid, kind: "task", day, slot, sess, task: t })));
+      if (sess.setup) sess.tasks.forEach(t => effWho(t, sess).forEach(pid => out.push({ pid, kind: "task", day, slot, sess, task: t, inherited: !t.who.length })));
     }
   }
   return out;
@@ -615,12 +618,13 @@ const whenChip = t => t.when ? `<span class="chip">${icon("clock")}${esc(t.when)
 const progChip = c => c.total ? `<span class="chip ${c.done === c.total ? "ok" : "warn"}">${c.done === c.total ? icon("check") : icon("flag")}Setup ${c.done}/${c.total}</span>` : `<span class="chip warn">${icon("flag")}Setup · no tasks yet</span>`;
 const A = o => Object.entries(o).filter(([, v]) => v != null).map(([k, v]) => `data-${k}="${esc(v)}"`).join(" ");
 const avatar = (p, sm) => `<span class="av${sm ? " sm" : ""}" style="background:${avColor(p.id)}">${esc(initials(p.name))}</span>`;
-/* Assigned-name chips. With the Team panel or Edit mode open, each has a × to unassign. */
-function whoChips(ids, kind, a) {
-  const removable = ui.team || ui.edit;
+/* Assigned-name chips. With the Team panel or Edit mode open, each has a × to unassign.
+   Inherited chips (a task falling back to its item's lead) are shown dashed, without ×. */
+function whoChips(ids, kind, a, inherited = false) {
+  const removable = (ui.team || ui.edit) && !inherited;
   return ids.map(pid => {
     const p = person(pid); if (!p) return "";
-    return `<span class="pchip${p.archived ? " gone" : ""}" title="${esc(p.name)}${p.email ? " · " + esc(p.email) : ""}">${avatar(p, true)}${esc(p.name)}${removable
+    return `<span class="pchip${p.archived ? " gone" : ""}${inherited ? " inh" : ""}" title="${esc(p.name)}${p.email ? " · " + esc(p.email) : ""}${inherited ? " · assigned as the lead. Drop a name here to give this task to someone else." : ""}">${avatar(p, true)}${esc(p.name)}${removable
       ? `<button data-act="unassign" ${A({ ...a, kind, p: pid })} title="Unassign ${esc(p.name)}" aria-label="Unassign ${esc(p.name)}">×</button>` : ""}</span>`;
   }).join("");
 }
@@ -754,12 +758,12 @@ function sessCard(d, sl, x) {
   if (!x.setup) return `<div class="sess" data-drop="sess" ${A(ids)}>${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}${who}</div>`;
   const c = count(x.tasks);
   return `<div role="button" tabindex="0" class="sess flag ${c.total && c.done === c.total ? "done" : ""}" data-act="goto" data-drop="sess" ${A({ ...ids, k: "ev-" + x.id })}>
-    ${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}<span class="badge">${progChip(c)}</span>${miniTasks(ids, x.tasks)}${who}</div>`;
+    ${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}<span class="badge">${progChip(c)}</span>${miniTasks(ids, x.tasks, x)}${who}</div>`;
 }
 /* The item's setup tasks, listed on its agenda card. They can be ticked right here. */
-function miniTasks(ids, tasks) {
+function miniTasks(ids, tasks, x) {
   if (!tasks.length) return "";
-  const names = t => t.who.map(person).filter(Boolean).map(p => p.name).join(", ");
+  const names = t => effWho(t, x).map(person).filter(Boolean).map(p => p.name).join(", ");
   return `<ul class="mini">${tasks.map(t => {
     const a = { ...ids, t: t.id }, meta = [t.when, names(t)].filter(Boolean).map(esc).join(" · ");
     return `<li class="${t.done ? "done" : ""}" data-drop="task" ${A(a)}><label><input type="checkbox" data-act="tick" ${A(a)} ${t.done ? "checked" : ""}>
@@ -812,19 +816,20 @@ function block(d, sl, x, tasks, visible) {
   const head = x
     ? `<div class="block-head ev" data-drop="sess" ${A(ids)}><span class="slot-tag">${esc(sl.label)}</span><h3>${esc(x.title)}</h3>${x.time || x.venue ? `<span class="muted" style="font-size:13px;font-weight:600">${[x.time, x.venue].filter(Boolean).map(esc).join(" · ")}</span>` : ""}${lead}<div class="spacer"></div>${progChip(c)}</div>`
     : `<div class="block-head pre">${icon("flag")}<h3>Before ${esc(d.name)} · general setup</h3><div class="spacer"></div><span class="chip ${c.total && c.done === c.total ? "ok" : "brand"}">${c.done}/${c.total}</span></div>`;
-  const rows = list.map((t, i) => ui.edit ? taskEdit(ids, t, i, tasks.length) : taskRow(ids, t)).join("")
+  const rows = list.map((t, i) => ui.edit ? taskEdit(ids, t, i, tasks.length, x) : taskRow(ids, t, x)).join("")
     || `<div class="empty">${ui.edit ? "No tasks yet." : "No setup tasks listed yet. Click Edit to add some."}</div>`;
   return `<div class="block" id="${x ? "ev-" + x.id : "pre-" + d.id}">${head}<ul class="tasks">${rows}</ul>
     ${ui.edit ? `<div class="block-foot"><button class="btn sm dashed" data-act="task-add" ${A(ids)}>${icon("plus")}Add task</button></div>` : ""}</div>`;
 }
-function taskRow(ids, t) {
+const taskChips = (t, x, a) => t.who.length ? whoChips(t.who, "task", a) : whoChips(x?.who || [], "task", a, true);
+function taskRow(ids, t, x) {
   const cb = `task-${t.id}`, a = { ...ids, t: t.id };
   return `<li class="task ${t.done ? "done" : ""}" data-drop="task" ${A(a)}>
     <input type="checkbox" id="${cb}" data-act="tick" ${A(a)} ${t.done ? "checked" : ""}>
     <label for="${cb}"><div class="txt">${esc(t.text) || "<i>(untitled)</i>"}</div>${t.note ? `<div class="note">${esc(t.note)}</div>` : ""}</label>
-    <div class="tags">${whenChip(t)}${whoChips(t.who, "task", a)}</div></li>`;
+    <div class="tags">${whenChip(t)}${taskChips(t, x, a)}</div></li>`;
 }
-function taskEdit(ids, t, i, n) {
+function taskEdit(ids, t, i, n, x) {
   const a = { ...ids, t: t.id };
   return `<li class="task-edit" data-drop="task" ${A(a)}>
     <input class="input txt-in" data-edit="task" ${A(a)} data-f="text" data-key="k-${t.id}" value="${esc(t.text)}" placeholder="What needs doing">
@@ -834,7 +839,7 @@ function taskEdit(ids, t, i, n) {
       <button class="btn sm icon ghost" data-act="task-move" ${A({ ...a, v: 1 })} ${i === n - 1 ? "disabled" : ""} title="Move down">${icon("down")}</button>
       <button class="btn sm icon ghost danger" data-act="task-del" ${A(a)} title="Delete">${icon("trash")}</button></div>
     <input class="input note-in" data-edit="task" ${A(a)} data-f="note" value="${esc(t.note)}" placeholder="Notes (optional): where things are, contacts, links…">
-    <div class="who-cell who">${whoChips(t.who, "task", a)}${t.who.length ? "" : `<span class="drop-hint">${ui.team ? "Drop a name here" : "Open 👥 Team to assign"}</span>`}</div>
+    <div class="who-cell who">${taskChips(t, x, a)}${effWho(t, x).length ? "" : `<span class="drop-hint">${ui.team ? "Drop a name here" : "Open 👥 Team to assign"}</span>`}</div>
   </li>`;
 }
 
@@ -935,11 +940,11 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
   const days = m.days.map(d => {
     const groups = [];
     const pre = d.pre.filter(keep);
-    if (pre.length) groups.push({ title: `Before ${d.name}`, sub: "", lead: "", tasks: pre });
+    if (pre.length) groups.push({ title: `Before ${d.name}`, sub: "", lead: "", tasks: pre, sess: null });
     d.slots.forEach(sl => sl.sessions.forEach(x => {
       if (!x.setup) return;
       const ts = x.tasks.filter(keep);
-      if (ts.length || x.who.length) groups.push({ title: `${sl.label} · ${x.title}`, sub: [x.time, x.venue].filter(Boolean).join(", "), lead: names(x.who), tasks: ts });
+      if (ts.length || x.who.length) groups.push({ title: `${sl.label} · ${x.title}`, sub: [x.time, x.venue].filter(Boolean).join(", "), lead: names(x.who), tasks: ts, sess: x });
     }));
     return { title: `${d.name}${d.date ? " – " + d.date : ""}`, groups };
   }).filter(d => d.groups.length);
@@ -967,7 +972,7 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
     for (const g of d.groups) {
       html += `<p style="margin:14px 0 6px"><b>${esc(g.title)}</b>${g.sub ? ` <span style="color:#64748b">(${esc(g.sub)})</span>` : ""}${g.lead ? `<br><span style="color:#64748b">Lead: ${esc(g.lead)}</span>` : ""}</p>`;
       if (g.tasks.length) html += `<table style="border-collapse:collapse;width:100%;${F}"><tr style="background:#eef6fa"><th style="${td}text-align:left">Task</th><th style="${td}text-align:left;width:22%">When</th><th style="${td}text-align:left;width:22%">Who</th></tr>${g.tasks.map(t =>
-        `<tr><td style="${td}">${esc(t.text)}${t.note ? `<br><span style="color:#64748b;font-size:13px">${para(t.note)}</span>` : ""}</td><td style="${td}">${esc(t.when) || "&nbsp;"}</td><td style="${td}">${esc(names(t.who)) || `<span style="color:#b45309">To be assigned</span>`}</td></tr>`).join("")}</table>`;
+        `<tr><td style="${td}">${esc(t.text)}${t.note ? `<br><span style="color:#64748b;font-size:13px">${para(t.note)}</span>` : ""}</td><td style="${td}">${esc(t.when) || "&nbsp;"}</td><td style="${td}">${esc(names(effWho(t, g.sess))) || `<span style="color:#b45309">To be assigned</span>`}</td></tr>`).join("")}</table>`;
     }
   }
   if (!days.length) html += `<p><i>No setup tasks ${todoOnly ? "left " : ""}for this month.</i></p>`;
@@ -984,7 +989,7 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
     text += `${d.title.toUpperCase()}\n`;
     for (const g of d.groups) {
       text += `\n${g.title}${g.sub ? ` (${g.sub})` : ""}${g.lead ? `\nLead: ${g.lead}` : ""}\n`;
-      for (const t of g.tasks) text += `- ${t.text}${t.when ? ` – ${t.when}` : ""} – ${names(t.who) || "to be assigned"}\n`;
+      for (const t of g.tasks) text += `- ${t.text}${t.when ? ` – ${t.when}` : ""} – ${names(effWho(t, g.sess)) || "to be assigned"}\n`;
     }
     text += "\n";
   }
@@ -1259,14 +1264,16 @@ document.addEventListener("submit", e => {
 // in between, e.g. from a live update, would otherwise throw away the field the user tabbed to).
 let fieldBusy = false, dragging = false;
 document.addEventListener("focusin", e => { if (e.target.matches?.("#app input.input")) fieldBusy = true; });
-document.addEventListener("focusout", () => setTimeout(() => {
+/* Redraw now if anything changed meanwhile, then put focus back on the field the user is in. */
+function flush() {
   const ae = document.activeElement;
   fieldBusy = !!ae?.matches?.("#app input.input");
   if (!render.pending) return;
   const key = fieldBusy ? keyOf(ae) : null;
   render(true);
   if (key) document.querySelector(key)?.focus();
-}, 0));
+}
+document.addEventListener("focusout", () => setTimeout(flush, 0));
 const keyOf = el => "#app " + (el.name && el.closest("form") ? `form [name="${el.name}"]` : ["edit", "f", "d", "s", "x", "t", "p", "m"].filter(k => el.dataset[k]).map(k => `[data-${k}="${CSS.escape(el.dataset[k])}"]`).join(""));
 
 // Drag and drop names from the namelist
@@ -1283,7 +1290,7 @@ document.addEventListener("dragstart", e => {
 document.addEventListener("dragend", () => {
   dragging = false; dragPid = "";
   document.querySelectorAll(".drop-over").forEach(x => x.classList.remove("drop-over"));
-  if (render.pending) render();
+  flush(); // a field (e.g. the add-person box) may still have focus
 });
 document.addEventListener("dragover", e => {
   if (!dragPid) return;
