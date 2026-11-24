@@ -181,6 +181,102 @@
   .confirm-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 22px 20px; }
   .loading { text-align: center; padding: 80px 20px; color: var(--muted); font-weight: 600; }
 
+  /* ---------- months, namelist, assignments, email ---------- */
+  .agenda { grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
+  .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .85; margin-bottom: 4px; }
+  .mrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .msel { position: relative; display: inline-flex; }
+  .msel select { appearance: none; -webkit-appearance: none; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); color: #fff; font-size: 24px; font-weight: 800; letter-spacing: -.01em; border-radius: 12px; padding: 4px 40px 4px 12px; cursor: pointer; max-width: 100%; }
+  .msel select option { color: var(--ink); font-size: 15px; font-weight: 600; }
+  .msel::after { content: "▾"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 16px; }
+  .hbtn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 10px; border: none; background: rgba(255,255,255,.16); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .hbtn:hover { background: rgba(255,255,255,.28); }
+  .hbtn.icon { width: 36px; padding: 0; justify-content: center; }
+  .hbtn:disabled { opacity: .4; cursor: default; }
+  .hero .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  .layout.with-team { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 18px; align-items: start; }
+  .team-panel { position: sticky; top: 76px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-2); padding: 14px; max-height: calc(100vh - 96px); overflow: auto; }
+  .tp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .tp-head b { color: var(--ink); font-size: 16px; }
+  .people { display: grid; gap: 6px; margin: 10px 0; }
+  .person { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 8px; border-radius: 12px; border: 1px solid var(--line); background: #fff; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+  .person:hover { border-color: var(--brand-200); }
+  .person.picked { outline: 3px solid var(--brand); outline-offset: 1px; }
+  .person .pn { flex: 1; min-width: 0; font-weight: 700; font-size: 14px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .person .pn small { display: block; font-weight: 500; font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+  .person .cnt { font-size: 11px; font-weight: 800; color: var(--muted); background: var(--surface-2); border-radius: 99px; padding: 1px 7px; }
+  .person-edit { display: grid; gap: 6px; padding: 8px; border-radius: 12px; border: 2px solid var(--brand-200); background: var(--brand-50); }
+  .add-person { display: grid; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .removed { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .removed summary { cursor: pointer; font-weight: 700; }
+  .removed .row { justify-content: space-between; padding: 4px 0; }
+  .av { width: 26px; height: 26px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; flex: 0 0 auto; letter-spacing: 0; }
+  .av.sm { width: 20px; height: 20px; font-size: 9px; }
+  .who { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .sess .who, .sess-edit .who { margin-top: 8px; }
+  .pchip { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px 0 3px; border-radius: 99px; background: #fff; border: 1px solid var(--line); font-size: 12px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+  .pchip.gone { color: var(--muted); font-style: italic; }
+  .pchip button { border: none; background: none; color: var(--muted); cursor: pointer; padding: 0 0 0 2px; margin-right: -4px; font-size: 15px; line-height: 1; }
+  .pchip button:hover { color: var(--bad); }
+  .who-label { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .drop-hint { font-size: 12px; color: var(--subtle); border: 1px dashed var(--line-2); border-radius: 99px; padding: 3px 10px; }
+  .drop-over { outline: 3px dashed var(--brand) !important; outline-offset: 2px; }
+  body.picking [data-drop] { cursor: copy; }
+  body.picking [data-drop]:hover { outline: 2px dashed var(--brand); outline-offset: 2px; }
+  .pickbar { position: sticky; top: 66px; z-index: 15; background: var(--brand); color: #fff; border-radius: 12px; padding: 10px 14px; display: flex; gap: 10px; align-items: center; margin-bottom: 12px; box-shadow: var(--sh-2); font-weight: 600; font-size: 14px; }
+  .pickbar .btn { margin-left: auto; }
+  .btn.on { background: var(--brand-50); border-color: var(--brand-200); color: var(--brand-700); }
+
+  .task-edit { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; }
+  .task-edit .note-in { grid-column: 1 / 2; }
+  .task-edit .who-cell { grid-column: 2 / 3; display: flex; align-items: center; min-height: 36px; }
+  .task-edit .acts { grid-column: 3; grid-row: 1 / 3; }
+  .block-head .who { margin-left: 4px; }
+
+  .sec-title { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 800; margin: 20px 0 10px; }
+  .mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 14px; }
+  .mcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; box-shadow: var(--sh-1); display: grid; gap: 10px; align-content: start; }
+  .mcard.on { border: 2px solid var(--brand); padding: 15px; }
+  .mcard h3 { margin: 0; font-size: 18px; color: var(--ink); }
+  .mcard .dates { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .mcard .progress { max-width: none; }
+  .mcard .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  dialog.dlg { border: none; border-radius: var(--r-lg); padding: 0; width: min(520px, calc(100vw - 24px)); box-shadow: var(--sh-3); color: var(--text); }
+  dialog.dlg.wide { width: min(980px, calc(100vw - 24px)); }
+  dialog.dlg::backdrop { background: rgba(15,23,42,.45); backdrop-filter: blur(2px); }
+  .dlg-head { display: flex; align-items: center; gap: 10px; padding: 18px 22px 0; }
+  .dlg-head h3 { margin: 0; font-size: 19px; color: var(--ink); }
+  .dlg-body { padding: 14px 22px; display: grid; gap: 12px; }
+  .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 6px 22px 20px; flex-wrap: wrap; }
+  .f { display: grid; gap: 5px; font-size: 13px; font-weight: 700; color: var(--ink); }
+  .f small { font-weight: 500; color: var(--muted); }
+  .radio { display: flex; gap: 8px; align-items: center; font-weight: 600; font-size: 14px; padding: 6px 0; cursor: pointer; flex-wrap: wrap; }
+  .radio input { accent-color: var(--brand); width: 16px; height: 16px; }
+  .radio select { width: auto; flex: 1; min-width: 160px; }
+  .textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: #fff; font-size: 14px; resize: vertical; min-height: 90px; }
+  .textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-100); }
+  .email-grid { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .preview { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; max-height: 62vh; overflow: auto; }
+  .preview-label { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .check input { accent-color: var(--brand); width: 16px; height: 16px; }
+
+  @media (max-width: 960px) {
+    .layout.with-team { grid-template-columns: 1fr; }
+    .team-panel { position: static; max-height: none; order: -1; }
+    .team-panel .people { display: flex; flex-wrap: wrap; }
+    .person { flex: 0 1 auto; max-width: 100%; }
+    .person .pn small { display: none; }
+    .email-grid { grid-template-columns: 1fr; }
+    .preview { max-height: 40vh; }
+  }
+  @media (max-width: 720px) {
+    .msel select { font-size: 20px; }
+    .task-edit .who-cell { grid-column: 1 / 3; }
+  }
+
   @media (max-width: 720px) {
     .hd { padding: 10px 16px; flex-wrap: wrap; }
     .hd .title-txt, .hd a.btn.ghost { display: none; }
@@ -196,7 +292,9 @@
     .task-edit .acts { grid-row: auto; grid-column: 1 / 3; justify-content: flex-end; }
   }
   @media print {
-    header, .toolbar, .editbar, .btn, .add-day { display: none !important; }
+    header, .toolbar, .editbar, .btn, .hbtn, .add-day, .team-panel, .pickbar, .msel::after { display: none !important; }
+    .layout.with-team { display: block; }
+    .msel select { color: var(--ink); background: none; border: none; padding: 0; }
     body { background: #fff; }
     .hero { background: none; color: var(--ink); box-shadow: none; padding: 0; }
     .stat { background: none; border: 1px solid var(--line); }
@@ -213,20 +311,22 @@
   <div class="tabs" id="tabs">
     <button data-act="tab" data-v="agenda">Agenda</button>
     <button data-act="tab" data-v="checklist">Checklist</button>
+    <button data-act="tab" data-v="months">Months</button>
   </div>
+  <button class="btn" id="teamBtn" data-act="team" title="Namelist: drag names onto agenda items and tasks">👥 Team</button>
   <a class="btn ghost" href="setup-guide.html" title="How to use this page">📘 Guide</a>
   <button class="btn" id="editBtn" data-act="edit"></button>
   <div class="menu">
     <button class="btn icon" data-act="menu" title="More" aria-label="More options"></button>
     <div class="menu-pop" id="menu" hidden>
-      <button data-act="untick">↺ Untick everything (new intake)</button>
-      <button data-act="print">🖨 Print checklist</button>
+      <button data-act="email">✉ Email draft for this month</button>
+      <button data-act="new-month">＋ New month</button>
+      <button data-act="untick">↺ Untick everything this month</button>
+      <button data-act="print">🖨 Print this month's checklist</button>
       <button data-act="guide">📘 How to use this page</button>
       <hr>
-      <button data-act="export">⬇ Export to file (backup)</button>
-      <button data-act="import">⬆ Import from file</button>
-      <hr>
-      <button data-act="sample" style="color:var(--bad)">⟲ Replace with sample agenda</button>
+      <button data-act="export">⬇ Export everything (backup)</button>
+      <button data-act="import">⬆ Import from a backup</button>
     </div>
   </div>
 </div></header>
@@ -238,7 +338,13 @@
 <script type="module">
 /* =====================================================================
    1. CONFIG — same Firebase project as healthcare.html (see FIREBASE_SETUP.md)
-      Data lives in one Firestore document: su_setup/main
+      Everything lives in one Firestore document: su_setup/main
+        { title, subtitle,
+          people: [{ id, name, email, archived }],
+          months: [{ id, ym: "2026-03", label, days: [
+            { id, name, date, color, pre: [task],
+              slots: [{ id, label, sessions: [{ id, title, time, venue, setup, who: [personId], tasks: [task] }] }] } ] }] }
+        task = { id, text, when, note, done, who: [personId] }
    ===================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyARCoY6TQUKDghViUafeNMpxIPD_ZyzekA",
@@ -254,6 +360,7 @@ const FIREBASE_VERSION = "10.12.2";
 const USE_FIREBASE = !!firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("PASTE");
 const PATH = "su_setup/main";
 const DAY_COLORS = ["#8496a9", "#223f6e", "#1b6082", "#15803d", "#7c3aed", "#b45309"];
+const AV_COLORS = ["#1b6082", "#15803d", "#b45309", "#7c3aed", "#be123c", "#0e7490", "#4d7c0f", "#c2410c", "#334155", "#a21caf"];
 
 /* =====================================================================
    2. DATA LAYER (Firestore, or this browser only in demo mode)
@@ -293,6 +400,14 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
 const clone = o => JSON.parse(JSON.stringify(o));
+const pad = n => String(n).padStart(2, "0");
+const ymNow = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const addMonths = (ym, n) => { const [y, m] = ym.split("-").map(Number); const d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const fmtYM = ym => { const [y, m] = String(ym).split("-").map(Number); return y && m ? new Date(y, m - 1, 1).toLocaleDateString("en-SG", { month: "long", year: "numeric" }) : String(ym || "Untitled"); };
+const monthName = m => (m.label || "").trim() || fmtYM(m.ym);
+const isYM = v => /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+const initials = n => String(n || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase() || "?";
+const avColor = id => { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return AV_COLORS[h % AV_COLORS.length]; };
 const ICONS = {
   edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
   check: '<path d="M20 6L9 17l-5-5"/>',
@@ -304,9 +419,10 @@ const ICONS = {
   trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>',
   dots: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   flag: '<path d="M4 22V4"/><path d="M4 4h12l-2 4 2 4H4"/>',
-  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-  pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+  x: '<path d="M18 6L6 18M6 6l12 12"/>',
 };
 const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ""}</svg>`;
 function toast(msg, type = "ok", ms = 3500) {
@@ -331,86 +447,124 @@ function ask(title, body, { ok = "Confirm", danger = false, input = null } = {})
 }
 
 /* =====================================================================
-   4. SAMPLE DATA (from the Programme Agenda slide; setup tasks are examples to edit)
+   4. SAMPLE DATA, NEW MONTHS, AND UPGRADING OLD DATA
    ===================================================================== */
-const T = (text, owner = "", when = "", note = "") => ({ id: uid(), text, owner, when, note, done: false });
-const S = (title, setup = false, tasks = [], time = "", venue = "") => ({ id: uid(), title, time, venue, setup, tasks });
-function sample() {
-  return {
-    title: "Induction Setup Checklist",
-    subtitle: "What needs to be ready before each day, and which agenda items need setting up.",
-    days: [
-      { id: uid(), name: "Day 1", date: "", color: DAY_COLORS[0],
-        pre: [
-          T("Confirm venue booking and room layout", "", "1 week before"),
-          T("Send joining instructions to new hires", "", "3 days before"),
-          T("Print name tags and attendance list", "", "Day before"),
-          T("Test projector, HDMI, clicker and mic", "", "Day before"),
-          T("Set up registration table and welcome packs", "", "Morning, 8:00am"),
-        ],
-        slots: [
-          { id: uid(), label: "AM", sessions: [
-            S("Getting to Know CPFB", true, [T("Load slides on the presenting laptop", "", "8:15am")]),
-            S("Our Challenges, Focus Areas, and ABCS"),
-            S("Our Cultural Norms and Cultural Attributes"),
-          ] },
-          { id: uid(), label: "PM", sessions: [
-            S("Journey Through Time", true, [
-              T("Set up the timeline stations around the room", "", "During lunch"),
-              T("Place props and printed panels at each station", "", "During lunch"),
-              T("Brief station facilitators", "", "12:45pm"),
-            ]),
-          ] },
-        ] },
-      { id: uid(), name: "Day 2", date: "", color: DAY_COLORS[1],
-        pre: [
-          T("Reset the room after Day 1", "", "End of Day 1"),
-          T("Update the attendance list", "", "Day before"),
-        ],
-        slots: [
-          { id: uid(), label: "AM", sessions: [
-            S("Recap of Learning"),
-            S("CPF Performance Management + CDG Growth"),
-            S("AUPE Sharing", true, [T("Confirm speaker and get their slides", "", "2 days before")]),
-            S("Amazing Race", true, [
-              T("Print clue cards and station sheets", "", "Day before"),
-              T("Place clues at each station", "", "Morning, 8:00am"),
-              T("Brief station masters and hand out answer keys", "", "8:30am"),
-            ]),
-            S("Chat with CM", true, [
-              T("Confirm CM's attendance and timing", "", "1 week before"),
-              T("Collect questions from participants", "", "Day 1 PM"),
-              T("Arrange seating and a handheld mic", "", "Before session"),
-            ]),
-          ] },
-          { id: uid(), label: "PM", sessions: [
-            S("Teambuilding", true, [
-              T("Confirm vendor, venue and headcount", "", "1 week before"),
-              T("Prepare team groupings", "", "Day before"),
-            ]),
-          ] },
-        ] },
-    ],
-    updatedAt: Date.now(),
+const T = (text, when = "", note = "") => ({ id: uid(), text, when, note, done: false, who: [] });
+const S = (title, setup = false, tasks = []) => ({ id: uid(), title, time: "", venue: "", setup, who: [], tasks });
+const D = (name, color, pre, slots) => ({ id: uid(), name, date: "", color, pre, slots });
+const L = (label, sessions = []) => ({ id: uid(), label, sessions });
+function sampleDays() {
+  return [
+    D("Day 1", DAY_COLORS[0], [
+      T("Confirm venue booking and room layout", "1 week before"),
+      T("Send joining instructions to new hires", "3 days before"),
+      T("Print name tags and attendance list", "Day before"),
+      T("Test projector, HDMI, clicker and mic", "Day before"),
+      T("Set up registration table and welcome packs", "Morning, 8:00am"),
+    ], [
+      L("AM", [S("Getting to Know CPFB", true, [T("Load slides on the presenting laptop", "8:15am")]),
+               S("Our Challenges, Focus Areas, and ABCS"), S("Our Cultural Norms and Cultural Attributes")]),
+      L("PM", [S("Journey Through Time", true, [T("Set up the timeline stations around the room", "During lunch"),
+               T("Place props and printed panels at each station", "During lunch"), T("Brief station facilitators", "12:45pm")])]),
+    ]),
+    D("Day 2", DAY_COLORS[1], [T("Reset the room after Day 1", "End of Day 1"), T("Update the attendance list", "Day before")], [
+      L("AM", [S("Recap of Learning"), S("CPF Performance Management + CDG Growth"),
+               S("AUPE Sharing", true, [T("Confirm speaker and get their slides", "2 days before")]),
+               S("Amazing Race", true, [T("Print clue cards and station sheets", "Day before"), T("Place clues at each station", "Morning, 8:00am"),
+                 T("Brief station masters and hand out answer keys", "8:30am")]),
+               S("Chat with CM", true, [T("Confirm CM's attendance and timing", "1 week before"), T("Collect questions from participants", "Day 1 PM"),
+                 T("Arrange seating and a handheld mic", "Before session")])]),
+      L("PM", [S("Teambuilding", true, [T("Confirm vendor, venue and headcount", "1 week before"), T("Prepare team groupings", "Day before")])]),
+    ]),
+  ];
+}
+const blankDays = () => [D("Day 1", DAY_COLORS[0], [], [L("AM"), L("PM")]), D("Day 2", DAY_COLORS[1], [], [L("AM"), L("PM")])];
+/* Copy a month's agenda with fresh ids, no ticks and no dates. */
+function copyDays(days, keepPeople) {
+  const t = x => ({ ...x, id: uid(), done: false, who: keepPeople ? [...(x.who || [])] : [] });
+  return days.map(d => ({ ...d, id: uid(), date: "", pre: d.pre.map(t),
+    slots: d.slots.map(sl => ({ ...sl, id: uid(), sessions: sl.sessions.map(x => ({ ...x, id: uid(), who: keepPeople ? [...(x.who || [])] : [], tasks: x.tasks.map(t) })) })) }));
+}
+function freshState() {
+  const ym = ymNow();
+  return { title: "Induction Setup Checklist", subtitle: "What needs to be ready before each day, and which agenda items need setting up.",
+    people: [], months: [{ id: "m_" + ym, ym, label: "", days: sampleDays() }], updatedAt: Date.now() };
+}
+/* Bring any saved data up to the current shape. Deterministic, so it gives the same
+   result in this browser and inside the save transaction. Older versions kept one
+   agenda (no months) and a free-text "owner" per task: those become the current
+   month and namelist entries. */
+function normalize(d) {
+  const s = clone(d || {});
+  s.title ??= "Induction Setup Checklist";
+  s.subtitle ??= "";
+  s.people = Array.isArray(s.people) ? s.people : [];
+  if (!Array.isArray(s.months)) {
+    const ym = ymNow();
+    s.months = [{ id: "m_" + ym, ym, label: "", days: Array.isArray(s.days) ? s.days : [] }];
+  }
+  delete s.days;
+  const byName = new Map(s.people.map(p => [p.name.trim().toLowerCase(), p]));
+  const personFor = name => {
+    const key = name.trim().toLowerCase();
+    if (!byName.has(key)) { const p = { id: "p_" + key.replace(/[^a-z0-9]+/g, "-"), name: name.trim(), email: "", archived: false }; s.people.push(p); byName.set(key, p); }
+    return byName.get(key).id;
   };
+  const fixTask = t => {
+    t.who = Array.isArray(t.who) ? t.who : [];
+    if (typeof t.owner === "string" && t.owner.trim() && !t.who.length) t.who.push(personFor(t.owner));
+    delete t.owner;
+    t.text ??= ""; t.when ??= ""; t.note ??= ""; t.done = !!t.done;
+  };
+  for (const m of s.months) {
+    m.label ??= ""; m.days = Array.isArray(m.days) ? m.days : [];
+    for (const day of m.days) {
+      day.pre = day.pre || []; day.slots = day.slots || []; day.date ??= "";
+      day.pre.forEach(fixTask);
+      for (const sl of day.slots) {
+        sl.sessions = sl.sessions || [];
+        for (const x of sl.sessions) { x.who = Array.isArray(x.who) ? x.who : []; x.tasks = x.tasks || []; x.tasks.forEach(fixTask); x.time ??= ""; x.venue ??= ""; }
+      }
+    }
+  }
+  return s;
 }
 
 /* =====================================================================
    5. STATE
    ===================================================================== */
 let DB, unsub, state = null, seeded = false, localReason = "";
+const store = (k, v) => { try { v === undefined ? localStorage.removeItem("susetup:" + k) : localStorage.setItem("susetup:" + k, v); } catch {} };
+const recall = k => { try { return localStorage.getItem("susetup:" + k); } catch { return null; } };
 const ui = {
-  tab: (() => { try { return localStorage.getItem("susetup:tab") || "agenda"; } catch { return "agenda"; } })(),
-  edit: false, filter: "all", owner: "",
+  tab: recall("tab") || "agenda",
+  month: new URLSearchParams(location.search).get("month") || recall("month") || "",
+  team: recall("team") === "1",
+  edit: false, filter: "all", owner: "", pick: "", personEdit: "",
 };
 let unlocked = !EDIT_PIN;
 try { if (EDIT_PIN && sessionStorage.getItem("susetup:pin") === EDIT_PIN) unlocked = true; } catch {}
 
-const findDay = (s, d) => s.days.find(x => x.id === d);
-const findSlot = (s, d, sl) => findDay(s, d)?.slots.find(x => x.id === sl);
-const findSess = (s, d, sl, x) => findSlot(s, d, sl)?.sessions.find(y => y.id === x);
-const taskList = (s, a) => a.x ? findSess(s, a.d, a.s, a.x)?.tasks : findDay(s, a.d)?.pre;
-const move = (arr, i, dir) => { const j = i + dir; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
+const sortedMonths = () => [...state.months].sort((a, b) => a.ym.localeCompare(b.ym) || monthName(a).localeCompare(monthName(b)));
+function defaultMonth() {
+  const list = sortedMonths(), now = ymNow();
+  return (list.find(m => m.ym >= now) || list[list.length - 1])?.id || "";
+}
+const cur = () => state.months.find(m => m.id === ui.month);
+function setMonth(id, { quiet = false } = {}) {
+  ui.month = id; store("month", id);
+  try { const u = new URL(location.href); u.searchParams.set("month", id); history.replaceState(null, "", u); } catch {}
+  ui.owner = ""; if (!quiet) render();
+}
+const mon = (s, mid) => s.months.find(m => m.id === mid);
+function ctx(s, mid, a) {
+  const m = mon(s, mid), day = m?.days.find(x => x.id === a.d), slot = day?.slots.find(x => x.id === a.s);
+  const sess = slot?.sessions.find(x => x.id === a.x), list = a.x ? sess?.tasks : day?.pre;
+  return { m, day, slot, sess, list, task: list?.find(t => t.id === a.t) };
+}
+const move = (arr, i, dir) => { const j = i + dir; if (i < 0 || j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
+const person = id => state.people.find(p => p.id === id);
+const activePeople = () => state.people.filter(p => !p.archived).sort((a, b) => a.name.localeCompare(b.name));
 
 function dayTasks(day) {
   const out = [...day.pre];
@@ -418,58 +572,78 @@ function dayTasks(day) {
   return out;
 }
 const count = ts => ({ done: ts.filter(t => t.done).length, total: ts.length });
+const monthTasks = m => m.days.flatMap(dayTasks);
+/* Every assignment in a month: [{ pid, kind: "lead"|"task", day, slot, sess, task }] */
+function assignments(m) {
+  const out = [];
+  for (const day of m.days) {
+    day.pre.forEach(t => t.who.forEach(pid => out.push({ pid, kind: "task", day, task: t })));
+    for (const slot of day.slots) for (const sess of slot.sessions) {
+      sess.who.forEach(pid => out.push({ pid, kind: "lead", day, slot, sess }));
+      if (sess.setup) sess.tasks.forEach(t => t.who.forEach(pid => out.push({ pid, kind: "task", day, slot, sess, task: t })));
+    }
+  }
+  return out;
+}
 
 /* Apply a change locally at once, then commit it to the shared store in a transaction. */
 function mutate(fn, { defer = false } = {}) {
   if (!state) return;
   fn(state);
   if (defer) render.pending = true; else render();
-  DB.tx(PATH, cur => { const s = cur ? clone(cur) : clone(state); fn(s); s.updatedAt = Date.now(); return { write: s }; })
+  DB.tx(PATH, curDoc => { const s = curDoc ? normalize(curDoc) : clone(state); fn(s); s.updatedAt = Date.now(); return { write: s }; })
     .catch(showError);
 }
 function showError(e) {
   console.error(e);
   const msg = String(e?.message || e);
   toast(/permission|insufficient/i.test(msg)
-    ? "Permission denied by Firestore. Publish the rules in firestore.rules (they now include su_setup)."
+    ? "Permission denied by Firestore. Publish the rules in firestore.rules (they include su_setup)."
     : "Couldn't save: " + msg, "err", 6000);
 }
 
 /* =====================================================================
    6. RENDER
    ===================================================================== */
-const ownerChip = t => t.owner ? `<span class="chip brand">${icon("user")}${esc(t.owner)}</span>` : "";
 const whenChip = t => t.when ? `<span class="chip">${icon("clock")}${esc(t.when)}</span>` : "";
 const progChip = c => c.total ? `<span class="chip ${c.done === c.total ? "ok" : "warn"}">${c.done === c.total ? icon("check") : icon("flag")}Setup ${c.done}/${c.total}</span>` : `<span class="chip warn">${icon("flag")}Setup · no tasks yet</span>`;
 const A = o => Object.entries(o).filter(([, v]) => v != null).map(([k, v]) => `data-${k}="${esc(v)}"`).join(" ");
+const avatar = (p, sm) => `<span class="av${sm ? " sm" : ""}" style="background:${avColor(p.id)}">${esc(initials(p.name))}</span>`;
+/* Assigned-name chips. With the Team panel or Edit mode open, each has a × to unassign. */
+function whoChips(ids, kind, a) {
+  const removable = ui.team || ui.edit;
+  return ids.map(pid => {
+    const p = person(pid); if (!p) return "";
+    return `<span class="pchip${p.archived ? " gone" : ""}" title="${esc(p.name)}${p.email ? " · " + esc(p.email) : ""}">${avatar(p, true)}${esc(p.name)}${removable
+      ? `<button data-act="unassign" ${A({ ...a, kind, p: pid })} title="Unassign ${esc(p.name)}" aria-label="Unassign ${esc(p.name)}">×</button>` : ""}</span>`;
+  }).join("");
+}
+const dropHint = txt => ui.team || ui.pick ? `<span class="drop-hint">${txt}</span>` : "";
 
 function render(force = false) {
-  // Don't redraw under someone typing; redraw once they leave the field.
-  if (!force && fieldBusy) { render.pending = true; return; }
+  // Don't redraw under someone typing or dragging; redraw once they finish.
+  if (!force && (fieldBusy || dragging)) { render.pending = true; return; }
   render.pending = false;
   if (!state) return;
-  document.title = state.title || "Induction Setup Checklist";
+  if (!cur()) setMonth(defaultMonth(), { quiet: true });
+  const m = cur();
+  document.title = `${m ? monthName(m) + " · " : ""}${state.title || "Induction Setup Checklist"}`;
+  document.body.classList.toggle("picking", !!ui.pick);
   $("#conn").className = "conn" + (DB.mode === "local" ? " local" : "");
   $("#conn").innerHTML = `<span class="dot"></span>${DB.mode === "local" ? (localReason || "Demo mode (this browser only)") : "Live · shared with the team"}`;
   document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.v === ui.tab));
   const eb = $("#editBtn");
   eb.className = "btn" + (ui.edit ? " editing" : "");
   eb.innerHTML = ui.edit ? `${icon("check")}Done editing` : `${icon("edit")}Edit`;
+  $("#teamBtn").classList.toggle("on", ui.team);
   $('[data-act="menu"]').innerHTML = icon("dots");
+  if (!m) { $("#app").innerHTML = `<div class="loading">No months yet. <button class="btn primary" data-act="new-month">${icon("plus")}New month</button></div>`; return; }
 
-  const all = state.days.flatMap(dayTasks), c = count(all);
-  const pct = n => n.total ? Math.round(n.done / n.total * 100) : 0;
-  const hero = `<section class="hero">
-    <div>${ui.edit ? `<div class="edit-stack">
-        <input class="input big on-dark" data-edit="meta" data-f="title" value="${esc(state.title)}" placeholder="Title">
-        <input class="input on-dark" data-edit="meta" data-f="subtitle" value="${esc(state.subtitle)}" placeholder="Subtitle">
-      </div>` : `<h1>${esc(state.title)}</h1><p>${esc(state.subtitle)}</p>`}</div>
-    <div class="stats">
-      <div class="stat"><small>All setup</small><b>${c.done}/${c.total}</b><div class="bar"><i style="width:${pct(c)}%"></i></div></div>
-      ${state.days.map(d => { const k = count(dayTasks(d)); return `<div class="stat"><small>${esc(d.name)}</small><b>${k.done}/${k.total}</b><div class="bar"><i style="width:${pct(k)}%"></i></div></div>`; }).join("")}
-    </div></section>`;
+  const pickP = ui.pick && person(ui.pick);
+  const pickbar = pickP ? `<div class="pickbar">${avatar(pickP)}<span>Assigning <b>${esc(pickP.name)}</b>: tap agenda items or tasks to assign them. Tap a name chip's × to undo.</span><button class="btn sm" data-act="pick-done">Done</button></div>` : "";
   const editbar = ui.edit ? `<div class="editbar">${icon("edit")}<span>Edit mode: changes save automatically and everyone sees them straight away.</span></div>` : "";
-  $("#app").innerHTML = editbar + hero + (ui.tab === "agenda" ? renderAgenda() : renderChecklist());
+  $("#app").innerHTML = pickbar + editbar + renderHero(m) +
+    `<div class="layout${ui.team ? " with-team" : ""}"><div class="content">${ui.tab === "months" ? renderMonths() : ui.tab === "checklist" ? renderChecklist(m) : renderAgenda(m)}</div>${ui.team ? renderTeam(m) : ""}</div>`;
   if (render.focusKey) {
     const el = document.querySelector(`[data-key="${render.focusKey}"]`);
     render.focusKey = null;
@@ -477,13 +651,69 @@ function render(force = false) {
   }
 }
 
-function renderAgenda() {
+function renderHero(m) {
+  const list = sortedMonths(), i = list.findIndex(x => x.id === m.id), now = ymNow();
+  const c = count(monthTasks(m));
+  const pct = n => n.total ? Math.round(n.done / n.total * 100) : 0;
+  const opt = x => `<option value="${esc(x.id)}" ${x.id === m.id ? "selected" : ""}>${esc(monthName(x))}${x.ym < now ? " (past)" : ""}</option>`;
+  return `<section class="hero">
+    <div>${ui.edit ? `<div class="edit-stack" style="margin-bottom:10px">
+        <input class="input on-dark" data-edit="meta" data-f="title" value="${esc(state.title)}" placeholder="Page title">
+        <input class="input on-dark" data-edit="meta" data-f="subtitle" value="${esc(state.subtitle)}" placeholder="Subtitle">
+      </div>` : `<div class="eyebrow">${esc(state.title)}</div>`}
+      <div class="mrow">
+        <button class="hbtn icon" data-act="month-step" data-v="-1" ${i <= 0 ? "disabled" : ""} title="Previous month" aria-label="Previous month">${icon("left")}</button>
+        <label class="msel"><select data-act="month-sel" aria-label="Month">${list.map(opt).join("")}</select></label>
+        <button class="hbtn icon" data-act="month-step" data-v="1" ${i >= list.length - 1 ? "disabled" : ""} title="Next month" aria-label="Next month">${icon("right")}</button>
+      </div>
+      ${ui.edit ? "" : `<p>${esc(state.subtitle)}</p>`}
+      <div class="acts">
+        <button class="hbtn" data-act="email">${icon("mail")}Email draft</button>
+        <button class="hbtn" data-act="new-month">${icon("plus")}New month</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>All setup</small><b>${c.done}/${c.total}</b><div class="bar"><i style="width:${pct(c)}%"></i></div></div>
+      ${m.days.map(d => { const k = count(dayTasks(d)); return `<div class="stat"><small>${esc(d.name)}${d.date ? " · " + esc(d.date) : ""}</small><b>${k.done}/${k.total}</b><div class="bar"><i style="width:${pct(k)}%"></i></div></div>`; }).join("")}
+    </div></section>`;
+}
+
+function renderTeam(m) {
+  const counts = {};
+  assignments(m).forEach(x => counts[x.pid] = (counts[x.pid] || 0) + 1);
+  const rows = activePeople().map(p => ui.personEdit === p.id
+    ? `<div class="person-edit">
+        <input class="input" data-edit="person" ${A({ p: p.id })} data-f="name" data-key="pn-${p.id}" value="${esc(p.name)}" placeholder="Name">
+        <input class="input" data-edit="person" ${A({ p: p.id })} data-f="email" type="email" value="${esc(p.email)}" placeholder="Email (for the email draft)">
+        <div class="row"><button class="btn sm danger" data-act="person-remove" ${A({ p: p.id })}>${icon("trash")}Remove</button><div class="spacer"></div><button class="btn sm primary" data-act="person-edit" data-p="">Done</button></div>
+      </div>`
+    : `<div class="person${ui.pick === p.id ? " picked" : ""}" draggable="true" data-person="${esc(p.id)}" data-act="pick" ${A({ p: p.id })} title="Drag onto an agenda item or task, or tap then tap where it goes">
+        ${avatar(p)}<span class="pn">${esc(p.name)}${p.email ? `<small>${esc(p.email)}</small>` : ""}</span>
+        ${counts[p.id] ? `<span class="cnt" title="Assignments this month">${counts[p.id]}</span>` : ""}
+        <button class="btn sm icon ghost" data-act="person-edit" ${A({ p: p.id })} title="Edit ${esc(p.name)}" aria-label="Edit ${esc(p.name)}">${icon("edit")}</button>
+      </div>`).join("");
+  const gone = state.people.filter(p => p.archived).sort((a, b) => a.name.localeCompare(b.name));
+  return `<aside class="team-panel" aria-label="Namelist">
+    <div class="tp-head"><b>👥 Namelist</b><span class="chip">${activePeople().length}</span><div class="spacer"></div>
+      <button class="btn sm icon ghost" data-act="team" title="Close" aria-label="Close namelist">${icon("x")}</button></div>
+    <p class="hint" style="margin:0">Drag a name onto an agenda item (as its lead) or a task. On a phone, tap a name, then tap where it goes.</p>
+    <div class="people">${rows || `<p class="muted" style="font-size:14px;margin:0">No one yet. Add your team below.</p>`}</div>
+    <form class="add-person" data-form="add-person">
+      <input class="input" name="name" placeholder="Name" autocomplete="off" required maxlength="60">
+      <input class="input" name="email" type="email" placeholder="Email (optional)" autocomplete="off" maxlength="120">
+      <button class="btn sm primary">${icon("plus")}Add to namelist</button>
+    </form>
+    ${gone.length ? `<details class="removed"><summary>Removed (${gone.length})</summary>${gone.map(p => `<div class="row"><span>${esc(p.name)}</span><button class="btn sm" data-act="person-restore" ${A({ p: p.id })}>Restore</button></div>`).join("")}</details>` : ""}
+  </aside>`;
+}
+
+function renderAgenda(m) {
   const legend = `<div class="legend">
     <span><span class="sw" style="background:var(--warn-50);border:2px solid var(--warn)"></span>Needs setup (to do)</span>
     <span><span class="sw" style="background:var(--ok-50);border:2px solid var(--ok)"></span>Setup done</span>
     <span><span class="sw" style="background:#fff;border:1px solid var(--line)"></span>No setup needed</span>
     ${ui.edit ? "" : `<span>Click a highlighted item to see its checklist.</span>`}</div>`;
-  const days = state.days.map((d, di) => {
+  const days = m.days.map((d, di) => {
     const pre = count(d.pre);
     const head = ui.edit ? `<div class="day-head"><div class="day-edit">
         <div class="row"><input class="input on-dark" style="flex:1;min-width:120px" data-edit="day" ${A({ d: d.id })} data-f="name" value="${esc(d.name)}" placeholder="Day name">
@@ -491,7 +721,7 @@ function renderAgenda() {
         <div class="row"><div class="swatches">${DAY_COLORS.map(col => `<button data-act="day-color" ${A({ d: d.id, v: col })} class="${col === d.color ? "on" : ""}" style="background:${col}" title="Colour"></button>`).join("")}</div>
           <div class="spacer"></div>
           <button class="btn sm icon ghost" style="color:#fff" data-act="day-move" ${A({ d: d.id, v: -1 })} title="Move left" ${di === 0 ? "disabled" : ""}>${icon("left")}</button>
-          <button class="btn sm icon ghost" style="color:#fff" data-act="day-move" ${A({ d: d.id, v: 1 })} title="Move right" ${di === state.days.length - 1 ? "disabled" : ""}>${icon("right")}</button>
+          <button class="btn sm icon ghost" style="color:#fff" data-act="day-move" ${A({ d: d.id, v: 1 })} title="Move right" ${di === m.days.length - 1 ? "disabled" : ""}>${icon("right")}</button>
           <button class="btn sm" data-act="slot-add" ${A({ d: d.id })}>${icon("plus")}Time block</button>
           <button class="btn sm danger" data-act="day-del" ${A({ d: d.id })}>${icon("trash")}Delete day</button></div>
       </div></div>`
@@ -509,21 +739,24 @@ function renderAgenda() {
     return `<section class="day" style="--day:${esc(d.color)}">${head}
       <div class="slots" style="--n:${Math.max(1, Math.min(d.slots.length, 3))}">${slots || `<p class="muted">No time blocks yet.</p>`}</div></section>`;
   }).join("");
-  return legend + `<div class="agenda">${days}${ui.edit ? `<button class="add-day" data-act="day-add"><span class="row">${icon("plus")}Add a day</span></button>` : ""}</div>`;
+  return legend + `<div class="agenda">${days || `<p class="muted">This month has no days yet. Click Edit, then Add a day.</p>`}${ui.edit ? `<button class="add-day" data-act="day-add"><span class="row">${icon("plus")}Add a day</span></button>` : ""}</div>`;
 }
 function sessCard(d, sl, x) {
+  const ids = { d: d.id, s: sl.id, x: x.id };
   const meta = [x.time, x.venue].filter(Boolean).map(esc).join(" · ");
-  if (!x.setup) return `<div class="sess">${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}</div>`;
+  const who = x.who.length ? `<span class="who">${whoChips(x.who, "sess", ids)}</span>` : (dropHint("Drop a lead here") ? `<span class="who">${dropHint("Drop a lead here")}</span>` : "");
+  if (!x.setup) return `<div class="sess" data-drop="sess" ${A(ids)}>${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}${who}</div>`;
   const c = count(x.tasks);
-  return `<button class="sess flag ${c.total && c.done === c.total ? "done" : ""}" data-act="goto" ${A({ k: "ev-" + x.id })}>
-    ${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}<span class="badge">${progChip(c)}</span></button>`;
+  return `<div role="button" tabindex="0" class="sess flag ${c.total && c.done === c.total ? "done" : ""}" data-act="goto" data-drop="sess" ${A({ ...ids, k: "ev-" + x.id })}>
+    ${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}<span class="badge">${progChip(c)}</span>${who}</div>`;
 }
 function sessEdit(d, sl, x, xi) {
   const ids = { d: d.id, s: sl.id, x: x.id };
-  return `<div class="sess-edit ${x.setup ? "flag" : ""}">
+  return `<div class="sess-edit ${x.setup ? "flag" : ""}" data-drop="sess" ${A(ids)}>
     <input class="input" data-edit="sess" ${A(ids)} data-f="title" data-key="t-${x.id}" value="${esc(x.title)}" placeholder="Agenda item">
     <div class="two"><input class="input" data-edit="sess" ${A(ids)} data-f="time" value="${esc(x.time)}" placeholder="Time">
       <input class="input" data-edit="sess" ${A(ids)} data-f="venue" value="${esc(x.venue)}" placeholder="Venue"></div>
+    ${x.who.length || ui.team ? `<div class="who" style="margin-top:0">${whoChips(x.who, "sess", ids)}${x.who.length ? "" : dropHint("Drop a lead here")}</div>` : ""}
     <div class="row"><label class="toggle"><input type="checkbox" data-act="sess-setup" ${A(ids)} ${x.setup ? "checked" : ""}>${icon("flag")}Needs setup</label>
       <div class="spacer"></div>
       <button class="btn sm icon ghost" data-act="sess-move" ${A({ ...ids, v: -1 })} ${xi === 0 ? "disabled" : ""} title="Move up">${icon("up")}</button>
@@ -532,16 +765,17 @@ function sessEdit(d, sl, x, xi) {
   </div>`;
 }
 
-function renderChecklist() {
-  const owners = [...new Set(state.days.flatMap(dayTasks).map(t => t.owner.trim()).filter(Boolean))].sort();
-  if (ui.owner && !owners.includes(ui.owner)) ui.owner = "";
-  const toolbar = ui.edit ? `<p class="hint" style="margin:0 0 14px">Add, edit, reorder and delete tasks below. To give an agenda item its own checklist, tick <b>Needs setup</b> on it in the Agenda tab.</p>`
+function renderChecklist(m) {
+  const inMonth = [...new Set(assignments(m).map(x => x.pid))].map(person).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
+  if (ui.owner && !inMonth.some(p => p.id === ui.owner)) ui.owner = "";
+  const toolbar = ui.edit ? `<p class="hint" style="margin:0 0 14px">Add, edit, reorder and delete tasks below. To give an agenda item its own checklist, tick <b>Needs setup</b> on it in the Agenda tab. Open 👥 Team to assign people.</p>`
     : `<div class="toolbar">
       <div class="seg"><button data-act="filter" data-v="all" class="${ui.filter === "all" ? "on" : ""}">All tasks</button><button data-act="filter" data-v="todo" class="${ui.filter === "todo" ? "on" : ""}">Still to do</button></div>
-      ${owners.length ? `<div class="seg"><button data-act="owner" data-v="" class="${!ui.owner ? "on" : ""}">Everyone</button>${owners.map(o => `<button data-act="owner" data-v="${esc(o)}" class="${ui.owner === o ? "on" : ""}">${esc(o)}</button>`).join("")}</div>` : ""}
+      ${inMonth.length ? `<div class="seg"><button data-act="owner" data-v="" class="${!ui.owner ? "on" : ""}">Everyone</button>${inMonth.map(p => `<button data-act="owner" data-v="${esc(p.id)}" class="${ui.owner === p.id ? "on" : ""}">${esc(p.name)}</button>`).join("")}</div>` : ""}
     </div>`;
-  const visible = t => (ui.filter === "all" || !t.done) && (!ui.owner || t.owner.trim() === ui.owner);
-  const days = state.days.map(d => {
+  // A person sees the tasks assigned to them, plus every task of an agenda item they lead.
+  const visible = (t, x) => (ui.filter === "all" || !t.done) && (!ui.owner || t.who.includes(ui.owner) || !!x?.who.includes(ui.owner));
+  const days = m.days.map(d => {
     const k = count(dayTasks(d));
     const blocks = [block(d, null, null, d.pre, visible)];
     d.slots.forEach(sl => sl.sessions.forEach(x => { if (x.setup) blocks.push(block(d, sl, x, x.tasks, visible)); }));
@@ -549,18 +783,18 @@ function renderChecklist() {
     return `<section class="cl-day" style="--day:${esc(d.color)}">
       <div class="cl-day-head"><h2><span class="dotc"></span>${esc(d.name)}${d.date ? ` <span class="muted" style="font-size:15px;font-weight:600">${esc(d.date)}</span>` : ""}</h2>
         <div class="progress"><i style="width:${k.total ? k.done / k.total * 100 : 0}%"></i></div><span class="chip ${k.total && k.done === k.total ? "ok" : ""}">${k.done}/${k.total} done</span></div>
-      ${shown.join("") || `<div class="none-left">✓ Nothing left here${ui.owner ? ` for ${esc(ui.owner)}` : ""}.</div>`}</section>`;
+      ${shown.join("") || `<div class="none-left">✓ Nothing left here${ui.owner ? ` for ${esc(person(ui.owner)?.name)}` : ""}.</div>`}</section>`;
   }).join("");
-  const dl = ui.edit ? `<datalist id="owners">${owners.map(o => `<option value="${esc(o)}">`).join("")}</datalist>` : "";
-  return toolbar + days + dl;
+  return toolbar + days;
 }
 function block(d, sl, x, tasks, visible) {
   const ids = { d: d.id, s: sl?.id, x: x?.id };
-  const list = ui.edit ? tasks : tasks.filter(visible);
+  const list = ui.edit ? tasks : tasks.filter(t => visible(t, x));
   if (!ui.edit && !list.length && (ui.filter !== "all" || ui.owner)) return "";
   const c = count(tasks);
+  const lead = x && (x.who.length || ui.team) ? `<span class="who"><span class="who-label">Lead</span>${whoChips(x.who, "sess", ids)}${x.who.length ? "" : dropHint("Drop a lead here")}</span>` : "";
   const head = x
-    ? `<div class="block-head ev"><span class="slot-tag">${esc(sl.label)}</span><h3>${esc(x.title)}</h3>${x.time || x.venue ? `<span class="muted" style="font-size:13px;font-weight:600">${[x.time, x.venue].filter(Boolean).map(esc).join(" · ")}</span>` : ""}<div class="spacer"></div>${progChip(c)}</div>`
+    ? `<div class="block-head ev" data-drop="sess" ${A(ids)}><span class="slot-tag">${esc(sl.label)}</span><h3>${esc(x.title)}</h3>${x.time || x.venue ? `<span class="muted" style="font-size:13px;font-weight:600">${[x.time, x.venue].filter(Boolean).map(esc).join(" · ")}</span>` : ""}${lead}<div class="spacer"></div>${progChip(c)}</div>`
     : `<div class="block-head pre">${icon("flag")}<h3>Before ${esc(d.name)} · general setup</h3><div class="spacer"></div><span class="chip ${c.total && c.done === c.total ? "ok" : "brand"}">${c.done}/${c.total}</span></div>`;
   const rows = list.map((t, i) => ui.edit ? taskEdit(ids, t, i, tasks.length) : taskRow(ids, t)).join("")
     || `<div class="empty">${ui.edit ? "No tasks yet." : "No setup tasks listed yet. Click Edit to add some."}</div>`;
@@ -568,40 +802,310 @@ function block(d, sl, x, tasks, visible) {
     ${ui.edit ? `<div class="block-foot"><button class="btn sm dashed" data-act="task-add" ${A(ids)}>${icon("plus")}Add task</button></div>` : ""}</div>`;
 }
 function taskRow(ids, t) {
-  const cb = `task-${t.id}`;
-  return `<li class="task ${t.done ? "done" : ""}">
-    <input type="checkbox" id="${cb}" data-act="tick" ${A({ ...ids, t: t.id })} ${t.done ? "checked" : ""}>
+  const cb = `task-${t.id}`, a = { ...ids, t: t.id };
+  return `<li class="task ${t.done ? "done" : ""}" data-drop="task" ${A(a)}>
+    <input type="checkbox" id="${cb}" data-act="tick" ${A(a)} ${t.done ? "checked" : ""}>
     <label for="${cb}"><div class="txt">${esc(t.text) || "<i>(untitled)</i>"}</div>${t.note ? `<div class="note">${esc(t.note)}</div>` : ""}</label>
-    <div class="tags">${whenChip(t)}${ownerChip(t)}</div></li>`;
+    <div class="tags">${whenChip(t)}${whoChips(t.who, "task", a)}</div></li>`;
 }
 function taskEdit(ids, t, i, n) {
   const a = { ...ids, t: t.id };
-  return `<li class="task-edit">
+  return `<li class="task-edit" data-drop="task" ${A(a)}>
     <input class="input txt-in" data-edit="task" ${A(a)} data-f="text" data-key="k-${t.id}" value="${esc(t.text)}" placeholder="What needs doing">
-    <input class="input" data-edit="task" ${A(a)} data-f="owner" value="${esc(t.owner)}" placeholder="Who" list="owners">
     <input class="input" data-edit="task" ${A(a)} data-f="when" value="${esc(t.when)}" placeholder="When, e.g. Day before">
     <div class="acts">
       <button class="btn sm icon ghost" data-act="task-move" ${A({ ...a, v: -1 })} ${i === 0 ? "disabled" : ""} title="Move up">${icon("up")}</button>
       <button class="btn sm icon ghost" data-act="task-move" ${A({ ...a, v: 1 })} ${i === n - 1 ? "disabled" : ""} title="Move down">${icon("down")}</button>
       <button class="btn sm icon ghost danger" data-act="task-del" ${A(a)} title="Delete">${icon("trash")}</button></div>
     <input class="input note-in" data-edit="task" ${A(a)} data-f="note" value="${esc(t.note)}" placeholder="Notes (optional): where things are, contacts, links…">
+    <div class="who-cell who">${whoChips(t.who, "task", a)}${t.who.length ? "" : `<span class="drop-hint">${ui.team ? "Drop a name here" : "Open 👥 Team to assign"}</span>`}</div>
   </li>`;
 }
 
+function renderMonths() {
+  const now = ymNow(), list = sortedMonths();
+  const up = list.filter(m => m.ym >= now), past = list.filter(m => m.ym < now).reverse();
+  const card = m => {
+    const c = count(monthTasks(m)), ppl = new Set(assignments(m).map(x => x.pid)).size;
+    const dates = m.days.map(d => d.date ? `${esc(d.name)} ${esc(d.date)}` : "").filter(Boolean).join(" · ");
+    const status = m.ym === now ? `<span class="chip brand">This month</span>` : m.ym > now ? `<span class="chip">Upcoming</span>` : `<span class="chip">Past</span>`;
+    return `<div class="mcard${m.id === ui.month ? " on" : ""}">
+      <div class="row"><h3>${esc(monthName(m))}</h3><div class="spacer"></div>${status}</div>
+      ${m.label ? `<div class="dates">${esc(fmtYM(m.ym))}</div>` : ""}
+      <div class="dates">${dates || "Dates not set yet"}</div>
+      <div class="row"><div class="progress" style="flex:1"><i style="width:${c.total ? c.done / c.total * 100 : 0}%"></i></div><span class="chip ${c.total && c.done === c.total ? "ok" : ""}">${c.done}/${c.total}</span></div>
+      <div class="dates">${m.days.length} day${m.days.length === 1 ? "" : "s"} · ${ppl} ${ppl === 1 ? "person" : "people"} assigned</div>
+      ${ui.edit ? `<div class="two"><input class="input" data-edit="month" ${A({ m: m.id })} data-f="ym" type="month" value="${esc(m.ym)}" title="Month">
+        <input class="input" data-edit="month" ${A({ m: m.id })} data-f="label" value="${esc(m.label)}" placeholder="Name (optional)"></div>` : ""}
+      <div class="row">
+        ${m.id === ui.month ? `<button class="btn sm" data-act="tab" data-v="agenda">Open</button>` : `<button class="btn sm primary" data-act="month-open" ${A({ m: m.id })}>Open</button>`}
+        <button class="btn sm" data-act="new-month" ${A({ m: m.id })} title="Create a new month from this one">${icon("copy")}Duplicate</button>
+        <button class="btn sm" data-act="email" ${A({ m: m.id })}>${icon("mail")}Email</button>
+        ${ui.edit ? `<div class="spacer"></div><button class="btn sm icon ghost danger" data-act="month-del" ${A({ m: m.id })} title="Delete month">${icon("trash")}</button>` : ""}
+      </div></div>`;
+  };
+  return `<div class="toolbar"><button class="btn primary" data-act="new-month">${icon("plus")}New month</button>
+      <span class="hint" style="margin:0">Each month keeps its own agenda, tasks, ticks and people, so past months stay as a record.${ui.edit ? "" : " Click Edit to rename, re-date or delete months."}</span></div>
+    <div class="sec-title">Upcoming and this month</div>
+    <div class="mgrid">${up.map(card).join("") || `<p class="muted">Nothing planned yet. Click <b>New month</b> to set one up in advance.</p>`}</div>
+    ${past.length ? `<div class="sec-title">History</div><div class="mgrid">${past.map(card).join("")}</div>` : ""}`;
+}
+
 /* =====================================================================
-   7. EVENTS
+   7. NEW MONTH AND EMAIL DRAFT DIALOGS
    ===================================================================== */
-const ds = el => ({ d: el.dataset.d, s: el.dataset.s, x: el.dataset.x, t: el.dataset.t, v: el.dataset.v });
+function dialog(cls, html) {
+  const d = document.createElement("dialog");
+  d.className = "dlg " + cls;
+  d.innerHTML = html;
+  document.body.appendChild(d);
+  d.addEventListener("click", e => { if (e.target === d || e.target.closest("[data-close]")) d.close(); });
+  d.addEventListener("close", () => d.remove());
+  d.showModal();
+  return d;
+}
+
+function newMonthDialog(srcId) {
+  const list = sortedMonths();
+  const src = srcId || ui.month;
+  const next = addMonths(list.length ? list[list.length - 1].ym : addMonths(ymNow(), -1), 1);
+  const d = dialog("", `<form>
+    <div class="dlg-head"><h3>New month</h3><div class="spacer"></div><button type="button" class="btn sm icon ghost" data-close aria-label="Close">${icon("x")}</button></div>
+    <div class="dlg-body">
+      <div class="row" style="gap:10px;align-items:end">
+        <label class="f" style="flex:1;min-width:160px">Month<input class="input" type="month" name="ym" value="${next}" required></label>
+        <label class="f" style="flex:1.4;min-width:180px">Name <small>(optional)</small><input class="input" name="label" placeholder="e.g. April intake (batch 2)" maxlength="60"></label>
+      </div>
+      <div class="f">Start from
+        ${list.length ? `<label class="radio"><input type="radio" name="from" value="copy" checked>Copy <select class="input" name="src">${[...list].reverse().map(m => `<option value="${esc(m.id)}" ${m.id === src ? "selected" : ""}>${esc(monthName(m))}</option>`).join("")}</select></label>` : ""}
+        <label class="radio"><input type="radio" name="from" value="sample" ${list.length ? "" : "checked"}>The sample agenda</label>
+        <label class="radio"><input type="radio" name="from" value="blank">Blank (Day 1 and Day 2, nothing scheduled)</label>
+      </div>
+      <div class="f" data-copy-only>People
+        <label class="radio"><input type="radio" name="people" value="keep" checked>Keep the same people assigned</label>
+        <label class="radio"><input type="radio" name="people" value="clear">Clear all assignments, I'll reassign</label>
+      </div>
+      <p class="hint" style="margin:0">The new month starts with nothing ticked and no dates. Add the dates in Edit mode.</p>
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">${icon("plus")}Create month</button></div>
+  </form>`);
+  const f = d.querySelector("form");
+  const sync = () => { const copy = f.from.value === "copy"; d.querySelector("[data-copy-only]").hidden = !copy; };
+  f.addEventListener("change", e => { if (e.target.name === "src") f.querySelector('[value="copy"]').checked = true; sync(); });
+  sync();
+  f.addEventListener("submit", e => {
+    e.preventDefault();
+    const ym = f.ym.value;
+    if (!isYM(ym)) return toast("Pick a month.", "err");
+    const from = f.from.value, keep = f.people?.value === "keep";
+    const source = from === "copy" ? state.months.find(m => m.id === f.src.value) : null;
+    const days = source ? copyDays(source.days, keep) : from === "sample" ? sampleDays() : blankDays();
+    const nm = { id: "m_" + uid(), ym, label: f.label.value.trim(), days };
+    mutate(s => { s.months.push(clone(nm)); });
+    d.close();
+    ui.tab = "agenda"; store("tab", "agenda");
+    setMonth(nm.id);
+    toast(`Created ${monthName(nm)}.${source ? ` Copied from ${monthName(source)}${keep ? ", names kept" : ", names cleared"}.` : ""}`);
+  });
+}
+
+/* Build the email for a month: { to, subject, html, text } */
+function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
+  const P = id => person(id);
+  const names = ids => ids.map(P).filter(Boolean).map(p => p.name).join(", ");
+  const dates = m.days.map(d => d.date ? `${d.name} ${d.date}` : "").filter(Boolean).join(", ");
+  const link = `${location.origin}${location.pathname}?month=${encodeURIComponent(m.id)}`;
+  const keep = t => !todoOnly || !t.done;
+  const days = m.days.map(d => {
+    const groups = [];
+    const pre = d.pre.filter(keep);
+    if (pre.length) groups.push({ title: `Before ${d.name}`, sub: "", lead: "", tasks: pre });
+    d.slots.forEach(sl => sl.sessions.forEach(x => {
+      if (!x.setup) return;
+      const ts = x.tasks.filter(keep);
+      if (ts.length || x.who.length) groups.push({ title: `${sl.label} · ${x.title}`, sub: [x.time, x.venue].filter(Boolean).join(", "), lead: names(x.who), tasks: ts });
+    }));
+    return { title: `${d.name}${d.date ? " – " + d.date : ""}`, groups };
+  }).filter(d => d.groups.length);
+
+  const people = new Map();
+  if (byPerson) for (const a of assignments(m)) {
+    if (a.kind === "task" && !keep(a.task)) continue;
+    const p = P(a.pid); if (!p) continue;
+    const where = `${a.day.name}${a.sess ? `, ${a.slot.label} ${a.sess.title}` : ", before the day"}`;
+    const item = a.kind === "lead" ? `Lead for ${a.sess.title} (${a.day.name} ${a.slot.label})` : `${a.task.text}${a.task.when ? ` – ${a.task.when}` : ""} (${where})`;
+    if (!people.has(p.id)) people.set(p.id, { p, items: [] });
+    people.get(p.id).items.push(item);
+  }
+  const ppl = [...people.values()].sort((a, b) => a.p.name.localeCompare(b.p.name));
+  const to = [...new Set(assignments(m).map(a => P(a.pid)?.email?.trim()).filter(Boolean))];
+  const subject = `Induction setup: ${monthName(m)}${dates ? ` (${dates})` : ""}`;
+
+  const F = "font-family:Arial,Helvetica,sans-serif;";
+  const para = s => esc(s).replace(/\n/g, "<br>");
+  const td = "border:1px solid #cfdbe0;padding:6px 8px;vertical-align:top;font-size:14px;";
+  let html = `<div style="${F}font-size:14px;color:#1e293b;line-height:1.5">`;
+  if (intro.trim()) html += `<p>${para(intro.trim())}</p>`;
+  for (const d of days) {
+    html += `<h2 style="${F}font-size:18px;color:#0f3a50;margin:22px 0 8px">${esc(d.title)}</h2>`;
+    for (const g of d.groups) {
+      html += `<p style="margin:14px 0 6px"><b>${esc(g.title)}</b>${g.sub ? ` <span style="color:#64748b">(${esc(g.sub)})</span>` : ""}${g.lead ? `<br><span style="color:#64748b">Lead: ${esc(g.lead)}</span>` : ""}</p>`;
+      if (g.tasks.length) html += `<table style="border-collapse:collapse;width:100%;${F}"><tr style="background:#eef6fa"><th style="${td}text-align:left">Task</th><th style="${td}text-align:left;width:22%">When</th><th style="${td}text-align:left;width:22%">Who</th></tr>${g.tasks.map(t =>
+        `<tr><td style="${td}">${esc(t.text)}${t.note ? `<br><span style="color:#64748b;font-size:13px">${para(t.note)}</span>` : ""}</td><td style="${td}">${esc(t.when) || "&nbsp;"}</td><td style="${td}">${esc(names(t.who)) || `<span style="color:#b45309">To be assigned</span>`}</td></tr>`).join("")}</table>`;
+    }
+  }
+  if (!days.length) html += `<p><i>No setup tasks ${todoOnly ? "left " : ""}for this month.</i></p>`;
+  if (ppl.length) {
+    html += `<h2 style="${F}font-size:18px;color:#0f3a50;margin:22px 0 8px">Who's doing what</h2>`;
+    for (const { p, items } of ppl) html += `<p style="margin:10px 0 4px"><b>${esc(p.name)}</b></p><ul style="margin:0 0 0 18px;padding:0">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`;
+  }
+  html += `<p style="margin-top:20px">Live checklist (tick tasks off as you finish them): <a href="${esc(link)}">${esc(link)}</a></p>`;
+  if (outro.trim()) html += `<p>${para(outro.trim())}</p>`;
+  html += `</div>`;
+
+  let text = intro.trim() ? intro.trim() + "\n\n" : "";
+  for (const d of days) {
+    text += `${d.title.toUpperCase()}\n`;
+    for (const g of d.groups) {
+      text += `\n${g.title}${g.sub ? ` (${g.sub})` : ""}${g.lead ? `\nLead: ${g.lead}` : ""}\n`;
+      for (const t of g.tasks) text += `- ${t.text}${t.when ? ` – ${t.when}` : ""} – ${names(t.who) || "to be assigned"}\n`;
+    }
+    text += "\n";
+  }
+  if (ppl.length) { text += "WHO'S DOING WHAT\n"; for (const { p, items } of ppl) text += `\n${p.name}\n${items.map(i => "- " + i).join("\n")}\n`; text += "\n"; }
+  text += `Live checklist: ${link}\n`;
+  if (outro.trim()) text += `\n${outro.trim()}\n`;
+  return { to, subject, html, text };
+}
+
+async function copyRich(html, text) {
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([text], { type: "text/plain" }) })]);
+    return true;
+  } catch {
+    const div = document.createElement("div");
+    div.contentEditable = "true"; div.innerHTML = html;
+    div.style.cssText = "position:fixed;left:-9999px;top:0;background:#fff";
+    document.body.appendChild(div);
+    const r = document.createRange(); r.selectNodeContents(div);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    let ok = false; try { ok = document.execCommand("copy"); } catch {}
+    sel.removeAllRanges(); div.remove();
+    return ok;
+  }
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; }
+  catch { const a = document.createElement("textarea"); a.value = t; document.body.appendChild(a); a.select(); let ok = false; try { ok = document.execCommand("copy"); } catch {} a.remove(); return ok; }
+}
+/* An .eml file with X-Unsent: 1 opens in Outlook as a new, editable, unsent message. */
+function emlFile(to, subject, html) {
+  const b64 = s => btoa(unescape(encodeURIComponent(s)));
+  const body = b64(`<!doctype html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`).replace(/.{76}/g, "$&\r\n");
+  return ["X-Unsent: 1", `To: ${to}`, `Subject: =?UTF-8?B?${b64(subject)}?=`, "MIME-Version: 1.0",
+    "Content-Type: text/html; charset=UTF-8", "Content-Transfer-Encoding: base64", "", body, ""].join("\r\n");
+}
+function download(name, content, type) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([content], { type }));
+  link.download = name; link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1500);
+}
+
+function emailDialog(mid) {
+  const m = state.months.find(x => x.id === (mid || ui.month));
+  if (!m) return;
+  const dates = m.days.map(d => d.date ? `${d.name} ${d.date}` : "").filter(Boolean).join(", ");
+  const opts = {
+    intro: `Hi team,\n\nHere's the setup plan for the ${monthName(m)} induction${dates ? ` (${dates})` : ""}. Please check what's assigned to you below, and tick tasks off on the live checklist as you finish them.`,
+    outro: "Thanks!", todoOnly: false, byPerson: true,
+  };
+  const first = buildEmail(m, opts);
+  const noEmail = [...new Set(assignments(m).map(a => person(a.pid)).filter(p => p && !p.email?.trim()).map(p => p.name))];
+  const d = dialog("wide", `<form>
+    <div class="dlg-head">${icon("mail")}<h3>Email draft · ${esc(monthName(m))}</h3><div class="spacer"></div><button type="button" class="btn sm icon ghost" data-close aria-label="Close">${icon("x")}</button></div>
+    <div class="dlg-body"><div class="email-grid">
+      <div style="display:grid;gap:10px">
+        <label class="f">To <small>Emails of everyone assigned this month. Add others, separated by ;</small><textarea class="textarea" name="to" style="min-height:60px">${esc(first.to.join("; "))}</textarea></label>
+        ${noEmail.length ? `<p class="hint" style="margin:-4px 0 0;color:var(--warn-600)">No email saved for: ${esc(noEmail.join(", "))}. Add emails in 👥 Team.</p>` : ""}
+        <label class="f">Subject<input class="input" name="subject" value="${esc(first.subject)}"></label>
+        <label class="f">Opening<textarea class="textarea" name="intro" style="min-height:130px">${esc(opts.intro)}</textarea></label>
+        <label class="f">Sign-off<textarea class="textarea" name="outro" style="min-height:50px">${esc(opts.outro)}</textarea></label>
+        <label class="check"><input type="checkbox" name="byPerson" checked>Add a "Who's doing what" list per person</label>
+        <label class="check"><input type="checkbox" name="todoOnly">Only include tasks not yet ticked</label>
+      </div>
+      <div><div class="preview-label">Preview</div><div class="preview" id="emailPreview"></div></div>
+    </div></div>
+    <div class="dlg-foot">
+      <button type="button" class="btn" data-act="em-to">${icon("copy")}Copy To addresses</button>
+      <button type="button" class="btn" data-act="em-mailto">Open in email app</button>
+      <button type="button" class="btn" data-act="em-eml">⬇ Outlook draft (.eml)</button>
+      <button type="button" class="btn primary" data-act="em-copy">${icon("copy")}Copy email</button>
+    </div>
+    <p class="hint" style="margin:0 22px 18px;text-align:right">Copy email, then paste it into a new Outlook message. Or download the Outlook draft and open it: Outlook opens it as a new email, ready to send.</p>
+  </form>`);
+  const f = d.querySelector("form");
+  let em = first;
+  const build = () => {
+    em = buildEmail(m, { intro: f.intro.value, outro: f.outro.value, todoOnly: f.todoOnly.checked, byPerson: f.byPerson.checked });
+    d.querySelector("#emailPreview").innerHTML = `<div style="font:13px Arial,sans-serif;color:#64748b;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:8px"><b>Subject:</b> ${esc(f.subject.value)}</div>` + em.html;
+  };
+  f.addEventListener("input", e => { if (e.target.name !== "to" && e.target.name !== "subject") build(); else if (e.target.name === "subject") build(); });
+  f.addEventListener("change", build);
+  f.addEventListener("submit", e => e.preventDefault());
+  build();
+  const toStr = () => f.to.value.split(/[;,\n]/).map(s => s.trim()).filter(Boolean).join("; ");
+  d.addEventListener("click", async e => {
+    const act = e.target.closest("[data-act]")?.dataset.act;
+    if (!act?.startsWith("em-")) return;
+    if (act === "em-copy") { const ok = await copyRich(em.html, em.text); toast(ok ? "Email copied. Paste it into a new message." : "Couldn't copy. Select the preview and copy it instead.", ok ? "ok" : "err"); }
+    if (act === "em-to") toast(await copyText(toStr()) ? "Addresses copied." : "Couldn't copy.", "ok");
+    if (act === "em-eml") { download(`Induction setup ${m.ym}.eml`, emlFile(toStr(), f.subject.value, em.html), "message/rfc822"); toast("Downloaded. Open the file to get a new Outlook message."); }
+    if (act === "em-mailto") {
+      const url = `mailto:${encodeURIComponent(toStr()).replace(/%40/g, "@").replace(/%3B%20/g, ";")}?subject=${encodeURIComponent(f.subject.value)}&body=${encodeURIComponent(em.text)}`;
+      if (url.length > 1900) toast("This email is long, so some email apps may cut it short. If that happens, use Copy email instead.", "info", 6000);
+      location.href = url;
+    }
+  });
+}
+
+/* =====================================================================
+   8. EVENTS
+   ===================================================================== */
+const ds = el => ({ d: el.dataset.d, s: el.dataset.s, x: el.dataset.x, t: el.dataset.t, v: el.dataset.v, p: el.dataset.p, m: el.dataset.m, kind: el.dataset.kind });
+const closeMenu = () => { $("#menu").hidden = true; };
+
+function assign(el, pid) {
+  const a = ds(el), kind = el.dataset.drop, mid = ui.month, p = person(pid);
+  if (!p) return;
+  const c = ctx(state, mid, a), tgt = kind === "task" ? c.task : c.sess;
+  if (!tgt) return;
+  if (tgt.who.includes(pid)) return toast(`${p.name} is already on that.`, "info", 1800);
+  mutate(s => { const c2 = ctx(s, mid, a), t2 = kind === "task" ? c2.task : c2.sess; if (t2 && !t2.who.includes(pid)) t2.who.push(pid); });
+  toast(`${p.name} → ${kind === "task" ? tgt.text || "task" : tgt.title || "agenda item"}${kind === "sess" ? " (lead)" : ""}`, "ok", 1600);
+}
+
+// Tap-to-assign: while a name is picked, tapping an agenda item or task assigns it (instead of ticking or opening).
+document.addEventListener("click", e => {
+  if (!ui.pick) return;
+  if (e.target.closest(".team-panel, .pickbar, [data-act='unassign'], header, dialog")) return;
+  const tgt = e.target.closest("[data-drop]");
+  if (!tgt) return;
+  if (ui.edit && e.target.closest("input, button, select")) return;
+  e.preventDefault(); e.stopPropagation();
+  assign(tgt, ui.pick);
+}, true);
 
 document.addEventListener("click", async e => {
   const el = e.target.closest("[data-act]");
-  if (!$("#menu").hidden && !e.target.closest(".menu")) $("#menu").hidden = true;
-  if (!el || el.disabled) return;
-  const act = el.dataset.act, a = ds(el);
-  if (act === "tick" || act === "sess-setup") return; // handled on change
+  if (!$("#menu").hidden && !e.target.closest(".menu")) closeMenu();
+  if (!el || el.disabled || el.closest("dialog")) return;
+  const act = el.dataset.act, a = ds(el), mid = ui.month;
+  if (act === "tick" || act === "sess-setup" || act === "month-sel") return; // handled on change
   switch (act) {
-    case "tab": ui.tab = a.v; try { localStorage.setItem("susetup:tab", a.v); } catch {} render(); window.scrollTo(0, 0); break;
+    case "tab": ui.tab = a.v; store("tab", a.v); render(); window.scrollTo(0, 0); break;
     case "menu": $("#menu").hidden = !$("#menu").hidden; break;
+    case "team": ui.team = !ui.team; store("team", ui.team ? "1" : "0"); if (!ui.team) { ui.pick = ""; ui.personEdit = ""; } render(); break;
     case "edit":
       if (!ui.edit && !unlocked) {
         const pin = await ask("Enter edit PIN", "Editing is locked with a PIN.", { ok: "Unlock", input: "" });
@@ -613,87 +1117,131 @@ document.addEventListener("click", async e => {
     case "filter": ui.filter = a.v; render(); break;
     case "owner": ui.owner = a.v; render(); break;
     case "goto": {
-      ui.tab = "checklist"; ui.filter = "all"; ui.owner = ""; render();
+      if (e.target.closest("[data-act='unassign']")) return;
+      ui.tab = "checklist"; store("tab", "checklist"); ui.filter = "all"; ui.owner = ""; render();
       const b = document.getElementById(el.dataset.k);
       if (b) { b.scrollIntoView({ behavior: "smooth", block: "start" }); b.classList.remove("hl"); void b.offsetWidth; b.classList.add("hl"); }
       break;
     }
+    case "month-step": { const list = sortedMonths(), i = list.findIndex(m => m.id === mid), n = list[i + +a.v]; if (n) setMonth(n.id); break; }
+    case "month-open": setMonth(a.m); ui.tab = "agenda"; store("tab", "agenda"); render(); window.scrollTo(0, 0); break;
+    case "new-month": closeMenu(); newMonthDialog(a.m); break;
+    case "email": closeMenu(); emailDialog(a.m); break;
+    case "month-del": {
+      const m = mon(state, a.m);
+      if (state.months.length <= 1) return toast("You need at least one month.", "info");
+      if (!await ask(`Delete ${monthName(m)}?`, "This deletes the month's agenda, tasks and ticks for everyone. Other months aren't affected.", { ok: "Delete", danger: true })) return;
+      mutate(s => { s.months = s.months.filter(x => x.id !== a.m); });
+      if (a.m === ui.month) setMonth(defaultMonth());
+      break;
+    }
+    // namelist
+    case "pick": {
+      if (e.target.closest("button")) return;
+      ui.pick = ui.pick === a.p ? "" : a.p; render(); break;
+    }
+    case "pick-done": ui.pick = ""; render(); break;
+    case "person-edit": ui.personEdit = a.p || ""; if (a.p) render.focusKey = "pn-" + a.p; render(); break;
+    case "person-remove": {
+      const p = person(a.p);
+      if (!await ask(`Remove ${p.name} from the namelist?`, "They stay on anything already assigned, so past months still show who did what. You can restore them later.", { ok: "Remove" })) return;
+      ui.personEdit = ""; if (ui.pick === a.p) ui.pick = "";
+      mutate(s => { const q = s.people.find(x => x.id === a.p); if (q) q.archived = true; }); break;
+    }
+    case "person-restore": mutate(s => { const q = s.people.find(x => x.id === a.p); if (q) q.archived = false; }); break;
+    case "unassign": mutate(s => { const c = ctx(s, mid, a), tgt = a.kind === "task" ? c.task : c.sess; if (tgt) tgt.who = tgt.who.filter(id => id !== a.p); }); break;
+    // agenda
     case "day-add": {
-      const id = uid(), n = state.days.length + 1;
-      mutate(s => s.days.push({ id, name: `Day ${n}`, date: "", color: DAY_COLORS[(n - 1) % DAY_COLORS.length], pre: [],
+      const id = uid(), n = cur().days.length + 1;
+      mutate(s => mon(s, mid)?.days.push({ id, name: `Day ${n}`, date: "", color: DAY_COLORS[(n - 1) % DAY_COLORS.length], pre: [],
         slots: [{ id: id + "a", label: "AM", sessions: [] }, { id: id + "p", label: "PM", sessions: [] }] }));
       break;
     }
     case "day-del": {
-      const d = findDay(state, a.d);
-      if (!await ask(`Delete ${d.name}?`, "This removes the day, its agenda items and all its setup tasks.", { ok: "Delete", danger: true })) return;
-      mutate(s => { s.days = s.days.filter(x => x.id !== a.d); }); break;
+      const d = ctx(state, mid, a).day;
+      if (!await ask(`Delete ${d.name}?`, "This removes the day, its agenda items and all its setup tasks from this month.", { ok: "Delete", danger: true })) return;
+      mutate(s => { const m = mon(s, mid); if (m) m.days = m.days.filter(x => x.id !== a.d); }); break;
     }
-    case "day-move": mutate(s => move(s.days, s.days.findIndex(x => x.id === a.d), +a.v)); break;
-    case "day-color": mutate(s => { const d = findDay(s, a.d); if (d) d.color = a.v; }); break;
-    case "slot-add": { const id = uid(); mutate(s => findDay(s, a.d)?.slots.push({ id, label: "PM", sessions: [] })); break; }
-    case "slot-move": mutate(s => { const d = findDay(s, a.d); if (d) move(d.slots, d.slots.findIndex(x => x.id === a.s), +a.v); }); break;
+    case "day-move": mutate(s => { const m = mon(s, mid); if (m) move(m.days, m.days.findIndex(x => x.id === a.d), +a.v); }); break;
+    case "day-color": mutate(s => { const d = ctx(s, mid, a).day; if (d) d.color = a.v; }); break;
+    case "slot-add": { const id = uid(); mutate(s => ctx(s, mid, a).day?.slots.push({ id, label: "PM", sessions: [] })); break; }
+    case "slot-move": mutate(s => { const d = ctx(s, mid, a).day; if (d) move(d.slots, d.slots.findIndex(x => x.id === a.s), +a.v); }); break;
     case "slot-del": {
-      const sl = findSlot(state, a.d, a.s);
+      const sl = ctx(state, mid, a).slot;
       if (sl.sessions.length && !await ask(`Delete the ${sl.label} block?`, `It has ${sl.sessions.length} agenda item(s), which will be deleted too.`, { ok: "Delete", danger: true })) return;
-      mutate(s => { const d = findDay(s, a.d); if (d) d.slots = d.slots.filter(x => x.id !== a.s); }); break;
+      mutate(s => { const d = ctx(s, mid, a).day; if (d) d.slots = d.slots.filter(x => x.id !== a.s); }); break;
     }
-    case "sess-add": { const id = uid(); render.focusKey = "t-" + id; mutate(s => findSlot(s, a.d, a.s)?.sessions.push({ id, title: "", time: "", venue: "", setup: false, tasks: [] })); break; }
-    case "sess-move": mutate(s => { const sl = findSlot(s, a.d, a.s); if (sl) move(sl.sessions, sl.sessions.findIndex(x => x.id === a.x), +a.v); }); break;
+    case "sess-add": { const id = uid(); render.focusKey = "t-" + id; mutate(s => ctx(s, mid, a).slot?.sessions.push({ id, title: "", time: "", venue: "", setup: false, who: [], tasks: [] })); break; }
+    case "sess-move": mutate(s => { const sl = ctx(s, mid, a).slot; if (sl) move(sl.sessions, sl.sessions.findIndex(x => x.id === a.x), +a.v); }); break;
     case "sess-del": {
-      const x = findSess(state, a.d, a.s, a.x);
+      const x = ctx(state, mid, a).sess;
       if ((x.tasks.length || x.title) && !await ask(`Delete "${x.title || "this item"}"?`, x.tasks.length ? `Its ${x.tasks.length} setup task(s) will be deleted too.` : "It will be removed from the agenda.", { ok: "Delete", danger: true })) return;
-      mutate(s => { const sl = findSlot(s, a.d, a.s); if (sl) sl.sessions = sl.sessions.filter(y => y.id !== a.x); }); break;
+      mutate(s => { const sl = ctx(s, mid, a).slot; if (sl) sl.sessions = sl.sessions.filter(y => y.id !== a.x); }); break;
     }
-    case "task-add": { const id = uid(); render.focusKey = "k-" + id; mutate(s => taskList(s, a)?.push({ id, text: "", owner: "", when: "", note: "", done: false })); break; }
-    case "task-move": mutate(s => { const l = taskList(s, a); if (l) move(l, l.findIndex(t => t.id === a.t), +a.v); }); break;
-    case "task-del": mutate(s => { const l = taskList(s, a); const i = l ? l.findIndex(t => t.id === a.t) : -1; if (i >= 0) l.splice(i, 1); }); break;
+    case "task-add": { const id = uid(); render.focusKey = "k-" + id; mutate(s => ctx(s, mid, a).list?.push({ id, text: "", when: "", note: "", done: false, who: [] })); break; }
+    case "task-move": mutate(s => { const l = ctx(s, mid, a).list; if (l) move(l, l.findIndex(t => t.id === a.t), +a.v); }); break;
+    case "task-del": mutate(s => { const l = ctx(s, mid, a).list; const i = l ? l.findIndex(t => t.id === a.t) : -1; if (i >= 0) l.splice(i, 1); }); break;
+    // menu
     case "untick":
-      $("#menu").hidden = true;
-      if (!await ask("Untick everything?", "Clears every tick on every day so the checklist is ready for the next intake. Tasks and the agenda stay as they are.", { ok: "Untick all" })) return;
-      mutate(s => s.days.forEach(d => { d.pre.forEach(t => t.done = false); d.slots.forEach(sl => sl.sessions.forEach(x => x.tasks.forEach(t => t.done = false))); }));
-      toast("All ticks cleared."); break;
+      closeMenu();
+      if (!await ask(`Untick everything in ${monthName(cur())}?`, "Clears every tick in this month. Tasks, names and the agenda stay as they are. Other months aren't affected.", { ok: "Untick all" })) return;
+      mutate(s => mon(s, mid)?.days.forEach(d => { d.pre.forEach(t => t.done = false); d.slots.forEach(sl => sl.sessions.forEach(x => x.tasks.forEach(t => t.done = false))); }));
+      toast("All ticks cleared for this month."); break;
     case "guide": location.href = "setup-guide.html"; break;
-    case "print": $("#menu").hidden = true; ui.tab = "checklist"; ui.edit = false; ui.filter = "all"; ui.owner = ""; render(); setTimeout(() => print(), 50); break;
-    case "export": {
-      $("#menu").hidden = true;
-      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `induction-setup-${new Date().toISOString().slice(0, 10)}.json`;
-      link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); break;
-    }
-    case "import": $("#menu").hidden = true; $("#importFile").click(); break;
-    case "sample":
-      $("#menu").hidden = true;
-      if (!await ask("Replace with the sample agenda?", "This overwrites the current agenda and checklist for everyone. Export a backup first if you might need it.", { ok: "Replace", danger: true })) return;
-      { const fresh = sample(); mutate(s => { Object.keys(s).forEach(k => delete s[k]); Object.assign(s, clone(fresh)); }); }
-      break;
+    case "print": closeMenu(); ui.tab = "checklist"; ui.edit = false; ui.filter = "all"; ui.owner = ""; ui.team = false; render(); setTimeout(() => print(), 50); break;
+    case "export": closeMenu(); download(`induction-setup-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(state, null, 2), "application/json"); break;
+    case "import": closeMenu(); $("#importFile").click(); break;
   }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && ui.pick) { ui.pick = ""; render(); }
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches?.('[role="button"][data-act]')) { e.preventDefault(); e.target.click(); }
+  if (e.key === "Enter" && e.target.matches?.("#app input.input") && !e.target.closest("form")) e.target.blur();
 });
 
 document.addEventListener("change", e => {
-  const el = e.target, a = ds(el);
+  const el = e.target, a = ds(el), mid = ui.month;
+  if (el.closest("dialog")) return;
+  if (el.dataset.act === "month-sel") return setMonth(el.value);
   if (el.dataset.act === "tick") {
-    mutate(s => { const t = taskList(s, a)?.find(t => t.id === a.t); if (t) t.done = el.checked; });
+    mutate(s => { const t = ctx(s, mid, a).task; if (t) t.done = el.checked; });
   } else if (el.dataset.act === "sess-setup") {
-    mutate(s => { const x = findSess(s, a.d, a.s, a.x); if (x) x.setup = el.checked; });
+    mutate(s => { const x = ctx(s, mid, a).sess; if (x) x.setup = el.checked; });
   } else if (el.dataset.edit) {
     const f = el.dataset.f, v = el.value.trim();
+    if (el.dataset.edit === "month" && f === "ym" && !isYM(v)) return toast("Pick a month.", "err");
+    if (el.dataset.edit === "person" && f === "name" && !v) return toast("A name can't be empty.", "err");
     mutate(s => {
-      const target = { meta: () => s, day: () => findDay(s, a.d), slot: () => findSlot(s, a.d, a.s),
-        sess: () => findSess(s, a.d, a.s, a.x), task: () => taskList(s, a)?.find(t => t.id === a.t) }[el.dataset.edit]?.();
+      const c = () => ctx(s, mid, a);
+      const target = { meta: () => s, month: () => mon(s, a.m), person: () => s.people.find(p => p.id === a.p),
+        day: () => c().day, slot: () => c().slot, sess: () => c().sess, task: () => c().task }[el.dataset.edit]?.();
       if (target) target[f] = v;
     }, { defer: true }); // redrawn on focusout, once focus has landed on the next field
   }
 });
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter" && e.target.matches?.("input.input")) e.target.blur();
+
+document.addEventListener("submit", e => {
+  const f = e.target.closest("[data-form='add-person']");
+  if (!f) return;
+  e.preventDefault();
+  const name = f.elements.name.value.trim().replace(/\s+/g, " "), email = f.elements.email.value.trim();
+  if (!name) return;
+  const existing = state.people.find(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existing && !existing.archived) return toast(`${existing.name} is already on the namelist.`, "info");
+  const id = existing ? existing.id : "p_" + uid();
+  mutate(s => {
+    const q = s.people.find(p => p.id === id);
+    if (q) { q.archived = false; if (email) q.email = email; }
+    else s.people.push({ id, name, email, archived: false });
+  });
+  toast(existing ? `Restored ${name}.` : `Added ${name}.`, "ok", 1600);
+  render(true);
+  $("[data-form='add-person'] [name=name]")?.focus();
 });
-// After leaving a field, redraw if anything changed meanwhile, keeping focus on wherever the user went next.
+
 // fieldBusy stays true from focusing a field until focus has settled somewhere else (a redraw
 // in between, e.g. from a live update, would otherwise throw away the field the user tabbed to).
-let fieldBusy = false;
+let fieldBusy = false, dragging = false;
 document.addEventListener("focusin", e => { if (e.target.matches?.("#app input.input")) fieldBusy = true; });
 document.addEventListener("focusout", () => setTimeout(() => {
   const ae = document.activeElement;
@@ -703,29 +1251,64 @@ document.addEventListener("focusout", () => setTimeout(() => {
   render(true);
   if (key) document.querySelector(key)?.focus();
 }, 0));
-const keyOf = el => "#app " + ["edit", "f", "d", "s", "x", "t"].filter(k => el.dataset[k]).map(k => `[data-${k}="${CSS.escape(el.dataset[k])}"]`).join("");
+const keyOf = el => "#app " + (el.name && el.closest("form") ? `form [name="${el.name}"]` : ["edit", "f", "d", "s", "x", "t", "p", "m"].filter(k => el.dataset[k]).map(k => `[data-${k}="${CSS.escape(el.dataset[k])}"]`).join(""));
+
+// Drag and drop names from the namelist
+const MIME = "application/x-setup-person";
+let dragPid = "";
+document.addEventListener("dragstart", e => {
+  const p = e.target.closest?.("[data-person]");
+  if (!p) return;
+  dragging = true; dragPid = p.dataset.person;
+  e.dataTransfer.setData(MIME, dragPid);
+  e.dataTransfer.setData("text/plain", person(dragPid)?.name || "");
+  e.dataTransfer.effectAllowed = "copy";
+});
+document.addEventListener("dragend", () => {
+  dragging = false; dragPid = "";
+  document.querySelectorAll(".drop-over").forEach(x => x.classList.remove("drop-over"));
+  if (render.pending) render();
+});
+document.addEventListener("dragover", e => {
+  if (!dragPid) return;
+  const t = e.target.closest?.("[data-drop]");
+  document.querySelectorAll(".drop-over").forEach(x => { if (x !== t) x.classList.remove("drop-over"); });
+  if (!t) return;
+  e.preventDefault(); e.dataTransfer.dropEffect = "copy";
+  t.classList.add("drop-over");
+});
+document.addEventListener("drop", e => {
+  const t = e.target.closest?.("[data-drop]");
+  const pid = e.dataTransfer.getData(MIME) || dragPid;
+  if (!t || !pid) return;
+  e.preventDefault();
+  t.classList.remove("drop-over");
+  assign(t, pid);
+});
 
 $("#importFile").addEventListener("change", async e => {
   const f = e.target.files[0]; e.target.value = "";
   if (!f) return;
   try {
     const data = JSON.parse(await f.text());
-    if (!Array.isArray(data.days)) throw new Error("This file isn't a setup checklist export.");
-    if (!await ask("Import this file?", `Replaces the current agenda and checklist for everyone with "${data.title || f.name}".`, { ok: "Import", danger: true })) return;
-    mutate(s => { Object.keys(s).forEach(k => delete s[k]); Object.assign(s, clone(data)); });
+    if (!Array.isArray(data.months) && !Array.isArray(data.days)) throw new Error("This file isn't a setup checklist backup.");
+    const n = normalize(data);
+    if (!await ask("Import this backup?", `Replaces everything (${n.months.length} month(s), ${n.people.length} people on the namelist) for everyone.`, { ok: "Import", danger: true })) return;
+    mutate(s => { Object.keys(s).forEach(k => delete s[k]); Object.assign(s, clone(n)); });
+    setMonth(defaultMonth());
     toast("Imported.");
   } catch (err) { toast(String(err.message || err), "err"); }
 });
 
 /* =====================================================================
-   8. START
+   9. START
    ===================================================================== */
 function onData(d) {
   if (!d) {
-    if (!seeded) { seeded = true; DB.tx(PATH, cur => cur ? {} : { write: sample() }).catch(onErr); }
+    if (!seeded) { seeded = true; DB.tx(PATH, c => c ? {} : { write: freshState() }).catch(onErr); }
     return;
   }
-  state = d; render();
+  state = normalize(d); render();
 }
 function onErr(e) {
   console.error(e);
