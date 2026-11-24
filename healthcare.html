@@ -606,6 +606,13 @@ const SLOTS = 4;
 const COL_CHARS = "hc_characters";       // saved character library
 const GAME = "hc_game/state";            // current game: slots, status, reveal
 const PROG = i => `hc_progress/${i}`;    // live progress per slot (0..3)
+/* Team progress is kept for this many days after its last change, then cleared.
+   Every progress write stamps an "expireAt" date. A Firestore TTL policy on
+   hc_progress.expireAt deletes expired docs on the server (see FIREBASE_SETUP.md);
+   the admin page and main screen also reset any expired progress they find. */
+const PROGRESS_KEEP_DAYS = 14;
+const PROGRESS_KEEP_MS = PROGRESS_KEEP_DAYS * 24 * 60 * 60 * 1000;
+const isProgPath = p => p.startsWith("hc_progress/");
 
 /* =====================================================================
    2. DATA LAYER — same small API for Firebase and the local demo store
@@ -619,12 +626,13 @@ async function makeFirebaseStore() {
   const app = initializeApp(firebaseConfig);
   const db = fs.getFirestore(app);
   const ref = p => fs.doc(db, p);
+  const stamp = (p, d) => isProgPath(p) ? { ...d, expireAt: fs.Timestamp.fromMillis(Date.now() + PROGRESS_KEEP_MS) } : d;
   return {
     mode: "firebase",
     watchDoc: (p, cb) => fs.onSnapshot(ref(p), s => cb(s.exists() ? s.data() : null), showError),
     watchCol: (c, cb) => fs.onSnapshot(fs.collection(db, c), qs => cb(qs.docs.map(d => ({ ...d.data(), id: d.id }))), showError),
-    set: (p, d) => fs.setDoc(ref(p), d),
-    merge: (p, d) => fs.setDoc(ref(p), d, { merge: true }),
+    set: (p, d) => fs.setDoc(ref(p), stamp(p, d)),
+    merge: (p, d) => fs.setDoc(ref(p), stamp(p, d), { merge: true }),
     del: p => fs.deleteDoc(ref(p)),
     newId: c => fs.doc(fs.collection(db, c)).id,
     now: () => fs.serverTimestamp(),
@@ -632,7 +640,7 @@ async function makeFirebaseStore() {
     tx: (p, fn) => fs.runTransaction(db, async t => {
       const r = ref(p); const s = await t.get(r);
       const out = fn(s.exists() ? s.data() : null);
-      if (out.write) t.set(r, out.write);
+      if (out.write) t.set(r, stamp(p, out.write));
       return out.result;
     }),
   };
@@ -643,7 +651,7 @@ function makeLocalStore() {
   const subs = new Set();
   const get = p => { try { const v = localStorage.getItem(P + p); return v ? JSON.parse(v) : null; } catch { return null; } };
   const ping = () => queueMicrotask(() => subs.forEach(f => f()));
-  const put = (p, d) => { localStorage.setItem(P + p, JSON.stringify(d)); ping(); };
+  const put = (p, d) => { localStorage.setItem(P + p, JSON.stringify(isProgPath(p) ? { ...d, expireAt: Date.now() + PROGRESS_KEEP_MS } : d)); ping(); };
   window.addEventListener("storage", e => { if (!e.key || e.key.startsWith(P)) ping(); });
   const sub = f => { subs.add(f); queueMicrotask(f); return () => subs.delete(f); };
   const listCol = c => {
@@ -759,6 +767,17 @@ function confetti(host, n = 60) {
   setTimeout(() => box.remove(), 3200);
 }
 
+// Expired team progress is reset to blank. Docs written before expiry stamps existed
+// get a stamp now (without losing their progress), so they expire like the rest.
+// Returns true when it changed the doc, so the caller can wait for the next snapshot.
+function tidyProgress(i, p) {
+  if (!p) return false;
+  const exp = tsMs(p.expireAt);
+  if (exp == null) { DB.merge(PROG(i), {}).catch(showError); return false; }
+  if (exp > Date.now()) return false;
+  DB.set(PROG(i), blankProgress()).catch(showError);
+  return true;
+}
 const blankProgress = () => ({ step: 0, wrong: 0, attempts: 0, lastResult: null, lastAnswer: "", hintStep: -1, finishedAt: null, lastAt: null, history: [] });
 const defaultGame = () => ({
   status: "waiting", reveal: false,
@@ -1636,6 +1655,7 @@ function viewDisplay() {
   DB.watchDoc(GAME, g => { game = g; applyTheme(g); renderAll(); });
   for (let i = 0; i < SLOTS; i++) {
     DB.watchDoc(PROG(i), p => {
+      if (tidyProgress(i, p)) return;
       const f = fx[i]; const step = p?.step || 0; const wrong = p?.wrong || 0;
       if (f.prevStep !== null) {
         if (step !== f.prevStep || wrong !== f.prevWrong) f.lastActivity = Date.now();
@@ -1882,6 +1902,7 @@ function viewAdmin() {
         </nav>
         <div class="spacer"></div>
         <span class="conn ${DB.mode === "local" ? "local" : ""}"><span class="dot"></span>${DB.mode === "local" ? "Demo mode (this browser only)" : `Connected · ${esc(firebaseConfig.projectId)}`}</span>
+        <a class="btn" href="./" title="Induction Hub: all induction apps">🎓 All apps</a>
         <a class="btn" href="guide.html" target="_blank" title="How to use this site">${icon("info")}Guide</a>
         <a class="btn primary" href="?view=display" target="_blank">${icon("ext")}Main screen</a>
       </div></header>
@@ -2515,6 +2536,7 @@ function viewAdmin() {
     DB.watchCol(COL_CHARS, list => { lib = list; if (game) renderSlots(); renderLib(); });
     for (let i = 0; i < SLOTS; i++) DB.watchDoc(PROG(i), p => {
       if (!p) { DB.set(PROG(i), blankProgress()).catch(showError); return; }
+      if (tidyProgress(i, p)) return;
       prog[i] = p; renderStats();
     });
   }

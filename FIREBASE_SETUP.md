@@ -51,8 +51,8 @@ firebase deploy
 ```
 
 Run these from this folder. `firebase use --add` asks you to pick the project you created. `firebase deploy`
-publishes the page and the rules (see `firebase.json`). The site is then at
-`https://<project-id>.web.app/` (main screen). Open admin from the main screen (⚙ button, top right) or at `https://<project-id>.web.app/healthcare.html?view=admin`.
+publishes the pages and the rules (see `firebase.json`). The site is then at
+`https://<project-id>.web.app/` (the Induction Hub, which links to every app) and the game's main screen at `https://<project-id>.web.app/healthcare.html`. Open admin from the main screen (⚙ button, top right) or at `https://<project-id>.web.app/healthcare.html?view=admin`.
 
 **Option B: GitHub Pages.** Enable Pages for this repo under **Settings → Pages**, using the default branch and
 the root folder. Then open `https://<org>.github.io/induction/healthcare.html`. Only do this if the repo can be
@@ -94,16 +94,44 @@ You can also click **↻ Re-sync characters**.
 hc_characters/{id}   name, age, gender, situation, questions[{q, answer, tolerance, hint, explain}]   (admin only)
 hc_game/state        status: waiting|live|paused, reveal: bool,
                      slots[4]{teamName, characterId, character (copy of the character)}
-hc_progress/{0..3}   step, wrong, attempts, hintStep, lastAnswer, lastResult, lastAt, finishedAt, history[]
+hc_progress/{0..3}   step, wrong, attempts, hintStep, lastAnswer, lastResult, lastAt, finishedAt, history[],
+                     expireAt (14 days after the last change; see below)
 ```
 
 When you assign a character, it is copied into `hc_game/state`. Library edits therefore don't change a game
 that's already running unless you re-sync.
 
+### Automatic clean-up of team progress (14 days)
+
+Every write to a team's progress sets `expireAt` to 14 days later, so the date moves forward while a team is
+still playing. Progress that hasn't changed for 14 days is cleared in two ways:
+
+- **On the server (recommended, one-time setup):** a Firestore TTL policy deletes expired progress docs even if
+  nobody opens the game. In the Firebase console open **Firestore Database → Time-to-live (TTL)** (in some
+  consoles it's under the Google Cloud console's Firestore page), click **Create policy**, and enter collection
+  group `hc_progress` and timestamp field `expireAt`. Firestore usually deletes expired docs within a day of
+  their expiry. The admin page recreates blank progress docs when it next opens.
+- **In the app:** when the admin page or main screen opens, it resets any expired team progress it finds. This
+  works without the TTL policy.
+
+To change the window, edit `PROGRESS_KEEP_DAYS` near the top of the `<script>` in `healthcare.html`.
+Characters, team names and game settings are not affected.
+
 **Note:** there is no login. Anyone who has the page address could open the admin screen or change game data,
 and anyone who opens the browser developer tools could see the answers. That's fine for an induction
 activity, but don't put sensitive or personal data in the characters. `ADMIN_PIN` hides the admin screen
 from casual visitors, but it is not real security.
+
+## Induction Hub (`index.html`)
+
+The site's home page is a tile board linking to every induction app and its guide. Anyone with the page can
+click **✎** on a tile to edit it, or **＋ Add app** to add one. Tiles are stored in the Firestore collection
+`portal_apps`, so the whole team sees the same board. Make sure the published Firestore rules include the
+`portal_apps` block from [`firestore.rules`](firestore.rules); otherwise saving shows a permission error.
+To require a PIN before editing, set `EDIT_PIN` near the top of the `<script>` in `index.html`.
+
+Old links to the site root with game parameters (for example `/?view=team&slot=2`) are forwarded to
+`healthcare.html` automatically.
 
 ## Induction setup checklist (`setup.html`)
 

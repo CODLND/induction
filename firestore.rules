@@ -15,6 +15,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Induction Hub tiles (index.html)
+    match /portal_apps/{id} {
+      allow read, write: if true;
+    }
+
     // Live progress per team (slots 0-3)
     match /hc_progress/{slot} {
       allow read, write: if slot in ['0', '1', '2', '3'];
