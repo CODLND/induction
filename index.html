@@ -200,6 +200,11 @@ const DEFAULTS = [{
   title: "Healthcare Bill Challenge",
   desc: "Teams help patient characters work out their hospital bills. Projected main screen, team phones via QR code, and an admin page for facilitators.",
   url: "healthcare.html", guide: "guide.html",
+}, {
+  id: "setup", order: 2, icon: "🧰", color: "amber", status: "live",
+  title: "Induction Setup Checklist",
+  desc: "The programme agenda with the setup needed before each day. Agenda items that need setting up are highlighted, and the team ticks tasks off live.",
+  url: "setup.html", guide: "",
 }];
 
 const COLORS = {
@@ -320,8 +325,29 @@ function openEditor(id) {
 async function materialise() {
   if (!usingDefaults) return;
   for (const d of DEFAULTS) { const { id, ...rest } = d; await DB.set(id, rest); }
-  await DB.set(META, { seeded: true });
+  await DB.set(META, { seeded: true, seededIds: DEFAULTS.map(d => d.id) });
   usingDefaults = false;
+}
+// Default tiles added to the code after the board was first saved are added once.
+// seededIds remembers which defaults have been added, so deleting one doesn't bring it back.
+let toppingUp = false;
+async function addNewDefaults(list) {
+  if (toppingUp) return;
+  const meta = list.find(a => a.id === META) || {};
+  const known = meta.seededIds || ["healthcare"];
+  const missing = DEFAULTS.filter(d => !known.includes(d.id));
+  if (!missing.length) return;
+  toppingUp = true;
+  try {
+    let order = Math.max(0, ...list.filter(a => a.id !== META).map(a => +a.order || 0));
+    for (const d of missing) {
+      if (list.some(a => a.id === d.id)) continue;
+      const { id, ...rest } = d;
+      await DB.set(id, { ...rest, order: ++order });
+    }
+    const { id: _m, ...metaRest } = meta;
+    await DB.set(META, { ...metaRest, seeded: true, seededIds: [...new Set([...known, ...missing.map(d => d.id)])] });
+  } finally { toppingUp = false; }
 }
 const guard = p => p.catch(e => {
   console.error(e);
@@ -390,6 +416,7 @@ DB.watch(list => {
   usingDefaults = !list.some(a => a.id === META);
   apps = usingDefaults ? DEFAULTS : list.filter(a => a.id !== META);
   render(); footer(true);
+  if (!usingDefaults) addNewDefaults(list).catch(e => console.error(e));
 }, e => { console.error(e); footer(false); });
 </script>
 </body>
