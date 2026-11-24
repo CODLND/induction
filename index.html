@@ -3,12 +3,394 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Healthcare Bill Challenge</title>
-<!-- The site's home page: forwards to the game's main screen, keeping any ?view=…&slot=… parameters. -->
-<script>location.replace("healthcare.html" + location.search + location.hash);</script>
-<meta http-equiv="refresh" content="0; url=healthcare.html">
+<meta name="theme-color" content="#1b6082">
+<title>Induction Hub</title>
+<script>
+  // Old links and QR codes pointed the site root at the game (e.g. /?view=team&slot=2).
+  // Keep those working by forwarding any game parameters to healthcare.html.
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.has("view") || q.has("slot")) location.replace("healthcare.html" + location.search + location.hash);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #1b6082; --brand-600: #164f6b; --brand-700: #0f3a50; --brand-50: #e3eff4; --brand-100: #d6eaf3;
+    --ink: #0f172a; --text: #1e293b; --muted: #5b6b7a;
+    --line: #cfdbe0; --line-2: #b8c7ce; --bg: #dde7eb; --surface: #f6f9fa; --surface-2: #ecf2f4;
+    --ok: #15803d; --ok-50: #ecfdf3; --warn: #b45309; --warn-50: #fffbeb; --bad: #e11d48; --bad-50: #fff1f2;
+    --r: 16px; --sh: 0 2px 6px rgba(15,23,42,.05), 0 10px 30px rgba(15,23,42,.08);
+    --sh-3: 0 10px 40px rgba(15,23,42,.18);
+    --font: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  a { color: var(--brand); }
+
+  header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--surface) 85%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .hd { max-width: 1160px; margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--brand); display: grid; place-items: center; font-size: 18px; }
+  .hd b { color: var(--ink); font-size: 16px; } .hd span { color: var(--muted); font-size: 14px; }
+  .hd .sp { flex: 1; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); text-decoration: none; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--surface-2); border-color: var(--line-2); }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.primary:hover { background: var(--brand-600); }
+  .btn.ghost { background: transparent; color: var(--brand); }
+  .btn.danger { color: var(--bad); } .btn.danger:hover { background: var(--bad-50); border-color: #fecdd3; }
+  .btn.icon { width: 34px; height: 34px; padding: 0; }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 24px 20px 60px; }
+  .hero { background: linear-gradient(135deg, var(--brand) 0%, #2a7aa1 100%); color: #fff; border-radius: 22px; padding: 28px 30px; box-shadow: var(--sh); margin-bottom: 22px; }
+  .hero h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -.02em; line-height: 1.15; }
+  .hero p { margin: 0; opacity: .92; font-size: 16px; max-width: 720px; }
+
+  .bar { display: flex; align-items: center; gap: 10px; margin: 0 2px 12px; }
+  .bar h2 { margin: 0; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .bar .sp { flex: 1; }
+  .search { height: 36px; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 0 12px; width: min(260px, 50vw); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+  .tile { position: relative; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; box-shadow: var(--sh); min-height: 230px; transition: transform .15s, box-shadow .15s; }
+  .tile:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(15,23,42,.06), 0 16px 40px rgba(15,23,42,.12); }
+  .tile .top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+  .tile .ic { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-size: 28px; flex: 0 0 auto; }
+  .tile h3 { margin: 0 0 4px; font-size: 18px; color: var(--ink); letter-spacing: -.01em; line-height: 1.3; }
+  .tile p { margin: 0 0 16px; color: var(--muted); font-size: 14px; flex: 1; white-space: pre-line; }
+  .tile .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tile .acts .btn { flex: 1; }
+  .tile .edit { position: absolute; top: 14px; right: 14px; background: transparent; border-color: transparent; color: var(--muted); }
+  .tile .edit:hover { background: #fff; border-color: var(--line); color: var(--ink); }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; margin-top: 4px; }
+  .pill.live { background: var(--ok-50); color: var(--ok); border: 1px solid #bbf0cf; }
+  .pill.dev { background: var(--warn-50); color: var(--warn); border: 1px solid #fde4b0; }
+  .pill.retired { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+  .tile.retired { opacity: .7; }
+  .add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 230px; border: 2px dashed var(--line-2); border-radius: 20px; background: transparent; color: var(--muted); font-weight: 700; cursor: pointer; }
+  .add:hover { border-color: var(--brand); color: var(--brand); background: color-mix(in srgb, var(--surface) 50%, transparent); }
+  .add .plus { width: 48px; height: 48px; border-radius: 50%; background: #fff; border: 1px solid var(--line); display: grid; place-items: center; font-size: 26px; line-height: 1; }
+  .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 30px; }
+
+  dialog { border: none; border-radius: 22px; padding: 0; width: min(560px, calc(100vw - 32px)); box-shadow: var(--sh-3); color: var(--text); background: var(--surface); }
+  dialog::backdrop { background: rgba(15,23,42,.45); backdrop-filter: blur(2px); }
+  dialog form { padding: 22px 24px; }
+  dialog h2 { margin: 0 0 14px; font-size: 20px; color: var(--ink); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label.f { display: block; margin-bottom: 12px; font-size: 13px; font-weight: 700; color: var(--ink); }
+  label.f small { font-weight: 500; color: var(--muted); }
+  .input { display: block; width: 100%; margin-top: 4px; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 0 12px; font-size: 14px; font-weight: 500; }
+  textarea.input { height: auto; min-height: 70px; padding: 8px 12px; resize: vertical; }
+  .input:focus, .search:focus { outline: 2px solid var(--brand-100); border-color: var(--brand); }
+  .swatches { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .swatches label { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+  .swatches input { position: absolute; opacity: 0; pointer-events: none; }
+  .swatches input:checked + label { box-shadow: 0 0 0 2px var(--brand); }
+  .swatches input:focus-visible + label { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .foot { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+  .foot .sp { flex: 1; }
+
+  .toasts { position: fixed; z-index: 1000; right: 16px; top: 72px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; max-width: calc(100vw - 32px); }
+  .toast { pointer-events: auto; background: var(--ink); color: #fff; padding: 12px 14px; border-radius: 12px; box-shadow: var(--sh-3); font-size: 14px; max-width: 420px; }
+  .toast.err { background: #881337; }
+
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 28px; }
+  .conn { display: inline-flex; align-items: center; gap: 6px; }
+  .conn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  .conn.local .dot { background: var(--warn); }
+
+  @media (max-width: 640px) {
+    .hd { padding: 10px 16px; } .hd span { display: none; }
+    .wrap { padding: 16px 16px 48px; }
+    .hero { padding: 22px; } .hero h1 { font-size: 24px; }
+    .row { grid-template-columns: 1fr; }
+    .bar { flex-wrap: wrap; } .search { width: 100%; }
+    dialog form { padding: 18px; }
+  }
+</style>
 </head>
-<body style="font-family:system-ui,sans-serif;padding:24px">
-<p>Opening the <a href="healthcare.html">Healthcare Bill Challenge</a>…</p>
+<body>
+<header><div class="hd">
+  <div class="logo">🎓</div><b>Induction Hub</b><span>All our induction apps in one place</span>
+  <div class="sp"></div>
+  <button class="btn primary" id="addTop" type="button">＋ Add app</button>
+</div></header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Induction apps &amp; guides</h1>
+    <p>Open any app we use in induction sessions, or read its facilitator guide first. Use ✎ on a tile to update it, or add a tile when a new app is ready.</p>
+  </div>
+
+  <div class="bar">
+    <h2 id="count">Apps</h2>
+    <div class="sp"></div>
+    <input class="search" id="q" type="search" placeholder="Search apps…" aria-label="Search apps">
+  </div>
+  <div class="grid" id="grid"><div class="empty">Loading…</div></div>
+
+  <footer id="foot"></footer>
+</div>
+
+<dialog id="dlg">
+  <form id="form" method="dialog">
+    <h2 id="dlgTitle">Edit app</h2>
+    <div class="row">
+      <label class="f">Name<input class="input" name="title" required maxlength="80" placeholder="e.g. Healthcare Bill Challenge"></label>
+      <label class="f">Icon <small>(an emoji)</small><input class="input" name="icon" maxlength="8" placeholder="🏥"></label>
+    </div>
+    <label class="f">Short description<textarea class="input" name="desc" maxlength="300" placeholder="What the app is for and when it's used"></textarea></label>
+    <label class="f">App link<input class="input" name="url" required maxlength="500" placeholder="healthcare.html or https://…"></label>
+    <label class="f">Guide link <small>(optional)</small><input class="input" name="guide" maxlength="500" placeholder="guide.html or https://…"></label>
+    <div class="row">
+      <label class="f">Status
+        <select class="input" name="status">
+          <option value="live">Live</option>
+          <option value="dev">In development</option>
+          <option value="retired">Retired</option>
+        </select>
+      </label>
+      <div class="f" style="font-size:13px;font-weight:700;color:var(--ink)">Colour<div class="swatches" id="sw"></div></div>
+    </div>
+    <div class="foot">
+      <button class="btn danger" type="button" id="del">Delete</button>
+      <button class="btn icon" type="button" id="left" title="Move earlier" aria-label="Move earlier">←</button>
+      <button class="btn icon" type="button" id="right" title="Move later" aria-label="Move later">→</button>
+      <div class="sp"></div>
+      <button class="btn" type="button" id="cancel">Cancel</button>
+      <button class="btn primary" type="submit" id="save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script type="module">
+/* =====================================================================
+   CONFIG — same Firebase project as healthcare.html.
+   Tiles are stored in the Firestore collection "portal_apps"
+   (see firestore.rules). With a placeholder apiKey the page runs in
+   demo mode and keeps tiles in this browser only.
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyARCoY6TQUKDghViUafeNMpxIPD_ZyzekA",
+  authDomain: "induction-5725a.firebaseapp.com",
+  projectId: "induction-5725a",
+  storageBucket: "induction-5725a.firebasestorage.app",
+  messagingSenderId: "538687322070",
+  appId: "1:538687322070:web:f64d09f0c8f8903b29d677"
+};
+/* Optional PIN asked for before adding, editing or deleting tiles (once per tab).
+   Leave "" for no PIN. It keeps casual visitors out; it is not real security. */
+const EDIT_PIN = "";
+
+const FIREBASE_VERSION = "10.12.2";
+const USE_FIREBASE = !!firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("PASTE");
+const COL = "portal_apps";
+const META = "_meta";
+
+// Shown until the first tile is saved, so the hub is never empty.
+const DEFAULTS = [{
+  id: "healthcare", order: 1, icon: "🏥", color: "teal", status: "live",
+  title: "Healthcare Bill Challenge",
+  desc: "Teams help patient characters work out their hospital bills. Projected main screen, team phones via QR code, and an admin page for facilitators.",
+  url: "healthcare.html", guide: "guide.html",
+}];
+
+const COLORS = {
+  teal:   ["#d6eaf3", "#1b6082"],
+  green:  ["#d1fadf", "#15803d"],
+  amber:  ["#fef3c7", "#b45309"],
+  rose:   ["#ffe4e6", "#be123c"],
+  violet: ["#ede9fe", "#6d28d9"],
+  slate:  ["#e2e8f0", "#334155"],
+};
+const STATUS = { live: "Live", dev: "In development", retired: "Retired" };
+
+/* ---------- data layer ---------- */
+async function firebaseStore() {
+  const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/`;
+  const [{ initializeApp }, fs] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-firestore.js")]);
+  const db = fs.getFirestore(initializeApp(firebaseConfig));
+  return {
+    mode: "firebase",
+    watch: (cb, onErr) => fs.onSnapshot(fs.collection(db, COL), qs => cb(qs.docs.map(d => ({ ...d.data(), id: d.id }))), onErr),
+    set: (id, d) => fs.setDoc(fs.doc(db, COL, id), d),
+    del: id => fs.deleteDoc(fs.doc(db, COL, id)),
+    newId: () => fs.doc(fs.collection(db, COL)).id,
+  };
+}
+function localStore() {
+  const K = "hub:apps";
+  const read = () => { try { return JSON.parse(localStorage.getItem(K)) || {}; } catch { return {}; } };
+  const write = o => { try { localStorage.setItem(K, JSON.stringify(o)); } catch {} subs.forEach(f => f()); };
+  const subs = new Set();
+  return {
+    mode: "local",
+    watch: cb => { const f = () => cb(Object.entries(read()).map(([id, d]) => ({ ...d, id }))); subs.add(f); f(); },
+    set: async (id, d) => { const o = read(); o[id] = d; write(o); },
+    del: async id => { const o = read(); delete o[id]; write(o); },
+    newId: () => Math.random().toString(36).slice(2, 12),
+  };
+}
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Only allow web links or links relative to this site (no javascript: etc.)
+const safeUrl = u => {
+  u = String(u || "").trim();
+  if (!u) return "";
+  try { const p = new URL(u, location.href); return /^https?:$/.test(p.protocol) ? u : ""; } catch { return ""; }
+};
+const isExternal = u => { try { return new URL(u, location.href).origin !== location.origin; } catch { return false; } };
+function toast(msg, kind = "") {
+  const t = document.createElement("div");
+  t.className = "toast " + kind; t.textContent = msg;
+  $("#toasts").appendChild(t); setTimeout(() => t.remove(), kind === "err" ? 7000 : 3000);
+}
+function unlock() {
+  if (!EDIT_PIN) return true;
+  try { if (sessionStorage.getItem("hub:pin") === EDIT_PIN) return true; } catch {}
+  const p = prompt("Enter the edit PIN");
+  if (p === null) return false;
+  if (p !== EDIT_PIN) { toast("Wrong PIN.", "err"); return false; }
+  try { sessionStorage.setItem("hub:pin", EDIT_PIN); } catch {}
+  return true;
+}
+
+/* ---------- state & render ---------- */
+let DB, apps = DEFAULTS, usingDefaults = true, query = "";
+const sorted = () => [...apps].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.title).localeCompare(b.title));
+
+function render() {
+  const list = sorted();
+  const q = query.trim().toLowerCase();
+  const shown = q ? list.filter(a => `${a.title} ${a.desc}`.toLowerCase().includes(q)) : list;
+  $("#count").textContent = `${list.length} app${list.length === 1 ? "" : "s"}`;
+  const tiles = shown.map(a => {
+    const [bg, fg] = COLORS[a.color] || COLORS.teal;
+    const url = safeUrl(a.url), guide = safeUrl(a.guide);
+    const tgt = u => isExternal(u) ? ` target="_blank" rel="noopener"` : "";
+    const st = STATUS[a.status] ? a.status : "live";
+    return `<article class="tile ${st === "retired" ? "retired" : ""}" style="border-top:4px solid ${fg}">
+      <button class="btn icon edit" data-edit="${esc(a.id)}" title="Edit tile" aria-label="Edit ${esc(a.title)}">✎</button>
+      <div class="top">
+        <div class="ic" style="background:${bg};color:${fg}">${esc(a.icon || "📱")}</div>
+        <div style="padding-right:34px"><h3>${esc(a.title)}</h3><span class="pill ${st}">${STATUS[st]}</span></div>
+      </div>
+      <p>${esc(a.desc)}</p>
+      <div class="acts">
+        ${url ? `<a class="btn primary" href="${esc(url)}"${tgt(url)}>Open app ↗</a>` : `<span class="btn" aria-disabled="true" style="opacity:.5">No link yet</span>`}
+        ${guide ? `<a class="btn ghost" href="${esc(guide)}"${tgt(guide)}>📘 Guide</a>` : ""}
+      </div>
+    </article>`;
+  }).join("");
+  const add = q ? "" : `<button class="add" type="button" data-add><span class="plus">＋</span>Add a tile</button>`;
+  $("#grid").innerHTML = (tiles + add) || `<div class="empty">No apps match “${esc(query)}”.</div>`;
+}
+
+/* ---------- edit dialog ---------- */
+const dlg = $("#dlg"), form = $("#form");
+let editing = null; // id, or null for new
+$("#sw").innerHTML = Object.entries(COLORS).map(([k, [bg, fg]]) =>
+  `<input type="radio" name="color" value="${k}" id="c-${k}"><label for="c-${k}" title="${k}" style="background:linear-gradient(135deg,${bg} 50%,${fg} 50%)"></label>`).join("");
+
+function openEditor(id) {
+  if (!unlock()) return;
+  editing = id;
+  const a = id ? apps.find(x => x.id === id) : { icon: "", color: "teal", status: "live" };
+  if (!a) return;
+  $("#dlgTitle").textContent = id ? "Edit app" : "Add an app";
+  for (const k of ["title", "icon", "desc", "url", "guide", "status"]) form.elements[k].value = a[k] ?? (k === "status" ? "live" : "");
+  form.elements.color.value = COLORS[a.color] ? a.color : "teal";
+  const list = sorted(), i = list.findIndex(x => x.id === id);
+  $("#del").hidden = $("#left").hidden = $("#right").hidden = !id;
+  $("#left").disabled = i <= 0; $("#right").disabled = i < 0 || i >= list.length - 1;
+  dlg.showModal();
+}
+
+// The first save writes the built-in default tile(s) too, so nothing disappears.
+// A "_meta" doc marks the list as seeded, so deleting every tile doesn't bring the defaults back.
+async function materialise() {
+  if (!usingDefaults) return;
+  for (const d of DEFAULTS) { const { id, ...rest } = d; await DB.set(id, rest); }
+  await DB.set(META, { seeded: true });
+  usingDefaults = false;
+}
+const guard = p => p.catch(e => {
+  console.error(e);
+  toast(/permission/i.test(e.message) ? "Couldn't save: the Firestore rules don't allow the portal_apps collection yet (see FIREBASE_SETUP.md)." : "Couldn't save: " + e.message, "err");
+  throw e;
+});
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = form.elements;
+  const d = {
+    title: f.title.value.trim(), icon: f.icon.value.trim(), desc: f.desc.value.trim(),
+    url: f.url.value.trim(), guide: f.guide.value.trim(), status: f.status.value, color: f.color.value || "teal",
+  };
+  if (!d.title) return f.title.focus();
+  if (!safeUrl(d.url)) { toast("App link must be a web address (https://…) or a page on this site.", "err"); return f.url.focus(); }
+  if (d.guide && !safeUrl(d.guide)) { toast("Guide link must be a web address (https://…) or a page on this site.", "err"); return f.guide.focus(); }
+  $("#save").disabled = true;
+  try {
+    await guard(materialise());
+    const cur = apps.find(x => x.id === editing);
+    const order = cur ? cur.order : Math.max(0, ...apps.map(a => a.order ?? 0)) + 1;
+    await guard(DB.set(editing || DB.newId(), { ...d, order, updatedAt: Date.now() }));
+    dlg.close(); toast(editing ? "Saved." : "Tile added.");
+  } catch {} finally { $("#save").disabled = false; }
+});
+
+$("#del").onclick = async () => {
+  const a = apps.find(x => x.id === editing);
+  if (!a || !confirm(`Delete the “${a.title}” tile? The app itself isn't affected.`)) return;
+  try { await guard(materialise()); await guard(DB.del(editing)); dlg.close(); toast("Tile deleted."); } catch {}
+};
+
+async function move(dir) {
+  const list = sorted(), i = list.findIndex(x => x.id === editing), j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  try {
+    await guard(materialise());
+    // Renumber everything so orders stay unique and tidy.
+    await Promise.all(list.map((a, n) => { const { id, ...rest } = a; return (a.order === n + 1) ? null : DB.set(id, { ...rest, order: n + 1 }); }));
+    $("#left").disabled = j <= 0; $("#right").disabled = j >= list.length - 1;
+  } catch {}
+}
+$("#left").onclick = () => move(-1);
+$("#right").onclick = () => move(1);
+$("#cancel").onclick = () => dlg.close();
+$("#addTop").onclick = () => openEditor(null);
+$("#grid").addEventListener("click", e => {
+  const ed = e.target.closest("[data-edit]"); if (ed) return openEditor(ed.dataset.edit);
+  if (e.target.closest("[data-add]")) openEditor(null);
+});
+$("#q").addEventListener("input", e => { query = e.target.value; render(); });
+
+/* ---------- start ---------- */
+function footer(ok) {
+  $("#foot").innerHTML = DB.mode === "local"
+    ? `<span class="conn local"><span class="dot"></span>Demo mode: tiles are saved in this browser only</span>`
+    : ok ? `<span class="conn"><span class="dot"></span>Shared with your team · ${esc(firebaseConfig.projectId)}</span>`
+         : `<span class="conn local"><span class="dot"></span>Showing default tiles: couldn't read the shared list</span>`;
+}
+try { DB = USE_FIREBASE ? await firebaseStore() : localStore(); }
+catch (e) { console.error(e); DB = localStore(); toast("Couldn't reach Firebase, so tiles are saved in this browser only.", "err"); }
+render(); footer(true);
+DB.watch(list => {
+  usingDefaults = !list.some(a => a.id === META);
+  apps = usingDefaults ? DEFAULTS : list.filter(a => a.id !== META);
+  render(); footer(true);
+}, e => { console.error(e); footer(false); });
+</script>
 </body>
 </html>

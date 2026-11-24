@@ -51,8 +51,8 @@ firebase deploy
 ```
 
 Run these from this folder. `firebase use --add` asks you to pick the project you created. `firebase deploy`
-publishes the page and the rules (see `firebase.json`). The site is then at
-`https://<project-id>.web.app/` (main screen). Open admin from the main screen (⚙ button, top right) or at `https://<project-id>.web.app/healthcare.html?view=admin`.
+publishes the pages and the rules (see `firebase.json`). The site is then at
+`https://<project-id>.web.app/` (the Induction Hub, which links to every app) and the game's main screen at `https://<project-id>.web.app/healthcare.html`. Open admin from the main screen (⚙ button, top right) or at `https://<project-id>.web.app/healthcare.html?view=admin`.
 
 **Option B: GitHub Pages.** Enable Pages for this repo under **Settings → Pages**, using the default branch and
 the root folder. Then open `https://<org>.github.io/induction/healthcare.html`. Only do this if the repo can be
@@ -104,3 +104,14 @@ that's already running unless you re-sync.
 and anyone who opens the browser developer tools could see the answers. That's fine for an induction
 activity, but don't put sensitive or personal data in the characters. `ADMIN_PIN` hides the admin screen
 from casual visitors, but it is not real security.
+
+## Induction Hub (`index.html`)
+
+The site's home page is a tile board linking to every induction app and its guide. Anyone with the page can
+click **✎** on a tile to edit it, or **＋ Add app** to add one. Tiles are stored in the Firestore collection
+`portal_apps`, so the whole team sees the same board. Make sure the published Firestore rules include the
+`portal_apps` block from [`firestore.rules`](firestore.rules); otherwise saving shows a permission error.
+To require a PIN before editing, set `EDIT_PIN` near the top of the `<script>` in `index.html`.
+
+Old links to the site root with game parameters (for example `/?view=team&slot=2`) are forwarded to
+`healthcare.html` automatically.
