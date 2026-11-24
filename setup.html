@@ -531,7 +531,7 @@ function normalize(d) {
   for (const m of s.months) {
     m.label ??= ""; m.days = Array.isArray(m.days) ? m.days : [];
     for (const day of m.days) {
-      day.pre = day.pre || []; day.slots = day.slots || []; day.date ??= "";
+      day.pre = day.pre || []; day.slots = day.slots || []; day.date ??= ""; day.preLabel ??= "";
       day.pre.forEach(fixTask);
       for (const sl of day.slots) {
         sl.sessions = sl.sessions || [];
@@ -587,6 +587,10 @@ function dayTasks(day) {
 const effWho = (t, x) => t.who.length ? t.who : (x?.who || []);
 /* Heading for a day's general list: "Before Day 1", or the day's own name if it already starts with "Before". */
 const preTitle = d => /^before\b/i.test(d.name.trim()) ? d.name.trim() : `Before ${d.name}`;
+/* The general list's heading: the team's own wording if set (Edit mode), else "Before Day 1 · general setup". */
+const preDefault = d => `${preTitle(d)} · general setup`;
+const preLabel = d => (d.preLabel || "").trim() || preDefault(d);
+const preInput = d => `<input class="input" data-edit="day" ${A({ d: d.id })} data-f="preLabel" value="${esc(d.preLabel || "")}" placeholder="${esc(preDefault(d))}" title="Heading for this day's general list" style="flex:1;min-width:180px;max-width:420px">`;
 const count = ts => ({ done: ts.filter(t => t.done).length, total: ts.length });
 const monthTasks = m => m.days.flatMap(dayTasks);
 /* Every assignment in a month: [{ pid, kind: "lead"|"task", day, slot, sess, task }] */
@@ -744,11 +748,11 @@ function renderAgenda(m) {
       </div></div>`
       : `<div class="day-head"><h2>${esc(d.name)}</h2>${d.date ? `<span class="date">${esc(d.date)}</span>` : ""}</div>`;
     // The day's general setup list, shown (and tickable) at the top of the day.
-    const preBox = d.pre.length ? `<div class="pre-box">
-        <div class="pre-head">${pre.done === pre.total ? icon("check") : icon("flag")}<span>${esc(preTitle(d))} · general setup</span><span class="chip ${pre.done === pre.total ? "ok" : "brand"}">${pre.done}/${pre.total}</span>
+    const preBox = d.pre.length || ui.edit ? `<div class="pre-box">
+        <div class="pre-head">${pre.total && pre.done === pre.total ? icon("check") : icon("flag")}${ui.edit ? preInput(d) : `<span>${esc(preLabel(d))}</span>`}<span class="chip ${pre.total && pre.done === pre.total ? "ok" : "brand"}">${pre.done}/${pre.total}</span>
           <div class="spacer"></div><button class="btn sm ghost" data-act="goto" ${A({ k: "pre-" + d.id })}>${ui.edit ? "Edit in Checklist" : "Open in Checklist"} ${icon("right")}</button></div>
-        ${miniTasks({ d: d.id }, d.pre, null, true)}</div>`
-      : ui.edit ? `<p class="hint" style="margin:12px 0 0">No general setup tasks for this day. Add them on the Checklist tab.</p>` : "";
+        ${d.pre.length ? miniTasks({ d: d.id }, d.pre, null, true) : `<p class="hint" style="margin:6px 0 2px">No general setup tasks yet. Add them on the Checklist tab.</p>`}</div>`
+      : "";
     const slots = d.slots.map((sl, si) => `<div class="slot">
       <div class="pill">${ui.edit ? `<input class="input" data-edit="slot" ${A({ d: d.id, s: sl.id })} data-f="label" value="${esc(sl.label)}" placeholder="AM / PM / 9am">
           <button class="btn sm icon ghost" data-act="slot-move" ${A({ d: d.id, s: sl.id, v: -1 })} ${si === 0 ? "disabled" : ""} title="Move left">${icon("left")}</button>
@@ -829,7 +833,7 @@ function block(d, sl, x, tasks, visible) {
   const lead = x && (x.who.length || ui.team) ? `<span class="who"><span class="who-label">Lead</span>${whoChips(x.who, "sess", ids)}${x.who.length ? "" : dropHint("Drop a lead here")}</span>` : "";
   const head = x
     ? `<div class="block-head ev" data-drop="sess" ${A(ids)}><span class="slot-tag">${esc(sl.label)}</span><h3>${esc(x.title)}</h3>${x.time || x.venue ? `<span class="muted" style="font-size:13px;font-weight:600">${[x.time, x.venue].filter(Boolean).map(esc).join(" · ")}</span>` : ""}${lead}<div class="spacer"></div>${progChip(c)}</div>`
-    : `<div class="block-head pre">${icon("flag")}<h3>${esc(preTitle(d))} · general setup</h3><div class="spacer"></div><span class="chip ${c.total && c.done === c.total ? "ok" : "brand"}">${c.done}/${c.total}</span></div>`;
+    : `<div class="block-head pre">${icon("flag")}${ui.edit ? preInput(d) : `<h3>${esc(preLabel(d))}</h3>`}<div class="spacer"></div><span class="chip ${c.total && c.done === c.total ? "ok" : "brand"}">${c.done}/${c.total}</span></div>`;
   const rows = list.map((t, i) => ui.edit ? taskEdit(ids, t, i, tasks.length, x) : taskRow(ids, t, x)).join("")
     || `<div class="empty">${ui.edit ? "No tasks yet." : "No setup tasks listed yet. Click Edit to add some."}</div>`;
   return `<div class="block" id="${x ? "ev-" + x.id : "pre-" + d.id}">${head}<ul class="tasks">${rows}</ul>
@@ -954,7 +958,7 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
   const days = m.days.map(d => {
     const groups = [];
     const pre = d.pre.filter(keep);
-    if (pre.length) groups.push({ title: preTitle(d), sub: "", lead: "", tasks: pre, sess: null });
+    if (pre.length) groups.push({ title: (d.preLabel || "").trim(), sub: "", lead: "", tasks: pre, sess: null });
     d.slots.forEach(sl => sl.sessions.forEach(x => {
       if (!x.setup) return;
       const ts = x.tasks.filter(keep);
@@ -983,13 +987,13 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
   // Tables have a fixed 640px width (width attributes too, for Outlook) so columns don't stretch in a wide window.
   const PS = "margin:0;line-height:1.6;";
   const SP = `<p style="${PS}">&nbsp;</p>`;
-  const H = `${F}font-size:18px;color:#0f3a50;margin:0 0 6px;line-height:1.4;`;
+  const H = `${F}font-size:15pt;font-weight:bold;color:#0f3a50;margin:0 0 6px;line-height:1.4;`;
   let html = `<div style="${F}font-size:14px;color:#1e293b;line-height:1.6">`;
   if (intro.trim()) html += `<p style="${PS}">${para(intro.trim())}</p>` + SP;
   for (const d of days) {
-    html += SP + `<h2 style="${H}">${esc(d.title)}</h2>`;
+    html += SP + `<p style="${H}">${esc(d.title)}</p>`;
     for (const g of d.groups) {
-      html += `<p style="${PS}margin-top:8px"><b>${esc(g.title)}</b>${g.sub ? ` <span style="color:#64748b">(${esc(g.sub)})</span>` : ""}${g.lead ? `<br><span style="color:#64748b">Lead: ${esc(g.lead)}</span>` : ""}</p>`;
+      if (g.title || g.sub || g.lead) html += `<p style="${PS}margin-top:8px"><b>${esc(g.title)}</b>${g.sub ? ` <span style="color:#64748b">(${esc(g.sub)})</span>` : ""}${g.lead ? `<br><span style="color:#64748b">Lead: ${esc(g.lead)}</span>` : ""}</p>`;
       if (g.tasks.length) html += `<table width="640" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:640px;max-width:100%;margin-top:4px;${F}"><tr style="background:#eef6fa"><th width="340" style="${td}text-align:left;width:340px">Task</th><th width="150" style="${td}text-align:left;width:150px">When</th><th width="150" style="${td}text-align:left;width:150px">Who</th></tr>${g.tasks.map(t =>
         `<tr><td style="${td}">${esc(t.text)}${t.note ? `<br><span style="color:#64748b;font-size:13px">${para(t.note)}</span>` : ""}</td><td style="${td}">${esc(t.when) || "&nbsp;"}</td><td style="${td}">${esc(names(effWho(t, g.sess))) || `<span style="color:#b45309">To be assigned</span>`}</td></tr>`).join("")}</table>`;
       html += SP;
@@ -997,7 +1001,7 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
   }
   if (!days.length) html += `<p style="${PS}"><i>No setup tasks ${todoOnly ? "left " : ""}for this month.</i></p>` + SP;
   if (ppl.length) {
-    html += SP + `<h2 style="${H}">Who's doing what</h2>`;
+    html += SP + `<p style="${H}">Who's doing what</p>`;
     for (const { p, items } of ppl) html += `<p style="${PS}margin-top:8px"><b>${esc(p.name)}</b></p><ul style="margin:2px 0 0 20px;padding:0">${items.map(i => `<li style="line-height:1.6;margin:0 0 2px">${esc(i)}</li>`).join("")}</ul>` + SP;
   }
   html += SP + `<p style="${PS}">Live checklist (tick tasks off as you finish them): <a href="${esc(link)}">${esc(link)}</a></p>`;
@@ -1008,7 +1012,8 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
   for (const d of days) {
     text += `${d.title.toUpperCase()}\n`;
     for (const g of d.groups) {
-      text += `\n${g.title}${g.sub ? ` (${g.sub})` : ""}${g.lead ? `\nLead: ${g.lead}` : ""}\n`;
+      if (g.title || g.lead) text += `\n${g.title}${g.sub ? ` (${g.sub})` : ""}${g.lead ? `\nLead: ${g.lead}` : ""}\n`
+      else text += "\n";
       for (const t of g.tasks) text += `- ${t.text}${t.when ? ` – ${t.when}` : ""} – ${names(effWho(t, g.sess)) || "to be assigned"}\n`;
     }
     text += "\n";
