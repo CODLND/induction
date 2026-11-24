@@ -132,3 +132,22 @@ To require a PIN before editing, set `EDIT_PIN` near the top of the `<script>` i
 
 Old links to the site root with game parameters (for example `/?view=team&slot=2`) are forwarded to
 `healthcare.html` automatically.
+
+## Induction setup checklist (`setup.html`)
+
+A page for the induction team: each month's agenda, the setup needed before each day, which agenda items need
+their own setup, and who is doing what. Full instructions are in [`setup-guide.html`](setup-guide.html)
+(also linked from the page's 📘 Guide button).
+
+- **Months:** each month has its own agenda, tasks, ticks and people. New months can copy an earlier month
+  (keeping or clearing the names), start from the sample agenda, or start blank, and can be created in advance.
+  Past months stay as a history.
+- **Namelist (👥 Team):** one list of people for all months. Drag names onto agenda items (as the lead) or tasks;
+  on phones, tap a name and then the target.
+- **Email draft:** builds the month's setup as a formatted email. **Copy email** copies it; **Open in email app**
+  copies it and opens a new message with To and Subject filled in, ready to paste the body into.
+- Set `EDIT_PIN` near the top of the `<script>` to ask for a PIN before Edit mode (not real security).
+
+Everything (all months and the namelist) is stored in one Firestore document, `su_setup/main`, covered by the
+`su_setup` block in [`firestore.rules`](firestore.rules). Older data with a single agenda and free-text "owner"
+names is upgraded automatically: it becomes the current month, and the names join the namelist.

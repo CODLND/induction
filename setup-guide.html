@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1b6082">
+<title>Guide · Induction Setup Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #1b6082; --brand-700: #0f3a50; --brand-50: #e3eff4; --brand-100: #d6eaf3;
+    --ink: #0f172a; --text: #1e293b; --muted: #5b6b7a;
+    --line: #cfdbe0; --bg: #dde7eb; --surface: #f6f9fa; --surface-2: #ecf2f4;
+    --ok: #16a34a; --ok-50: #ecfdf3; --warn: #b45309; --warn-50: #fffbeb;
+    --r: 16px; --sh: 0 2px 6px rgba(15,23,42,.05), 0 10px 30px rgba(15,23,42,.08);
+    --font: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; font-family: var(--font); color: var(--text); background: var(--bg); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--brand); font-weight: 600; }
+  header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--surface) 85%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .hd { max-width: 1160px; margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 12px; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--brand); display: grid; place-items: center; font-size: 18px; }
+  .hd b { color: var(--ink); font-size: 16px; } .hd span { color: var(--muted); font-size: 14px; }
+  .hd .sp { flex: 1; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; background: var(--brand); color: #fff; text-decoration: none; font-weight: 700; font-size: 14px; }
+  .btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--line); }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 24px 20px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; }
+  nav.toc { position: sticky; top: 76px; align-self: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; box-shadow: var(--sh); font-size: 14px; }
+  nav.toc b { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px 6px; }
+  nav.toc a { display: block; padding: 6px 8px; border-radius: 8px; color: var(--text); text-decoration: none; font-weight: 600; }
+  nav.toc a:hover { background: var(--brand-50); color: var(--brand-700); }
+  main { min-width: 0; }
+  .hero { background: linear-gradient(135deg, var(--brand) 0%, #2a7aa1 100%); color: #fff; border-radius: 22px; padding: 28px 30px; box-shadow: var(--sh); margin-bottom: 22px; }
+  .hero h1 { margin: 0 0 6px; font-size: 30px; letter-spacing: -.02em; line-height: 1.15; }
+  .hero p { margin: 0; opacity: .92; font-size: 16px; max-width: 720px; }
+  .links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .links a { background: rgba(255,255,255,.16); color: #fff; padding: 8px 12px; border-radius: 10px; text-decoration: none; font-size: 14px; }
+  .links a:hover { background: rgba(255,255,255,.26); }
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px 26px; margin-bottom: 18px; box-shadow: var(--sh); }
+  h2 { margin: 0 0 4px; font-size: 21px; color: var(--ink); letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
+  h2 .n { width: 30px; height: 30px; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-size: 14px; flex: 0 0 auto; }
+  h3 { margin: 18px 0 6px; font-size: 16px; color: var(--ink); }
+  .lead { color: var(--muted); margin: 0 0 12px; }
+  ol, ul { padding-left: 22px; margin: 8px 0; } li { margin: 4px 0; }
+  kbd { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: #fff; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 6px; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+  .ui { font-weight: 700; color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--surface-2); }
+  .tip, .warn { border-radius: 12px; padding: 12px 14px; margin: 12px 0; font-size: 14px; }
+  .tip { background: var(--brand-50); border: 1px solid var(--brand-100); color: var(--brand-700); }
+  .warn { background: var(--warn-50); border: 1px solid #fde4b0; color: #7c4a03; }
+  .steps { counter-reset: s; list-style: none; padding: 0; }
+  .steps > li { counter-increment: s; position: relative; padding: 2px 0 10px 42px; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .card b { display: block; color: var(--ink); margin-bottom: 4px; }
+  .card p { margin: 0; font-size: 14px; color: var(--muted); }
+  figure.shot { margin: 14px 0 6px; }
+  figure.shot img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--sh); background: #fff; }
+  figure.shot a { display: block; cursor: zoom-in; }
+  figure.shot figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; text-align: center; }
+  figure.shot.narrow { max-width: 640px; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; align-items: start; }
+  .shots.phone { grid-template-columns: repeat(auto-fit, minmax(180px, 240px)); justify-content: center; }
+  .shots figure.shot { margin: 6px 0; }
+  .tl { list-style: none; padding: 0; margin: 10px 0; border-left: 3px solid var(--brand-100); }
+  .tl li { position: relative; padding: 2px 0 12px 20px; margin: 0; }
+  .tl li::before { content: ""; position: absolute; left: -8px; top: 7px; width: 13px; height: 13px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 3px var(--surface); }
+  .tl b.when { display: inline-block; min-width: 92px; color: var(--brand-700); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+  td code { word-break: break-all; }
+  .prompt { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 10px; padding: 12px 14px; margin: 10px 0; font-size: 14px; color: var(--text); white-space: pre-line; }
+  .prompt small { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } nav.toc { position: static; } .hd span { display: none; } section { padding: 18px; } .hero { padding: 22px; } .hero h1 { font-size: 24px; } }
+  @media print { header, nav.toc { display: none; } .wrap { display: block; } section, .hero { box-shadow: none; break-inside: avoid; } body { background: #fff; } }
+  .shots.side { grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); align-items: start; }
+  .shots.side.wide { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+  .shots.side ul ul { margin: 2px 0; }
+  @media (max-width: 860px) { .shots.side, .shots.side.wide { grid-template-columns: 1fr; } .shots.side figure.shot { max-width: 420px; } }
+</style>
+</head>
+<body>
+<header><div class="hd">
+  <div class="logo">🧰</div><b>Setup checklist guide</b><span>Induction Setup Checklist</span>
+  <div class="sp"></div>
+  <a class="btn ghost" href="index.html">Induction Hub</a>
+  <a class="btn" href="setup.html">Open the checklist</a>
+</div></header>
+
+<div class="wrap">
+  <nav class="toc" aria-label="Contents">
+    <b>Contents</b>
+    <a href="#overview">Overview</a>
+    <a href="#quick">Quick start</a>
+    <a href="#team">Namelist and assigning</a>
+    <a href="#months">Months and history</a>
+    <a href="#agenda">Agenda tab</a>
+    <a href="#checklist">Checklist tab</a>
+    <a href="#email">Email draft</a>
+    <a href="#edit-agenda">Editing the agenda</a>
+    <a href="#edit-tasks">Editing tasks</a>
+    <a href="#menu">The ⋯ menu</a>
+    <a href="#phone">On your phone</a>
+    <a href="#timeline">A typical month</a>
+    <a href="#trouble">Troubleshooting</a>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>Using the Induction Setup Checklist</h1>
+      <p>One shared page for the induction team: what to set up before each day, which agenda items need setting up, and who is doing what, month by month. Everyone sees ticks and changes live.</p>
+      <div class="links">
+        <a href="https://codlnd.github.io/induction/setup.html">🧰 Open the checklist</a>
+        <a href="https://codlnd.github.io/induction/">🎓 Induction Hub</a>
+        <a href="#quick">⚡ Quick start</a>
+      </div>
+    </div>
+
+    <section id="overview">
+      <h2><span class="n">i</span>Overview</h2>
+      <p class="lead">Each month has its own agenda, setup tasks, ticks and people. Anyone with the link can tick tasks and edit.</p>
+      <div class="grid">
+        <div class="card"><b>📅 Agenda</b><p>The month's programme laid out like the agenda slide. Items that need setup are highlighted.</p></div>
+        <div class="card"><b>✅ Checklist</b><p>The setup tasks for each day: "Before Day N", then one list per highlighted agenda item. Tick them off as you go.</p></div>
+        <div class="card"><b>🗓 Months</b><p>Every month you've set up: upcoming ones planned ahead, and past ones kept as a history.</p></div>
+        <div class="card"><b>👥 Team</b><p>The namelist. Drag names onto agenda items and tasks to assign people.</p></div>
+        <div class="card"><b>✉ Email draft</b><p>Turns the month's setup into a formatted email to paste into Outlook.</p></div>
+        <div class="card"><b>✏️ Edit</b><p>Change the agenda and tasks: days, dates, time blocks, items, what, when and notes.</p></div>
+      </div>
+      <div class="tip">🔗 <b>Address:</b> <a href="https://codlnd.github.io/induction/setup.html">codlnd.github.io/induction/setup.html</a>. It's also a tile on the <a href="https://codlnd.github.io/induction/">Induction Hub</a>. The dot at the top says <b>Live · shared with the team</b> when everything is saving to the shared database.</div>
+    </section>
+
+    <section id="quick">
+      <h2><span class="n">⚡</span>Quick start</h2>
+      <ol class="steps">
+        <li><b>Set up the namelist once.</b> Click <span class="ui">👥 Team</span> and add everyone in the induction team, with their email if you want them on the email draft.</li>
+        <li><b>Pick or create the month.</b> Use the month picker at the top. For a new intake, click <span class="ui">New month</span> and copy last month (see <a href="#months">Months</a>).</li>
+        <li><b>Check the agenda.</b> Click <span class="ui">Edit</span>, type in the dates for each day, and tick <span class="ui">Needs setup</span> on every agenda item that needs something prepared.</li>
+        <li><b>Add the tasks.</b> On the <span class="ui">Checklist</span> tab, add what needs doing and when, for each list.</li>
+        <li><b>Assign people.</b> With <span class="ui">👥 Team</span> open, drag names onto agenda items (the lead) and onto tasks.</li>
+        <li><b>Send it out.</b> Click <span class="ui">Email draft</span>, check the preview, and copy it into Outlook. The team ticks tasks off on the live checklist as they go.</li>
+      </ol>
+      <div class="warn">⚠️ The sample tasks (venue, name tags, Amazing Race clues and so on) are <b>examples</b>. Replace them with your team's real setup tasks.</div>
+    </section>
+
+    <section id="team">
+      <h2><span class="n">👥</span>Namelist and assigning people</h2>
+      <p class="lead">Click <span class="ui">👥 Team</span> at the top to open the namelist beside the agenda or checklist. There's one namelist for all months.</p>
+      <div class="shots side">
+<figure class="shot"><a href="guide-img/setup-team.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-team.jpg" width="580" height="1076" alt="The namelist panel: five people with their emails and the number of things each is assigned this month, plus boxes to add a person." loading="lazy"></a><figcaption>The namelist. The number shows how many things each person has this month.</figcaption></figure>
+        <div>
+          <h3>Maintaining the namelist</h3>
+          <ul>
+            <li><b>Add:</b> type a name (and an email, optional) at the bottom of the panel and press <kbd>Enter</kbd> or <span class="ui">Add to namelist</span>.</li>
+            <li><b>Edit:</b> click ✎ next to a name to change the name or email. The change shows everywhere they're assigned, in every month.</li>
+            <li><b>Remove:</b> click ✎, then <span class="ui">Remove</span>. They stay on anything they were already assigned, so past months still show who did what. Restore them from <b>Removed</b> at the bottom of the panel.</li>
+          </ul>
+          <h3>Assigning</h3>
+          <ul>
+            <li><b>Drag and drop:</b> drag a name onto an <b>agenda item</b> to make them its lead, or onto a <b>task</b> to assign the task. This works on both the Agenda and Checklist tabs, in normal and Edit mode.</li>
+            <li><b>Tap to assign</b> (phones and tablets): tap a name, then tap each agenda item or task it should go on. Tap <span class="ui">Done</span> (or press <kbd>Esc</kbd>) when finished.</li>
+            <li>A task or item can have <b>more than one person</b>. Drop more names on it.</li>
+            <li>Tasks in an agenda item go to its <b>lead by default</b> (dashed name), until you drop someone else on the task.</li>
+            <li><b>Unassign:</b> click the <b>×</b> on a name chip. The × only shows while the Team panel or Edit mode is open, so it can't be clicked by accident.</li>
+          </ul>
+        </div>
+      </div>
+<figure class="shot"><a href="guide-img/setup-agenda.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-agenda.jpg" width="2720" height="1720" alt="The Agenda tab with the namelist open on the right. Journey Through Time shows Ravi as its lead; other items say Drop a lead here." loading="lazy"></a><figcaption>With the Team panel open, each agenda item shows its lead, or a "Drop a lead here" space.</figcaption></figure>
+      <div class="tip">💡 <b>Leads get the item's tasks by default.</b> When you drop a name on an agenda item, every task in that item is assigned to the lead too. Those names show with a dashed outline. To give a task to someone else, drop their name on that task: it replaces the lead for that task only. Remove that name (×) and the task goes back to the lead.<br><br>When someone filters the checklist to their name, they see the tasks assigned to them <b>plus</b> every task of the items they lead.</div>
+    </section>
+
+    <section id="months">
+      <h2><span class="n">🗓</span>Months and history</h2>
+      <p class="lead">Each month is a separate copy of the agenda and checklist, with its own dates, ticks and people. Switch months with the picker (or ‹ ›) at the top of the page.</p>
+<figure class="shot"><a href="guide-img/setup-months.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-months.jpg" width="2720" height="1778" alt="The Months tab: November 2026 marked This month, December and January upcoming, and September and October under History, each with dates, progress and buttons to open, duplicate or email." loading="lazy"></a><figcaption>The Months tab: upcoming months first, then the history of past months.</figcaption></figure>
+      <h3>Creating a month (including in advance)</h3>
+      <p>Click <span class="ui">New month</span> (at the top of the page, or on the Months tab), or <span class="ui">Duplicate</span> on a month's card to copy that month.</p>
+      <div class="shots side wide">
+<figure class="shot"><a href="guide-img/setup-newmonth.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-newmonth.jpg" width="1040" height="1072" alt="The New month window: month, optional name, start from a copy of a month, the sample agenda or blank, and whether to keep or clear the people assigned." loading="lazy"></a></figure>
+        <div>
+          <ul>
+            <li><b>Month:</b> any month, including months ahead. It suggests the month after your latest one.</li>
+            <li><b>Name</b> (optional): for example "April intake (batch 2)", if you have two intakes in a month.</li>
+            <li><b>Start from:</b>
+              <ul>
+                <li><b>Copy</b> a month: same days, time blocks, agenda items, tasks and notes.</li>
+                <li><b>The sample agenda</b>: the original example programme.</li>
+                <li><b>Blank</b>: Day 1 and Day 2 with nothing scheduled.</li>
+              </ul></li>
+            <li><b>People</b> (when copying): <b>Keep the same people assigned</b>, or <b>Clear all assignments</b> to reassign from scratch.</li>
+          </ul>
+          <p>A new month always starts with <b>nothing ticked and no dates</b>. Add the dates in Edit mode.</p>
+        </div>
+      </div>
+      <h3>History</h3>
+      <p>Past months move to <b>History</b> on the Months tab and keep their ticks and names, so you can look back at who did what. To rename a month, change its month, or delete it, click <span class="ui">Edit</span> and use the boxes on its card.</p>
+    </section>
+
+    <section id="agenda">
+      <h2><span class="n">1</span>Agenda tab</h2>
+      <p class="lead">The month's days side by side, each split into time blocks (AM and PM), with the agenda items underneath.</p>
+      <ul>
+        <li><b>Colours:</b> orange = needs setup, still to do. Green = all its setup tasks are ticked. White = no setup needed.</li>
+        <li><b>Progress at the top:</b> tasks done out of the total, for the whole month and for each day.</li>
+        <li><b>Each day starts with its general setup list</b> ("Before Day 1 · general setup"), so you can see and tick the day's general tasks without leaving the Agenda tab. On a phone, tap a name in 👥 Team, then tap one of these tasks to assign it.</li>
+        <li><b>Highlighted items list their setup tasks</b>, with when each is due and who's doing it. You can tick tasks right there on the card.</li>
+        <li><b>Click a highlighted item</b> (anywhere except a task) to jump to its checklist. <b>Open in Checklist</b> on a day's general list jumps to it on the Checklist tab.</li>
+      </ul>
+    </section>
+
+    <section id="checklist">
+      <h2><span class="n">2</span>Checklist tab</h2>
+      <p class="lead">For each day: the general "Before Day N" list, then one list for each agenda item marked <b>Needs setup</b>, in agenda order. Each list's header shows its lead.</p>
+<figure class="shot"><a href="guide-img/setup-checklist.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-checklist.jpg" width="2720" height="1720" alt="The Checklist tab: Day 1's general setup list with ticked tasks, each with when it's due and who's doing it." loading="lazy"></a><figcaption>Each task shows when it's due and who's doing it. Notes appear under the task.</figcaption></figure>
+      <h3>Ticking tasks</h3>
+      <p>Click the box or the task's name. The tick saves straight away and shows on everyone's screen within a second or two. Click again to untick.</p>
+      <h3>Seeing just your tasks</h3>
+      <p><span class="ui">Still to do</span> hides ticked tasks. Click a <b>name</b> to see only that person's tasks, including all the tasks of the items they lead.</p>
+<figure class="shot"><a href="guide-img/setup-filter.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-filter.jpg" width="2720" height="1400" alt="The checklist filtered to Still to do and Aisha." loading="lazy"></a><figcaption>"Still to do" + "Aisha": everything Aisha still has to do this month.</figcaption></figure>
+    </section>
+
+    <section id="email">
+      <h2><span class="n">✉</span>Email draft</h2>
+      <p class="lead">Click <span class="ui">Email draft</span> at the top (or <span class="ui">Email</span> on a month's card) to turn that month's setup into an email.</p>
+<figure class="shot"><a href="guide-img/setup-email.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-email.jpg" width="1960" height="1468" alt="The email draft window: To, Subject, Opening and Sign-off on the left; a preview on the right with a table of tasks per agenda item; buttons to copy or download." loading="lazy"></a><figcaption>Edit the opening and sign-off on the left; the preview updates as you type.</figcaption></figure>
+      <ul>
+        <li><b>To</b> is filled in with the emails of everyone assigned that month. It warns you if someone has no email saved. Add others separated by <code>;</code>.</li>
+        <li>The email lists each day's setup in tables (task, when, who), with each item's lead. Unassigned tasks show as <i>To be assigned</i>.</li>
+        <li><b>Who's doing what</b> adds a short list per person. Untick it for a shorter email.</li>
+        <li><b>Only include tasks not yet ticked</b> is handy for a reminder email closer to the day.</li>
+        <li>The email ends with a link that opens the checklist straight to that month.</li>
+      </ul>
+      <table>
+        <tr><th>Button</th><th>What it does</th></tr>
+        <tr><td><span class="ui">Copy email</span></td><td>Copies the formatted email. Open a new message in Outlook and paste it into the body.</td></tr>
+        <tr><td><span class="ui">Copy To addresses</span></td><td>Copies the email addresses, to paste into Outlook's To box.</td></tr>
+        <tr><td><span class="ui">Open in email app</span></td><td>Copies the formatted email and opens a new message in your email app with the To and Subject filled in. Click in the message body and press <kbd>Ctrl</kbd>+<kbd>V</kbd> (<kbd>⌘</kbd>+<kbd>V</kbd> on a Mac) to paste the formatted email.</td></tr>
+      </table>
+      <div class="tip">💡 Nothing is sent from the page itself. You always review and send the email from Outlook.</div>
+    </section>
+
+    <section id="edit-agenda">
+      <h2><span class="n">3</span>Editing the agenda</h2>
+      <p class="lead">Click <span class="ui">Edit</span>, then go to the <span class="ui">Agenda</span> tab. Edits apply to the month you're looking at. Changes save when you click or tab out of a box, or press <kbd>Enter</kbd>.</p>
+<figure class="shot narrow"><a href="guide-img/setup-edit-agenda.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-edit-agenda.jpg" width="1784" height="2140" alt="Day 1 in Edit mode: boxes for the day name and date, colour dots, time block labels, and each agenda item's name, time, venue, lead and Needs setup tick box." loading="lazy"></a><figcaption>Day 1 in Edit mode.</figcaption></figure>
+      <table>
+        <tr><th>To…</th><th>Do this</th></tr>
+        <tr><td>Rename a day or add its date</td><td>Type in the two boxes in the day's header.</td></tr>
+        <tr><td>Rename a day's general list (e.g. "Logistics" instead of "Before Day 1 · general setup")</td><td>Type in the box at the top of the day's general list. Leave it empty to use the standard heading. A name you type here also appears in the email draft.</td></tr>
+        <tr><td>Change a day's colour</td><td>Click one of the coloured dots.</td></tr>
+        <tr><td>Reorder days</td><td>Use <b>‹ ›</b> in the day's header.</td></tr>
+        <tr><td>Add or remove a day</td><td><span class="ui">Add a day</span> below the days; <span class="ui">Delete day</span> in the header.</td></tr>
+        <tr><td>Add a time block (e.g. "Lunch" or "9:00am")</td><td><span class="ui">+ Time block</span> in the day's header, then type its label in the orange bar. Reorder with <b>‹ ›</b>, delete with 🗑.</td></tr>
+        <tr><td>Add an agenda item</td><td><span class="ui">+ Add agenda item</span> under a time block. Time and venue are optional.</td></tr>
+        <tr><td>Move an item up or down</td><td>The <b>⌃ ⌄</b> arrows on the item.</td></tr>
+        <tr><td>Flag an item as needing setup</td><td>Tick <span class="ui">Needs setup</span>. It gets an orange outline and its own list on the Checklist tab.</td></tr>
+      </table>
+      <div class="tip">💡 Unticking <b>Needs setup</b> hides the item's list but keeps its tasks. Tick it again and they come back. Deleting the item deletes its tasks.</div>
+    </section>
+
+    <section id="edit-tasks">
+      <h2><span class="n">4</span>Editing tasks</h2>
+      <p class="lead">In Edit mode, go to the <span class="ui">Checklist</span> tab. Each task becomes a row of boxes.</p>
+<figure class="shot"><a href="guide-img/setup-edit-tasks.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-edit-tasks.jpg" width="1784" height="804" alt="Tasks in Edit mode with boxes for the task, when and notes, the people assigned, and move and delete buttons." loading="lazy"></a><figcaption>Tasks in Edit mode. Drop names from the Team panel onto a row to assign it.</figcaption></figure>
+      <div class="grid">
+        <div class="card"><b>What needs doing</b><p>A short instruction, e.g. "Print clue cards and station sheets".</p></div>
+        <div class="card"><b>When</b><p>Free text: "1 week before", "Day before", "8:30am", "During lunch".</p></div>
+        <div class="card"><b>Notes</b><p>Optional: where things are kept, contacts, links, the number of copies…</p></div>
+        <div class="card"><b>Who</b><p>Drag names from <span class="ui">👥 Team</span>. Click × on a name to unassign.</p></div>
+      </div>
+      <p>Use <span class="ui">+ Add task</span> at the bottom of a list to add a task, <b>⌃ ⌄</b> to reorder, and 🗑 to delete. Press <kbd>Tab</kbd> to move between boxes.</p>
+    </section>
+
+    <section id="menu">
+      <h2><span class="n">5</span>The ⋯ menu</h2>
+<figure class="shot narrow"><a href="guide-img/setup-menu.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-menu.jpg" width="1000" height="800" alt="The ⋯ menu: Email draft, New month, Untick everything this month, Print, How to use this page, Export everything, Import from a backup." loading="lazy"></a></figure>
+      <table>
+        <tr><th>Option</th><th>What it does</th></tr>
+        <tr><td><span class="ui">Email draft for this month</span></td><td>Same as the Email draft button. See <a href="#email">Email draft</a>.</td></tr>
+        <tr><td><span class="ui">New month</span></td><td>Same as the New month button. See <a href="#months">Months</a>.</td></tr>
+        <tr><td><span class="ui">Untick everything this month</span></td><td>Clears every tick in the month you're looking at. Usually you'll create a new month instead, so the old one stays as a record.</td></tr>
+        <tr><td><span class="ui">Print this month's checklist</span></td><td>Prints the month's lists (or saves them as PDF), without buttons.</td></tr>
+        <tr><td><span class="ui">Export everything (backup)</span></td><td>Downloads every month and the namelist as a <code>.json</code> file. Do this now and then, and before big changes.</td></tr>
+        <tr><td><span class="ui">Import from a backup</span></td><td>Replaces everything, for everyone, with a backup file.</td></tr>
+      </table>
+    </section>
+
+    <section id="phone">
+      <h2><span class="n">6</span>On your phone</h2>
+      <p class="lead">The page works on phones, so the team can tick tasks while walking the room.</p>
+      <div class="shots phone">
+<figure class="shot"><a href="guide-img/setup-phone.jpg" target="_blank" title="Open full size"><img src="guide-img/setup-phone.jpg" width="780" height="1560" alt="The checklist on a phone: filters at the top and the Before Day 1 list with ticked tasks and names." loading="lazy"></a><figcaption>The checklist on a phone.</figcaption></figure>
+      </div>
+      <p>To assign people on a phone, open <span class="ui">👥 Team</span>, tap a name, then tap where it goes. Tip: bookmark the page, then filter to your own name.</p>
+    </section>
+
+    <section id="timeline">
+      <h2><span class="n">7</span>A typical month</h2>
+      <ul class="tl">
+        <li><b class="when">Ahead</b> Create the next months in advance with <b>New month → Copy</b>, keeping or clearing the names.</li>
+        <li><b class="when">2 weeks out</b> Add the dates, update the agenda, assign people, then send the <b>Email draft</b>.</li>
+        <li><b class="when">1 week out</b> Everyone filters to their name and starts on the "1 week before" tasks.</li>
+        <li><b class="when">Day before</b> Check the Agenda tab: anything still orange needs attention. Send a reminder with <b>Only include tasks not yet ticked</b>.</li>
+        <li><b class="when">On the day</b> Tick tasks off on your phone as stations and rooms are ready.</li>
+        <li><b class="when">After</b> Note any changes for next time in the next month's copy. This month stays in History as it was.</li>
+      </ul>
+    </section>
+
+    <section id="trouble">
+      <h2><span class="n">?</span>Troubleshooting</h2>
+      <table>
+        <tr><th>What you see</th><th>What to do</th></tr>
+        <tr><td>The dot at the top is orange and says <b>Demo mode</b></td><td>The page couldn't reach the shared database, so changes are only saved in your browser. Check your internet connection and reload. If it says <i>rules not published</i>, the Firestore rules need publishing again (see <code>FIREBASE_SETUP.md</code>).</td></tr>
+        <tr><td>Dragging a name doesn't work</td><td>Drag and drop needs a mouse or trackpad. On a phone or tablet, tap the name, then tap where it goes.</td></tr>
+        <tr><td>Someone's missing from the email's To box</td><td>They need an email saved: open <span class="ui">👥 Team</span>, click ✎ next to their name and add it. The email draft warns you who's missing.</td></tr>
+        <tr><td>I'm looking at the wrong month</td><td>Use the month picker at the top. The page remembers the last month you looked at, and links from the email open their own month.</td></tr>
+        <tr><td>Someone else's change isn't showing</td><td>Changes appear within a couple of seconds. If you're typing in a box, the page waits until you leave it before updating. Reload if it still doesn't show.</td></tr>
+        <tr><td>Something was deleted by mistake</td><td>There's no undo. Import your last backup from the ⋯ menu, or re-add it by hand.</td></tr>
+      </table>
+      <div class="warn">⚠️ There's no login: anyone with the link can tick and edit. Only put work names and emails in the namelist, and don't put sensitive information in tasks or notes.</div>
+    </section>
+
+    <footer>Induction Setup Checklist · <a href="setup.html">Open the checklist</a> · <a href="index.html">Induction Hub</a></footer>
+  </main>
+</div>
+<script>
+document.querySelectorAll('nav.toc a, a[href^="#"]').forEach(a => a.addEventListener("click", e => {
+  const id = a.getAttribute("href"); if (!id || id.length < 2) return;
+  const el = document.querySelector(id); if (!el) return;
+  e.preventDefault(); history.replaceState(null, "", id);
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}));
+</script>
+</body>
+</html>
