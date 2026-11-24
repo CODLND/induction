@@ -104,3 +104,23 @@ that's already running unless you re-sync.
 and anyone who opens the browser developer tools could see the answers. That's fine for an induction
 activity, but don't put sensitive or personal data in the characters. `ADMIN_PIN` hides the admin screen
 from casual visitors, but it is not real security.
+
+## Induction setup checklist (`setup.html`)
+
+A separate page for the induction team: the programme agenda, the setup needed before each day, and which
+agenda items need their own setup. It uses the same Firebase project and is at `setup.html`
+(for example <https://codlnd.github.io/induction/setup.html>).
+
+- **Agenda** tab: the days, time blocks (AM/PM) and agenda items. Items that need setup are outlined in orange,
+  and turn green once all their tasks are ticked. Click one to jump to its checklist.
+- **Checklist** tab: for each day, the general "Before Day N" tasks, then one list per highlighted agenda item.
+  Anyone can tick tasks. Filter by **Still to do** or by person.
+- **Edit** (top right): rename the title, days, dates and time blocks; add, reorder or delete days, time blocks,
+  agenda items and tasks; tick **Needs setup** on an agenda item to give it a checklist. Each task has a
+  description, who, when and notes. Changes save as you type and everyone sees them live.
+- **⋯ menu:** untick everything for the next intake, print, export/import a backup, or reload the sample agenda.
+- Set `EDIT_PIN` near the top of the `<script>` to ask for a PIN before Edit mode (not real security).
+
+Everything is stored in one Firestore document, `su_setup/main`. **Publish the updated
+[`firestore.rules`](firestore.rules)** (Firestore Database → Rules) so the page can read and write it. Until then
+the page says "Demo mode: Firestore rules not published yet" and only saves in that browser.

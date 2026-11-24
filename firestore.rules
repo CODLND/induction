@@ -19,5 +19,10 @@ service cloud.firestore {
     match /hc_progress/{slot} {
       allow read, write: if slot in ['0', '1', '2', '3'];
     }
+
+    // Induction setup checklist (setup.html): one shared document
+    match /su_setup/{doc} {
+      allow read, write: if doc == 'main';
+    }
   }
 }
