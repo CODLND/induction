@@ -760,13 +760,15 @@ function sessCard(d, sl, x) {
   return `<div role="button" tabindex="0" class="sess flag ${c.total && c.done === c.total ? "done" : ""}" data-act="goto" data-drop="sess" ${A({ ...ids, k: "ev-" + x.id })}>
     ${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}<span class="badge">${progChip(c)}</span>${miniTasks(ids, x.tasks, x)}${who}</div>`;
 }
-/* The item's setup tasks, listed on its agenda card. They can be ticked right here. */
+/* The item's setup tasks, listed on its agenda card. They can be ticked right here.
+   They are not drop targets: a name dropped anywhere on the card makes it the item's lead,
+   which then covers every task that has no name of its own. */
 function miniTasks(ids, tasks, x) {
   if (!tasks.length) return "";
   const names = t => effWho(t, x).map(person).filter(Boolean).map(p => p.name).join(", ");
   return `<ul class="mini">${tasks.map(t => {
     const a = { ...ids, t: t.id }, meta = [t.when, names(t)].filter(Boolean).map(esc).join(" · ");
-    return `<li class="${t.done ? "done" : ""}" data-drop="task" ${A(a)}><label><input type="checkbox" data-act="tick" ${A(a)} ${t.done ? "checked" : ""}>
+    return `<li class="${t.done ? "done" : ""}"><label><input type="checkbox" data-act="tick" ${A(a)} ${t.done ? "checked" : ""}>
       <span><span class="mt">${esc(t.text) || "<i>(untitled)</i>"}</span>${meta ? `<small>${meta}</small>` : ""}</span></label></li>`;
   }).join("")}</ul>`;
 }
@@ -1103,7 +1105,8 @@ function assign(el, pid) {
   if (!tgt) return;
   if (tgt.who.includes(pid)) return toast(`${p.name} is already on that.`, "info", 1800);
   mutate(s => { const c2 = ctx(s, mid, a), t2 = kind === "task" ? c2.task : c2.sess; if (t2 && !t2.who.includes(pid)) t2.who.push(pid); });
-  toast(`${p.name} → ${kind === "task" ? tgt.text || "task" : tgt.title || "agenda item"}${kind === "sess" ? " (lead)" : ""}`, "ok", 1600);
+  const own = kind === "sess" && tgt.setup ? tgt.tasks.filter(t => !t.who.length).length : 0;
+  toast(`${p.name} → ${kind === "task" ? tgt.text || "task" : `${tgt.title || "agenda item"} (lead)`}${own ? `, and its ${own} task${own === 1 ? "" : "s"} without a name` : ""}`, "ok", 2200);
 }
 
 // Tap-to-assign: while a name is picked, tapping an agenda item or task assigns it (instead of ticking or opening).
