@@ -121,6 +121,12 @@
   .sess.flag.done { border-color: var(--ok); background: var(--ok-50); }
   .sess.flag.done:hover { box-shadow: 0 0 0 4px var(--ok-100); }
   .sess .badge { display: flex; margin-top: 8px; }
+  /* An agenda item that is itself a task ("Tick box" on): ticked off on the card. */
+  .sess.tick > label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+  .sess.tick input { width: 18px; height: 18px; margin: 2px 0 0; flex: 0 0 auto; accent-color: var(--ok); cursor: pointer; }
+  .sess.tick.done { border-color: var(--ok); background: var(--ok-50); }
+  .sess.tick.done .tt { text-decoration: line-through; color: var(--muted); }
+  .toggle.tick-t { color: var(--ok-600, #15803d); } .toggle.tick-t input { accent-color: var(--ok); }
   .pre-box { background: var(--brand-50); border: 1px solid var(--brand-100); border-radius: 14px; padding: 8px 12px 8px; margin-top: 12px; }
   .pre-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; font-weight: 800; color: var(--ink); }
   .pre-head .btn { height: 28px; color: var(--brand); }
@@ -134,7 +140,10 @@
   .mini .done .mt { text-decoration: line-through; color: var(--muted); }
   .sess-edit { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 6px; }
   .sess-edit.flag { border: 2px solid var(--warn); background: var(--warn-50); }
+  .sess-edit { min-width: 0; grid-template-columns: minmax(0, 1fr); }
   .sess-edit .row { flex-wrap: nowrap; gap: 2px; }
+  .sess-edit .toggles { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .sess-edit .toggle { white-space: nowrap; }
   .sess-edit .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; color: var(--warn-600); cursor: pointer; user-select: none; }
   .toggle input { width: 16px; height: 16px; accent-color: var(--warn); }
@@ -495,7 +504,7 @@ const blankDays = () => [D("Day 1", DAY_COLORS[0], [], [L("AM"), L("PM")]), D("D
 function copyDays(days, keepPeople) {
   const t = x => ({ ...x, id: uid(), done: false, who: keepPeople ? [...(x.who || [])] : [] });
   return days.map(d => ({ ...d, id: uid(), date: "", pre: d.pre.map(t),
-    slots: d.slots.map(sl => ({ ...sl, id: uid(), sessions: sl.sessions.map(x => ({ ...x, id: uid(), who: keepPeople ? [...(x.who || [])] : [], tasks: x.tasks.map(t) })) })) }));
+    slots: d.slots.map(sl => ({ ...sl, id: uid(), sessions: sl.sessions.map(x => ({ ...x, id: uid(), done: false, who: keepPeople ? [...(x.who || [])] : [], tasks: x.tasks.map(t) })) })) }));
 }
 function freshState() {
   const ym = ymNow();
@@ -535,7 +544,11 @@ function normalize(d) {
       day.pre.forEach(fixTask);
       for (const sl of day.slots) {
         sl.sessions = sl.sessions || [];
-        for (const x of sl.sessions) { x.who = Array.isArray(x.who) ? x.who : []; x.tasks = x.tasks || []; x.tasks.forEach(fixTask); x.time ??= ""; x.venue ??= ""; }
+        for (const x of sl.sessions) {
+          x.who = Array.isArray(x.who) ? x.who : []; x.tasks = x.tasks || []; x.tasks.forEach(fixTask); x.time ??= ""; x.venue ??= "";
+          // Items in a "… before" time block (e.g. "2 Weeks Before") are to-dos, so they get a tick box unless someone turned it off.
+          x.tick ??= /\bbefore\b/i.test(sl.label || ""); x.done = !!x.done;
+        }
       }
     }
   }
@@ -580,7 +593,7 @@ const activePeople = () => state.people.filter(p => !p.archived).sort((a, b) => 
 
 function dayTasks(day) {
   const out = [...day.pre];
-  day.slots.forEach(sl => sl.sessions.forEach(x => { if (x.setup) out.push(...x.tasks); }));
+  day.slots.forEach(sl => sl.sessions.forEach(x => { if (x.setup) out.push(...x.tasks); else if (x.tick) out.push({ done: x.done }); }));
   return out;
 }
 /* A task with no names of its own is done by its agenda item's lead(s). */
@@ -771,6 +784,7 @@ function sessCard(d, sl, x) {
   const ids = { d: d.id, s: sl.id, x: x.id };
   const meta = [x.time, x.venue].filter(Boolean).map(esc).join(" · ");
   const who = x.who.length ? `<span class="who">${whoChips(x.who, "sess", ids)}</span>` : (dropHint("Drop a lead here") ? `<span class="who">${dropHint("Drop a lead here")}</span>` : "");
+  if (!x.setup && x.tick) return `<div class="sess tick ${x.done ? "done" : ""}" data-drop="sess" ${A(ids)}><label><input type="checkbox" data-act="sess-tick" ${A(ids)} ${x.done ? "checked" : ""} aria-label="Done: ${esc(x.title)}"><span><span class="tt">${esc(x.title)}</span>${meta ? `<span class="meta">${meta}</span>` : ""}</span></label>${who}</div>`;
   if (!x.setup) return `<div class="sess" data-drop="sess" ${A(ids)}>${esc(x.title)}${meta ? `<span class="meta">${meta}</span>` : ""}${who}</div>`;
   const c = count(x.tasks);
   return `<div role="button" tabindex="0" class="sess flag ${c.total && c.done === c.total ? "done" : ""}" data-act="goto" data-drop="sess" ${A({ ...ids, k: "ev-" + x.id })}>
@@ -795,8 +809,8 @@ function sessEdit(d, sl, x, xi) {
     <div class="two"><input class="input" data-edit="sess" ${A(ids)} data-f="time" value="${esc(x.time)}" placeholder="Time">
       <input class="input" data-edit="sess" ${A(ids)} data-f="venue" value="${esc(x.venue)}" placeholder="Venue"></div>
     ${x.who.length || ui.team ? `<div class="who" style="margin-top:0">${whoChips(x.who, "sess", ids)}${x.who.length ? "" : dropHint("Drop a lead here")}</div>` : ""}
-    <div class="row"><label class="toggle"><input type="checkbox" data-act="sess-setup" ${A(ids)} ${x.setup ? "checked" : ""}>${icon("flag")}Needs setup</label>
-      <div class="spacer"></div>
+    <div class="row"><span class="toggles"><label class="toggle"><input type="checkbox" data-act="sess-setup" ${A(ids)} ${x.setup ? "checked" : ""}>${icon("flag")}Needs setup</label>
+      ${x.setup ? "" : `<label class="toggle tick-t" title="Show a tick box on this item, for agenda items that are tasks themselves"><input type="checkbox" data-act="sess-tickable" ${A(ids)} ${x.tick ? "checked" : ""}>Tick box</label>`}</span>
       <button class="btn sm icon ghost" data-act="sess-move" ${A({ ...ids, v: -1 })} ${xi === 0 ? "disabled" : ""} title="Move up">${icon("up")}</button>
       <button class="btn sm icon ghost" data-act="sess-move" ${A({ ...ids, v: 1 })} ${xi === sl.sessions.length - 1 ? "disabled" : ""} title="Move down">${icon("down")}</button>
       <button class="btn sm icon ghost danger" data-act="sess-del" ${A(ids)} title="Delete">${icon("trash")}</button></div>
@@ -1141,7 +1155,7 @@ document.addEventListener("click", async e => {
   if (!$("#menu").hidden && !e.target.closest(".menu")) closeMenu();
   if (!el || el.disabled || el.closest("dialog")) return;
   const act = el.dataset.act, a = ds(el), mid = ui.month;
-  if (act === "tick" || act === "sess-setup" || act === "month-sel") return; // handled on change
+  if (act === "tick" || act === "sess-setup" || act === "sess-tick" || act === "sess-tickable" || act === "month-sel") return; // handled on change
   switch (act) {
     case "tab": ui.tab = a.v; store("tab", a.v); render(); window.scrollTo(0, 0); break;
     case "menu": $("#menu").hidden = !$("#menu").hidden; break;
@@ -1245,6 +1259,10 @@ document.addEventListener("change", e => {
   if (el.dataset.act === "month-sel") return setMonth(el.value);
   if (el.dataset.act === "tick") {
     mutate(s => { const t = ctx(s, mid, a).task; if (t) t.done = el.checked; });
+  } else if (el.dataset.act === "sess-tick") {
+    mutate(s => { const x = ctx(s, mid, a).sess; if (x) x.done = el.checked; });
+  } else if (el.dataset.act === "sess-tickable") {
+    mutate(s => { const x = ctx(s, mid, a).sess; if (x) x.tick = el.checked; });
   } else if (el.dataset.act === "sess-setup") {
     mutate(s => { const x = ctx(s, mid, a).sess; if (x) x.setup = el.checked; });
   } else if (el.dataset.edit) {

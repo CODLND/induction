@@ -75,6 +75,17 @@
   .add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 230px; border: 2px dashed var(--line-2); border-radius: 20px; background: transparent; color: var(--muted); font-weight: 700; cursor: pointer; }
   .add:hover { border-color: var(--brand); color: var(--brand); background: color-mix(in srgb, var(--surface) 50%, transparent); }
   .add .plus { width: 48px; height: 48px; border-radius: 50%; background: #fff; border: 1px solid var(--line); display: grid; place-items: center; font-size: 26px; line-height: 1; }
+  /* rearrange mode */
+  .arr-only { display: none; }
+  body.arranging .arr-only { display: inline-flex; }
+  body.arranging .arr-hide { display: none !important; }
+  .arr-hint { color: var(--muted); font-size: 14px; font-weight: 600; }
+  body.arranging .tile { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; outline: 2px dashed var(--brand-100); outline-offset: 3px; }
+  body.arranging .tile:hover { transform: none; }
+  body.arranging .tile .acts { pointer-events: none; opacity: .55; }
+  .tile .mv { position: absolute; top: 12px; right: 12px; gap: 4px; }
+  .tile.dragging { position: fixed; z-index: 50; cursor: grabbing; pointer-events: none; transform: rotate(1.5deg) scale(1.02); box-shadow: var(--sh-3); outline: none; }
+  .ph { border: 2px dashed var(--brand); border-radius: 20px; background: var(--brand-50); }
   .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 30px; }
 
   dialog { border: none; border-radius: 22px; padding: 0; width: min(560px, calc(100vw - 32px)); box-shadow: var(--sh-3); color: var(--text); background: var(--surface); }
@@ -118,19 +129,23 @@
 <header><div class="hd">
   <div class="logo">🎓</div><b>Induction Hub</b><span>All our induction apps in one place</span>
   <div class="sp"></div>
-  <button class="btn primary" id="addTop" type="button">＋ Add app</button>
+  <button class="btn primary arr-hide" id="addTop" type="button">＋ Add app</button>
 </div></header>
 
 <div class="wrap">
   <div class="hero">
     <h1>Induction apps &amp; guides</h1>
-    <p>Open any app we use in induction sessions, or read its facilitator guide first. Use ✎ on a tile to update it, or add a tile when a new app is ready.</p>
+    <p>Open any app we use in induction sessions, or read its facilitator guide first. Use ✎ on a tile to update it, ⇅ Rearrange to change the order, or add a tile when a new app is ready.</p>
   </div>
 
   <div class="bar">
     <h2 id="count">Apps</h2>
+    <span class="arr-hint arr-only">Drag tiles into the order you want, or use ← →</span>
     <div class="sp"></div>
-    <input class="search" id="q" type="search" placeholder="Search apps…" aria-label="Search apps">
+    <input class="search arr-hide" id="q" type="search" placeholder="Search apps…" aria-label="Search apps">
+    <button class="btn arr-hide" id="arrange" type="button" title="Change the order of the tiles">⇅ Rearrange</button>
+    <button class="btn arr-only" id="arrCancel" type="button">Cancel</button>
+    <button class="btn primary arr-only" id="arrSave" type="button">Save order</button>
   </div>
   <div class="grid" id="grid"><div class="empty">Loading…</div></div>
 
@@ -271,11 +286,19 @@ function unlock() {
 
 /* ---------- state & render ---------- */
 let DB, apps = DEFAULTS, usingDefaults = true, query = "";
+let arranging = null; // array of tile ids in the order being arranged, or null
 const sorted = () => [...apps].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || String(a.title).localeCompare(b.title));
 
 function render() {
-  const list = sorted();
-  const q = query.trim().toLowerCase();
+  if (drag) return; // don't disturb a tile that's being dragged; the next update redraws
+  let list = sorted();
+  if (arranging) {
+    // Keep the order being arranged; tiles someone else added meanwhile go at the end.
+    const byId = new Map(list.map(a => [a.id, a]));
+    arranging = [...arranging.filter(id => byId.has(id)), ...list.map(a => a.id).filter(id => !arranging.includes(id))];
+    list = arranging.map(id => byId.get(id));
+  }
+  const q = arranging ? "" : query.trim().toLowerCase();
   const shown = q ? list.filter(a => `${a.title} ${a.desc}`.toLowerCase().includes(q)) : list;
   $("#count").textContent = `${list.length} app${list.length === 1 ? "" : "s"}`;
   const tiles = shown.map(a => {
@@ -283,11 +306,14 @@ function render() {
     const url = safeUrl(a.url), guide = safeUrl(a.guide);
     const tgt = u => isExternal(u) ? ` target="_blank" rel="noopener"` : "";
     const st = STATUS[a.status] ? a.status : "live";
-    return `<article class="tile ${st === "retired" ? "retired" : ""}" style="border-top:4px solid ${fg}">
-      <button class="btn icon edit" data-edit="${esc(a.id)}" title="Edit tile" aria-label="Edit ${esc(a.title)}">✎</button>
+    const n = list.indexOf(a);
+    return `<article class="tile ${st === "retired" ? "retired" : ""}" data-id="${esc(a.id)}" style="border-top:4px solid ${fg}">
+      ${arranging
+        ? `<span class="mv" style="display:flex"><button class="btn icon" type="button" data-step="-1" ${n === 0 ? "disabled" : ""} aria-label="Move ${esc(a.title)} earlier">←</button><button class="btn icon" type="button" data-step="1" ${n === list.length - 1 ? "disabled" : ""} aria-label="Move ${esc(a.title)} later">→</button></span>`
+        : `<button class="btn icon edit" data-edit="${esc(a.id)}" title="Edit tile" aria-label="Edit ${esc(a.title)}">✎</button>`}
       <div class="top">
         <div class="ic" style="background:${bg};color:${fg}">${esc(a.icon || "📱")}</div>
-        <div style="padding-right:34px"><h3>${esc(a.title)}</h3><span class="pill ${st}">${STATUS[st]}</span></div>
+        <div style="padding-right:${arranging ? 80 : 34}px"><h3>${esc(a.title)}</h3><span class="pill ${st}">${STATUS[st]}</span></div>
       </div>
       <p>${esc(a.desc)}</p>
       <div class="acts">
@@ -296,7 +322,7 @@ function render() {
       </div>
     </article>`;
   }).join("");
-  const add = q ? "" : `<button class="add" type="button" data-add><span class="plus">＋</span>Add a tile</button>`;
+  const add = q || arranging ? "" : `<button class="add" type="button" data-add><span class="plus">＋</span>Add a tile</button>`;
   $("#grid").innerHTML = (tiles + add) || `<div class="empty">No apps match “${esc(query)}”.</div>`;
 }
 
@@ -381,22 +407,92 @@ $("#del").onclick = async () => {
   try { await guard(materialise()); await guard(DB.del(editing)); dlg.close(); toast("Tile deleted."); } catch {}
 };
 
+// Save tiles in the given order (array of ids), renumbering so orders stay unique and tidy.
+async function saveOrder(ids) {
+  await guard(materialise());
+  const byId = new Map(apps.map(a => [a.id, a]));
+  await guard(Promise.all(ids.map((id, n) => {
+    const a = byId.get(id); if (!a || a.order === n + 1) return null;
+    const { id: _, ...rest } = a; return DB.set(id, { ...rest, order: n + 1 });
+  })));
+}
 async function move(dir) {
-  const list = sorted(), i = list.findIndex(x => x.id === editing), j = i + dir;
-  if (i < 0 || j < 0 || j >= list.length) return;
-  [list[i], list[j]] = [list[j], list[i]];
+  const ids = sorted().map(a => a.id), i = ids.indexOf(editing), j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
   try {
-    await guard(materialise());
-    // Renumber everything so orders stay unique and tidy.
-    await Promise.all(list.map((a, n) => { const { id, ...rest } = a; return (a.order === n + 1) ? null : DB.set(id, { ...rest, order: n + 1 }); }));
-    $("#left").disabled = j <= 0; $("#right").disabled = j >= list.length - 1;
+    await saveOrder(ids);
+    $("#left").disabled = j <= 0; $("#right").disabled = j >= ids.length - 1;
   } catch {}
 }
+
+/* ---------- rearrange mode (drag and drop, mouse or touch) ---------- */
+function setArranging(on) {
+  arranging = on ? sorted().map(a => a.id) : null;
+  document.body.classList.toggle("arranging", on);
+  render();
+}
+$("#arrange").onclick = () => { if (unlock()) setArranging(true); };
+$("#arrCancel").onclick = () => setArranging(false);
+$("#arrSave").onclick = async () => {
+  const ids = arranging, unchanged = ids.join() === sorted().map(a => a.id).join();
+  $("#arrSave").disabled = true;
+  try { if (!unchanged) await saveOrder(ids); setArranging(false); toast(unchanged ? "Order unchanged." : "New order saved."); }
+  catch {} finally { $("#arrSave").disabled = false; }
+};
+document.addEventListener("keydown", e => { if (e.key === "Escape" && arranging && !dlg.open) setArranging(false); });
+
+let drag = null; // { tile, ph, dx, dy, x0, y0, started, id }
+const grid = $("#grid");
+grid.addEventListener("pointerdown", e => {
+  if (!arranging || e.button > 0 || e.target.closest("button")) return;
+  const tile = e.target.closest(".tile"); if (!tile) return;
+  const r = tile.getBoundingClientRect();
+  drag = { tile, id: tile.dataset.id, dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, started: false };
+  grid.setPointerCapture(e.pointerId);
+});
+grid.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const { tile } = drag;
+  if (!drag.started) {
+    if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return;
+    const r = tile.getBoundingClientRect();
+    drag.ph = document.createElement("div"); drag.ph.className = "ph"; drag.ph.style.height = r.height + "px";
+    tile.before(drag.ph);
+    Object.assign(tile.style, { width: r.width + "px", height: r.height + "px" });
+    tile.classList.add("dragging"); drag.started = true;
+  }
+  tile.style.left = e.clientX - drag.dx + "px"; tile.style.top = e.clientY - drag.dy + "px";
+  // Auto-scroll near the top or bottom of the window.
+  if (e.clientY < 70) scrollBy(0, -14); else if (e.clientY > innerHeight - 70) scrollBy(0, 14);
+  const over = document.elementFromPoint(e.clientX, e.clientY)?.closest(".tile:not(.dragging)");
+  if (!over || !grid.contains(over)) return;
+  const r = over.getBoundingClientRect();
+  const after = e.clientY > r.bottom - 10 || (e.clientY > r.top + 10 && e.clientX > r.left + r.width / 2);
+  if (after ? over.nextElementSibling !== drag.ph : over.previousElementSibling !== drag.ph) (after ? over.after(drag.ph) : over.before(drag.ph));
+});
+const endDrag = () => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (!d.started) return;
+  d.ph.replaceWith(d.tile); d.tile.classList.remove("dragging");
+  arranging = [...grid.querySelectorAll(".tile")].map(t => t.dataset.id);
+  render();
+};
+grid.addEventListener("pointerup", endDrag);
+grid.addEventListener("pointercancel", endDrag);
 $("#left").onclick = () => move(-1);
 $("#right").onclick = () => move(1);
 $("#cancel").onclick = () => dlg.close();
 $("#addTop").onclick = () => openEditor(null);
 $("#grid").addEventListener("click", e => {
+  const st = e.target.closest("[data-step]");
+  if (st && arranging) {
+    const id = st.closest(".tile").dataset.id, i = arranging.indexOf(id), j = i + Number(st.dataset.step);
+    if (j >= 0 && j < arranging.length) { [arranging[i], arranging[j]] = [arranging[j], arranging[i]]; render(); grid.querySelector(`[data-id="${CSS.escape(id)}"] [data-step="${st.dataset.step}"]`)?.focus(); }
+    return;
+  }
+  if (arranging) { if (e.target.closest("a")) e.preventDefault(); return; }
   const ed = e.target.closest("[data-edit]"); if (ed) return openEditor(ed.dataset.edit);
   if (e.target.closest("[data-add]")) openEditor(null);
 });
