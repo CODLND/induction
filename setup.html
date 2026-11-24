@@ -980,6 +980,7 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
   const para = s => esc(s).replace(/\n/g, "<br>");
   const td = "border:1px solid #cfdbe0;padding:7px 9px;vertical-align:top;font-size:14px;line-height:1.5;";
   // Spacing uses empty paragraphs as well as margins: Outlook ignores most CSS margins (on tables in particular).
+  // Tables have a fixed 640px width (width attributes too, for Outlook) so columns don't stretch in a wide window.
   const PS = "margin:0;line-height:1.6;";
   const SP = `<p style="${PS}">&nbsp;</p>`;
   const H = `${F}font-size:18px;color:#0f3a50;margin:0 0 6px;line-height:1.4;`;
@@ -989,7 +990,7 @@ function buildEmail(m, { intro, outro, todoOnly, byPerson }) {
     html += SP + `<h2 style="${H}">${esc(d.title)}</h2>`;
     for (const g of d.groups) {
       html += `<p style="${PS}margin-top:8px"><b>${esc(g.title)}</b>${g.sub ? ` <span style="color:#64748b">(${esc(g.sub)})</span>` : ""}${g.lead ? `<br><span style="color:#64748b">Lead: ${esc(g.lead)}</span>` : ""}</p>`;
-      if (g.tasks.length) html += `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin-top:4px;${F}"><tr style="background:#eef6fa"><th style="${td}text-align:left">Task</th><th style="${td}text-align:left;width:22%">When</th><th style="${td}text-align:left;width:22%">Who</th></tr>${g.tasks.map(t =>
+      if (g.tasks.length) html += `<table width="640" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:640px;max-width:100%;margin-top:4px;${F}"><tr style="background:#eef6fa"><th width="340" style="${td}text-align:left;width:340px">Task</th><th width="150" style="${td}text-align:left;width:150px">When</th><th width="150" style="${td}text-align:left;width:150px">Who</th></tr>${g.tasks.map(t =>
         `<tr><td style="${td}">${esc(t.text)}${t.note ? `<br><span style="color:#64748b;font-size:13px">${para(t.note)}</span>` : ""}</td><td style="${td}">${esc(t.when) || "&nbsp;"}</td><td style="${td}">${esc(names(effWho(t, g.sess))) || `<span style="color:#b45309">To be assigned</span>`}</td></tr>`).join("")}</table>`;
       html += SP;
     }
