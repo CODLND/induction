@@ -127,7 +127,8 @@ from casual visitors, but it is not real security.
 The site's home page is a tile board linking to every induction app and its guide. Anyone with the page can
 click **✎** on a tile to edit it, or **＋ Add app** to add one. Tiles are stored in the Firestore collection
 `portal_apps`, so the whole team sees the same board. To change the order, click **⇅ Rearrange**, drag
-the tiles (or use the ← → buttons on each tile), then click **Save order**. Make sure the published Firestore rules include the
+the tiles (or use the ← → buttons on each tile), then click **Save order**. In a tile's edit dialog, tick **Open app in a new window** (or the same
+option under the guide link) to open that link in a new browser window or tab, keeping the hub open. Make sure the published Firestore rules include the
 `portal_apps` block from [`firestore.rules`](firestore.rules); otherwise saving shows a permission error.
 To require a PIN before editing, set `EDIT_PIN` near the top of the `<script>` in `index.html`.
 
