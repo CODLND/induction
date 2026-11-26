@@ -9,11 +9,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!--
-  CALL ROOM — a pretend video call with a 3D cartoon character who talks through an ElevenLabs Agent.
+  CALL ROOM — a pretend video call with a cartoon character who talks through an ElevenLabs Agent.
 
   How it works:
   - ElevenLabs' browser SDK handles the microphone, the agent's voice and turn-taking.
-  - The character is drawn with three.js from simple shapes (no model file needed).
+  - The character is a flat-style illustration drawn in SVG (no image files needed).
   - Every frame, the agent's output volume drives the mouth; idle motion (blinks, sways, glances) runs throughout.
 
   Set-up: open the page, paste your Agent ID, press "Join call". The settings are remembered in this browser.
@@ -22,7 +22,6 @@
 -->
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
   "@elevenlabs/client": "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.36.1/+esm"
 } }
 </script>
@@ -57,7 +56,8 @@
   .tile.speaking::after { border-color: var(--speak); }
   .main-tile { width: 100%; max-width: calc((100dvh - 48px - 76px - 16px) * 16 / 9); aspect-ratio: 16 / 9; max-height: 100%; }
   .app.toolbar-hidden .main-tile { max-width: calc((100dvh - 48px - 16px) * 16 / 9); }
-  .main-tile canvas { display: block; width: 100% !important; height: 100% !important; }
+  .main-tile > svg { display: block; width: 100%; height: 100%; }
+  #eyeL, #eyeR { transform-box: fill-box; transform-origin: center; }
   .self-tile { position: absolute; right: 28px; top: 20px; width: clamp(140px, 18vw, 280px); aspect-ratio: 16 / 9; box-shadow: 0 8px 24px rgba(0,0,0,.45); z-index: 3; }
   .self-tile video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
   .self-tile .initials { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -152,6 +152,104 @@
 
   <div class="stage" id="stage">
     <div class="tile main-tile" id="agentTile">
+      <svg id="avatarSvg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-label="Video of the character">
+        <defs>
+          <filter id="soften" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="5"/></filter>
+          <clipPath id="faceClip"><ellipse cx="800" cy="415" rx="172" ry="192"/></clipPath>
+          <clipPath id="bodyClip"><path d="M440 920 C440 770 540 690 690 668 L910 668 C1060 690 1160 770 1160 920 Z"/></clipPath>
+          <clipPath id="mouthClip"><use href="#mouthCavity"/></clipPath>
+        </defs>
+
+        <!-- room behind her, softly out of focus -->
+        <g filter="url(#soften)">
+          <rect width="1600" height="900" fill="#f3e7d3"/>
+          <rect y="640" width="1600" height="260" fill="#ead9bf"/>
+          <rect x="1170" y="100" width="320" height="350" rx="10" fill="#fffaf0"/>
+          <rect x="1190" y="120" width="280" height="310" fill="#cfe7f1"/>
+          <rect x="1190" y="330" width="280" height="100" fill="#b7d7a8"/>
+          <g fill="#efe5d2"><rect x="1240" y="120" width="7" height="310"/><rect x="1300" y="120" width="7" height="310"/><rect x="1360" y="120" width="7" height="310"/><rect x="1420" y="120" width="7" height="310"/></g>
+          <rect x="150" y="110" width="140" height="180" rx="6" fill="#ffffff"/>
+          <rect x="150" y="110" width="140" height="52" rx="6" fill="#e04b4b"/>
+          <g fill="#d9d2c4"><rect x="170" y="185" width="100" height="10" rx="5"/><rect x="170" y="215" width="100" height="10" rx="5"/><rect x="170" y="245" width="70" height="10" rx="5"/></g>
+          <rect x="0" y="560" width="380" height="340" fill="#b7835a"/>
+          <rect x="20" y="585" width="160" height="300" rx="6" fill="#c4916a"/>
+          <rect x="200" y="585" width="160" height="300" rx="6" fill="#c4916a"/>
+          <rect x="250" y="470" width="70" height="90" rx="18" fill="#7aa7c7"/>
+          <rect x="1340" y="700" width="130" height="200" rx="10" fill="#d17a4a"/>
+          <g fill="#5f9e5c"><ellipse cx="1405" cy="640" rx="70" ry="80"/><ellipse cx="1340" cy="600" rx="45" ry="70" transform="rotate(-25 1340 600)"/><ellipse cx="1470" cy="600" rx="45" ry="70" transform="rotate(25 1470 600)"/></g>
+        </g>
+
+        <!-- body: samfu-style floral blouse with a mandarin collar -->
+        <g id="body">
+          <rect x="758" y="540" width="84" height="150" fill="#f4bea6"/>
+          <g clip-path="url(#bodyClip)">
+            <rect x="400" y="650" width="800" height="300" fill="#8ec0de"/>
+            <path d="M880 650 C960 720 990 820 1000 950 L1220 950 L1220 650 Z" fill="#7db2d3"/>
+            <g id="flowers"></g>
+          </g>
+          <path d="M742 652 Q800 690 858 652 L862 690 Q800 722 738 690 Z" fill="#6a9fc4"/>
+          <g fill="none" stroke="#f6e7bd" stroke-width="5" stroke-linecap="round">
+            <path d="M846 718 h22"/><path d="M880 752 h22"/><path d="M910 790 h22"/>
+          </g>
+          <g fill="#f6e7bd"><circle cx="872" cy="718" r="6"/><circle cx="906" cy="752" r="6"/><circle cx="936" cy="790" r="6"/></g>
+        </g>
+
+        <g id="head">
+          <!-- permed hair, back layer -->
+          <g fill="#c9c4d2">
+            <circle cx="800" cy="390" r="215"/>
+            <circle cx="612" cy="470" r="58"/><circle cx="988" cy="470" r="58"/>
+            <circle cx="596" cy="390" r="64"/><circle cx="1004" cy="390" r="64"/>
+            <circle cx="616" cy="300" r="66"/><circle cx="984" cy="300" r="66"/>
+            <circle cx="670" cy="225" r="68"/><circle cx="930" cy="225" r="68"/>
+            <circle cx="745" cy="185" r="70"/><circle cx="855" cy="185" r="70"/>
+          </g>
+          <!-- ears + jade earrings -->
+          <g fill="#f9c8b2"><circle cx="626" cy="438" r="32"/><circle cx="974" cy="438" r="32"/></g>
+          <g fill="#3fae7c"><circle cx="624" cy="482" r="13"/><circle cx="976" cy="482" r="13"/></g>
+          <g fill="#bfeedb"><circle cx="620" cy="478" r="4"/><circle cx="972" cy="478" r="4"/></g>
+          <!-- face with flat two-tone shading -->
+          <ellipse cx="800" cy="415" rx="172" ry="192" fill="#ffdccb"/>
+          <path clip-path="url(#faceClip)" d="M870 180 C960 320 960 520 860 640 L1000 640 L1000 180 Z" fill="#fbcab5"/>
+          <!-- curly fringe -->
+          <g fill="#d8d4de">
+            <circle cx="668" cy="300" r="50"/><circle cx="712" cy="258" r="52"/><circle cx="772" cy="238" r="54"/>
+            <circle cx="834" cy="236" r="54"/><circle cx="892" cy="256" r="52"/><circle cx="936" cy="298" r="50"/>
+          </g>
+          <g fill="#e6e3ea"><circle cx="760" cy="226" r="18"/><circle cx="700" cy="250" r="14"/></g>
+          <!-- brows -->
+          <g id="brows" fill="none" stroke="#a7a1b0" stroke-width="8" stroke-linecap="round">
+            <path d="M705 362 Q735 346 765 360"/><path d="M835 360 Q865 346 895 362"/>
+          </g>
+          <!-- eyes -->
+          <g id="eyes">
+            <g id="eyeL"><ellipse cx="735" cy="425" rx="14" ry="18" fill="#3a3140"/><circle cx="740" cy="418" r="5" fill="#fff"/></g>
+            <g id="eyeR"><ellipse cx="865" cy="425" rx="14" ry="18" fill="#3a3140"/><circle cx="870" cy="418" r="5" fill="#fff"/></g>
+          </g>
+          <!-- round gold glasses -->
+          <g fill="#ffffff" fill-opacity=".18" stroke="#c48f4a" stroke-width="7">
+            <circle cx="735" cy="425" r="54"/><circle cx="865" cy="425" r="54"/>
+          </g>
+          <g fill="none" stroke="#c48f4a" stroke-width="7" stroke-linecap="round">
+            <path d="M789 420 Q800 406 811 420"/><path d="M681 418 L636 410"/><path d="M919 418 L964 410"/>
+          </g>
+          <!-- nose, rosy cheeks and smile wrinkles -->
+          <ellipse cx="800" cy="474" rx="15" ry="11" fill="#f4b59d"/>
+          <g fill="#ff9c9c" opacity=".45"><ellipse cx="700" cy="505" rx="36" ry="21"/><ellipse cx="900" cy="505" rx="36" ry="21"/></g>
+          <g fill="none" stroke="#ee9f8b" stroke-width="5" stroke-linecap="round">
+            <path d="M680 496 q14 8 30 4"/><path d="M684 514 q14 8 30 4"/>
+            <path d="M920 496 q-14 8 -30 4"/><path d="M916 514 q-14 8 -30 4"/>
+          </g>
+          <!-- mouth -->
+          <g transform="translate(800 538)">
+            <path id="smile" d="M-34 -4 Q0 26 34 -4" fill="none" stroke="#d9645f" stroke-width="8" stroke-linecap="round"/>
+            <g id="mouthOpen" style="display:none">
+              <ellipse id="mouthCavity" cx="0" cy="0" rx="34" ry="10" fill="#8a3440"/>
+              <ellipse id="tongue" clip-path="url(#mouthClip)" cx="0" cy="6" rx="20" ry="14" fill="#ee8590"/>
+            </g>
+          </g>
+        </g>
+      </svg>
       <div class="lens"></div>
       <div class="overlay-msg" id="agentOverlay" hidden><div class="box"><div class="spinner"></div><span id="agentOverlayText">Connecting…</span></div></div>
       <div class="captions" id="captions" hidden><span id="captionText"></span></div>
@@ -246,7 +344,6 @@
 <div class="toast" id="toast" hidden></div>
 
 <script type="module">
-import * as THREE from "three";
 
 /* =====================================================================
    SETTINGS
@@ -303,218 +400,40 @@ function toast(msg) {
 }
 
 /* =====================================================================
-   THE CHARACTER — a cute cartoon Singaporean grandmother built from shapes
+   THE CHARACTER — flat-style cartoon grandmother drawn in SVG (#avatarSvg above)
    ===================================================================== */
-const tile = $("agentTile");
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-tile.prepend(renderer.domElement);
+const svg = $("avatarSvg");
+const el = (id) => svg.getElementById(id);
+const headG = el("head"), bodyG = el("body"), eyesG = el("eyes"), eyeL = el("eyeL"), eyeR = el("eyeR");
+const mouthOpen = el("mouthOpen"), mouthCavity = el("mouthCavity"), tongueEl = el("tongue"), smileEl = el("smile"), browsG = el("brows");
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(26, 16 / 9, 0.1, 100);
-camera.position.set(0, 0.1, 8.3);
-camera.lookAt(0, -0.32, 0);
-
-// soft, friendly lighting
-scene.add(new THREE.HemisphereLight(0xfff6ea, 0x8a7a6a, 1.6));
-const key = new THREE.DirectionalLight(0xfff1de, 2.2); key.position.set(2.5, 3, 5); scene.add(key);
-const rim = new THREE.DirectionalLight(0xcfe3ff, 1.0); rim.position.set(-4, 2, -3); scene.add(rim);
-
-// 3-step toon shading ramp for the "avatar" look
-const ramp = (() => {
-  const d = new Uint8Array([90, 175, 255]);
-  const t = new THREE.DataTexture(d, 3, 1, THREE.RedFormat);
-  t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t;
+// scatter little flat flowers on the blouse (seeded so they look the same each time)
+(function flowers() {
+  const g = el("flowers"); let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const NS = "http://www.w3.org/2000/svg";
+  for (let i = 0; i < 34; i++) {
+    const x = 470 + rnd() * 660, y = 690 + rnd() * 220, r = 9 + rnd() * 7;
+    const f = document.createElementNS(NS, "g"); f.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+    const petal = rnd() > 0.5 ? "#fbe3ea" : "#ffffff";
+    for (let k = 0; k < 5; k++) {
+      const a = k / 5 * Math.PI * 2, c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", (Math.cos(a) * r * 0.6).toFixed(1)); c.setAttribute("cy", (Math.sin(a) * r * 0.6).toFixed(1));
+      c.setAttribute("r", (r * 0.45).toFixed(1)); c.setAttribute("fill", petal); f.append(c);
+    }
+    const ctr = document.createElementNS(NS, "circle"); ctr.setAttribute("r", (r * 0.28).toFixed(1)); ctr.setAttribute("fill", "#f2c14e"); f.append(ctr);
+    g.append(f);
+  }
 })();
-const toon = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap: ramp, ...extra });
-
-const SKIN = 0xf0c29e, SKIN_DARK = 0xe2a988, HAIR = 0xdcdbe0, HAIR_SHADE = 0xc4c3ca;
-
-/* --- blurred living-room backdrop (drawn once on a canvas) --- */
-(function backdrop() {
-  const c = document.createElement("canvas"); c.width = 1280; c.height = 720;
-  const g = c.getContext("2d");
-  const wall = g.createLinearGradient(0, 0, 0, 720); wall.addColorStop(0, "#f3e6cf"); wall.addColorStop(1, "#e4d3b5");
-  g.fillStyle = wall; g.fillRect(0, 0, 1280, 720);
-  g.filter = "blur(10px)";
-  // window with daylight + grille
-  g.fillStyle = "#fdfcf6"; g.fillRect(860, 90, 320, 330);
-  g.fillStyle = "#cfe8f5"; g.fillRect(880, 110, 280, 290);
-  g.fillStyle = "#b9d9a5"; g.fillRect(880, 300, 280, 100);
-  g.fillStyle = "#e9e2d2"; for (let i = 0; i < 5; i++) g.fillRect(880 + i * 70, 110, 8, 290);
-  // wall calendar
-  g.fillStyle = "#fff"; g.fillRect(150, 110, 130, 170); g.fillStyle = "#d63a3a"; g.fillRect(150, 110, 130, 50);
-  // altar shelf / cabinet
-  g.fillStyle = "#8a5a3b"; g.fillRect(0, 470, 420, 250); g.fillStyle = "#a46d47"; g.fillRect(20, 490, 180, 200); g.fillRect(220, 490, 180, 200);
-  // potted plant
-  g.fillStyle = "#c46a3c"; g.fillRect(1040, 560, 110, 160);
-  g.fillStyle = "#4d8a4a"; [[1095, 500, 90], [1050, 450, 60], [1140, 440, 60], [1095, 400, 55]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); });
-  // a fan
-  g.fillStyle = "#f7f7f7"; g.beginPath(); g.arc(640, 0, 70, 0, 7); g.fill();
-  g.filter = "none";
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(26, 14.6), new THREE.MeshBasicMaterial({ map: tex }));
-  plane.position.set(0, -0.6, -14); scene.add(plane);
-})();
-
-/* --- floral samfu-style blouse texture --- */
-function blouseTexture() {
-  const c = document.createElement("canvas"); c.width = c.height = 512;
-  const g = c.getContext("2d");
-  g.fillStyle = "#7fb3d5"; g.fillRect(0, 0, 512, 512);
-  const flower = (x, y, r, petal, centre) => {
-    g.fillStyle = petal;
-    for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; g.beginPath(); g.ellipse(x + Math.cos(a) * r * .55, y + Math.sin(a) * r * .55, r * .5, r * .32, a, 0, 7); g.fill(); }
-    g.fillStyle = centre; g.beginPath(); g.arc(x, y, r * .25, 0, 7); g.fill();
-  };
-  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 26; i++) {
-    const x = rnd() * 512, y = rnd() * 512, r = 18 + rnd() * 16;
-    g.fillStyle = "#5e9a6a"; g.beginPath(); g.ellipse(x + r * .8, y + r * .5, r * .45, r * .18, .6, 0, 7); g.fill();
-    flower(x, y, r, rnd() > .5 ? "#f7d6e0" : "#fdfdfd", "#f2c14e");
-  }
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return t;
-}
-
-const avatar = new THREE.Group(); scene.add(avatar);
-
-/* --- body: shoulders, blouse, collar, frog buttons --- */
-const body = new THREE.Group(); avatar.add(body);
-const torso = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), toon(0xffffff, { map: blouseTexture() }));
-torso.scale.set(1.85, 1.15, 1.05); torso.position.set(0, -2.45, -0.15); body.add(torso);
-const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 0.8, 24), toon(SKIN_DARK));
-neck.position.set(0, -1.15, -0.05); body.add(neck);
-const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.5, 0.26, 32, 1, true), toon(0x6aa0c4, { side: THREE.DoubleSide }));
-collar.position.set(0, -1.42, -0.05); body.add(collar);
-const frogMat = toon(0xf3e3b5);
-[[0.0, -1.68], [0.32, -1.86], [0.58, -2.12]].forEach(([x, y]) => {
-  const k = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.025, 8, 16), frogMat);
-  k.position.set(x, y, 0.88 - x * 0.25); body.add(k);
-  const b = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8), frogMat);
-  b.position.set(x + 0.12, y, 0.86 - x * 0.25); body.add(b);
-});
-
-/* --- head --- */
-const head = new THREE.Group(); head.position.set(0, -0.15, 0); avatar.add(head);
-const skull = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), toon(SKIN));
-skull.scale.set(0.98, 1.0, 0.94); head.add(skull);
-// soft rounded cheeks/jowls (gives an older, gentle face shape)
-[-1, 1].forEach(s => {
-  const j = new THREE.Mesh(new THREE.SphereGeometry(0.34, 32, 24), toon(SKIN));
-  j.position.set(0.46 * s, -0.4, 0.4); head.add(j);
-});
-// ears + jade stud earrings
-[-1, 1].forEach(s => {
-  const ear = new THREE.Mesh(new THREE.SphereGeometry(0.2, 20, 16), toon(SKIN_DARK));
-  ear.scale.set(0.55, 1, 0.8); ear.position.set(0.95 * s, -0.05, 0.02); head.add(ear);
-  const jade = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), new THREE.MeshToonMaterial({ color: 0x3fae7c, gradientMap: ramp, emissive: 0x0b3a24 }));
-  jade.position.set(0.99 * s, -0.24, 0.08); head.add(jade);
-});
-
-// permed curly hair: a cloud of small spheres over the crown, sides and back
-const curls = new THREE.Group(); head.add(curls);
-const hairCap = new THREE.Mesh(new THREE.SphereGeometry(1.0, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.42), toon(HAIR_SHADE));
-hairCap.scale.set(1.03, 1.04, 1.0); hairCap.rotation.x = -0.45; curls.add(hairCap);
-{
-  const geo = new THREE.SphereGeometry(1, 16, 12);
-  const mats = [toon(HAIR), toon(0xe8e7eb), toon(HAIR_SHADE)];
-  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const golden = Math.PI * (3 - Math.sqrt(5));
-  const N = 150;
-  for (let i = 0; i < N; i++) {
-    const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = golden * i;
-    const p = new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r);
-    // keep the face clear: skip the front-lower region and the underside
-    if (p.y < -0.35) continue;
-    if (p.z > 0.25 && p.y < 0.6 && Math.abs(p.x) < 0.88) continue;
-    if (p.z > 0.45 && p.y < 0.8) continue;
-    if (p.y < 0.05 && p.z > -0.2 && Math.abs(p.x) < 0.95) continue;
-    const curl = new THREE.Mesh(geo, mats[i % 3]);
-    const s = 0.19 + rnd() * 0.08;
-    curl.scale.setScalar(s);
-    curl.position.copy(p.multiplyScalar(1.02 + rnd() * 0.06));
-    curl.position.y += 0.04;
-    curls.add(curl);
-  }
-}
-
-// eyes: big glossy cartoon eyes with highlights
-const eyes = [];
-const eyeMat = new THREE.MeshBasicMaterial({ color: 0x2a1d17 });
-const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-[-1, 1].forEach(s => {
-  const g = new THREE.Group(); g.position.set(0.34 * s, 0.02, 0.86); head.add(g);
-  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.14, 24, 16), eyeMat);
-  eye.scale.set(0.9, 1.15, 0.5); g.add(eye);
-  const sh = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), shineMat); sh.position.set(0.035, 0.05, 0.06); g.add(sh);
-  const sh2 = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 6), shineMat); sh2.position.set(-0.03, -0.04, 0.06); g.add(sh2);
-  eyes.push(g);
-});
-// eyebrows (soft grey arcs)
-const brows = [];
-[-1, 1].forEach(s => {
-  const b = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.028, 8, 20, Math.PI * 0.75), toon(0xa9a7ae));
-  b.rotation.z = Math.PI * 0.125; b.position.set(0.34 * s, 0.27, 0.9); head.add(b); brows.push(b);
-});
-// gentle smile wrinkles at the eye corners
-[-1, 1].forEach(s => {
-  for (let k = 0; k < 2; k++) {
-    const w = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.008, 6, 12, Math.PI * 0.5), toon(SKIN_DARK));
-    w.position.set(0.6 * s, -0.02 - k * 0.06, 0.74); w.rotation.z = s > 0 ? -Math.PI * 0.25 : Math.PI * 0.75; w.rotation.y = 0.6 * s;
-    head.add(w);
-  }
-});
-// round gold-rimmed glasses
-const glasses = new THREE.Group(); head.add(glasses);
-const rimMat = toon(0xb98a45);
-[-1, 1].forEach(s => {
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 10, 40), rimMat);
-  ring.position.set(0.35 * s, 0.02, 0.97); glasses.add(ring);
-  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.21, 32), new THREE.MeshBasicMaterial({ color: 0xdff1ff, transparent: true, opacity: 0.16 }));
-  lens.position.set(0.35 * s, 0.02, 0.975); glasses.add(lens);
-  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.85, 8), rimMat);
-  arm.rotation.x = Math.PI / 2; arm.position.set(0.58 * s, 0.05, 0.55); arm.rotation.z = 0.12 * s; glasses.add(arm);
-});
-const bridge = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.02, 8, 16, Math.PI), rimMat);
-bridge.position.set(0, 0.06, 1.0); glasses.add(bridge);
-
-// nose + rosy cheeks
-const nose = new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 14), toon(SKIN_DARK));
-nose.scale.set(1.1, 0.85, 0.9); nose.position.set(0, -0.17, 0.97); head.add(nose);
-[-1, 1].forEach(s => {
-  const blush = new THREE.Mesh(new THREE.CircleGeometry(0.15, 28), new THREE.MeshBasicMaterial({ color: 0xff8f8f, transparent: true, opacity: 0.38 }));
-  blush.scale.set(1.25, 0.8, 1); blush.position.set(0.55 * s, -0.25, 0.86); blush.rotation.y = 0.55 * s; head.add(blush);
-});
-
-// mouth: a smiling line when closed, opens into a rounded mouth when she talks
-const mouth = new THREE.Group(); mouth.position.set(0, -0.47, 0.93); head.add(mouth);
-const mouthInner = new THREE.Mesh(new THREE.SphereGeometry(0.16, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x7b2d33 }));
-mouthInner.rotation.x = Math.PI; mouthInner.scale.set(1, 0.05, 0.25); mouth.add(mouthInner);
-const tongue = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10), new THREE.MeshBasicMaterial({ color: 0xe0707a }));
-tongue.scale.set(1.2, 0.5, 0.3); tongue.position.set(0, -0.06, 0.02); mouth.add(tongue);
-const smile = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.018, 8, 24, Math.PI * 0.8), new THREE.MeshBasicMaterial({ color: 0x8c4038 }));
-smile.rotation.z = Math.PI + Math.PI * 0.1; smile.position.set(0, 0.07, 0.01); mouth.add(smile);
-const upperLip = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.016, 8, 24, Math.PI), new THREE.MeshBasicMaterial({ color: 0xc96a68 }));
-upperLip.scale.set(1, 0.18, 1); upperLip.position.set(0, 0.005, 0.03); upperLip.visible = false; mouth.add(upperLip);
 
 /* =====================================================================
    ANIMATION: idle life + volume-driven talking
    ===================================================================== */
-const state = { mode: "idle", level: 0, talk: 0, blinkT: 2, blink: 0, lookT: 1.5, look: new THREE.Vector2(), lookTarget: new THREE.Vector2() };
+const state = { mode: "idle", level: 0, talk: 0, blinkT: 2, blink: 0, lookT: 1.5, lx: 0, ly: 0, tx: 0, ty: 0, tilt: 0 };
 let getAgentVolume = () => 0; // replaced when connected or previewing
 
-function resize() {
-  const w = tile.clientWidth, h = tile.clientHeight;
-  if (!w || !h) return;
-  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-}
-new ResizeObserver(resize).observe(tile); resize();
-
-const clock = new THREE.Clock();
-function frame() {
-  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+let last = performance.now(), t = 0;
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
 
   // speech level → smoothed mouth opening (fast open, slower close), with a little "syllable" flutter
   const raw = Math.min(1, Math.max(0, getAgentVolume()) * 2.4);
@@ -522,39 +441,44 @@ function frame() {
   const target = state.level > 0.04 ? Math.min(1, state.level * (0.85 + 0.25 * Math.sin(t * 22))) : 0;
   state.talk += (target - state.talk) * Math.min(1, dt * 18);
   const o = state.talk;
-  mouthInner.scale.set(1 - o * 0.25, 0.05 + o * 0.95, 0.25);
-  tongue.visible = o > 0.25; tongue.scale.y = 0.5 * Math.min(1, o * 1.2);
-  smile.visible = o < 0.12; upperLip.visible = o >= 0.12;
-  mouth.position.y = -0.47 - o * 0.04;
+  const open = o >= 0.1;
+  smileEl.style.display = open ? "none" : "";
+  mouthOpen.style.display = open ? "" : "none";
+  if (open) {
+    const ry = 6 + o * 30, rx = 36 - o * 8;
+    mouthCavity.setAttribute("rx", rx.toFixed(1)); mouthCavity.setAttribute("ry", ry.toFixed(1));
+    tongueEl.setAttribute("cy", (ry * 0.55).toFixed(1)); tongueEl.setAttribute("rx", (rx * 0.6).toFixed(1));
+    tongueEl.style.display = o > 0.3 ? "" : "none";
+  }
 
   // blinking
   state.blinkT -= dt;
   if (state.blinkT <= 0) { state.blink = 1; state.blinkT = 2 + Math.random() * 3.5; if (Math.random() < 0.15) state.blinkT = 0.25; }
   const lid = state.blink > 0 ? Math.abs(Math.cos(state.blink * Math.PI)) : 1;
   if (state.blink > 0) state.blink = Math.max(0, state.blink - dt * 7);
-  eyes.forEach(e => e.scale.y = Math.max(0.08, lid));
+  const sy = Math.max(0.1, lid).toFixed(3);
+  eyeL.style.transform = eyeR.style.transform = `scaleY(${sy})`;
 
   // glances: mostly at the room, occasionally away (as if thinking)
   state.lookT -= dt;
   if (state.lookT <= 0) {
     const away = Math.random() < (state.mode === "speaking" ? 0.35 : 0.2);
-    state.lookTarget.set(away ? (Math.random() - 0.5) * 0.06 : 0, away ? Math.random() * 0.03 : 0);
+    state.tx = away ? (Math.random() - 0.5) * 14 : 0; state.ty = away ? -Math.random() * 6 : 0;
     state.lookT = 1 + Math.random() * 2.5;
   }
-  state.look.lerp(state.lookTarget, Math.min(1, dt * 8));
-  eyes.forEach((e, i) => { e.position.x = 0.34 * (i ? 1 : -1) + state.look.x; e.position.y = 0.02 + state.look.y; });
+  const k = Math.min(1, dt * 8); state.lx += (state.tx - state.lx) * k; state.ly += (state.ty - state.ly) * k;
+  eyesG.setAttribute("transform", `translate(${state.lx.toFixed(2)} ${state.ly.toFixed(2)})`);
 
   // head motion: gentle sway; nods along when talking; attentive tilt when listening
-  const talking = o > 0.05 ? 1 : 0;
-  const listenTilt = state.mode === "listening" ? 0.08 : 0;
-  head.rotation.x = Math.sin(t * 0.9) * 0.03 + o * 0.06 * Math.sin(t * 7) + 0.02;
-  head.rotation.y = Math.sin(t * 0.45) * 0.08 + state.look.x * 2;
-  head.rotation.z += ((Math.sin(t * 0.6) * 0.03 + listenTilt) - head.rotation.z) * Math.min(1, dt * 2);
-  brows.forEach(b => b.position.y = 0.27 + o * 0.04 + talking * 0.01);
-  avatar.position.y = Math.sin(t * 1.4) * 0.015;  // breathing
-  body.scale.y = 1 + Math.sin(t * 1.4) * 0.006;
+  const tiltTarget = Math.sin(t * 0.6) * 2 + (state.mode === "listening" ? 4 : 0);
+  state.tilt += (tiltTarget - state.tilt) * Math.min(1, dt * 2);
+  const nod = Math.sin(t * 0.9) * 2 + o * 5 * Math.sin(t * 7);
+  const sway = Math.sin(t * 0.45) * 6 + state.lx * 0.6;
+  const breathe = Math.sin(t * 1.4) * 2;
+  headG.setAttribute("transform", `translate(${sway.toFixed(2)} ${(nod + breathe).toFixed(2)}) rotate(${state.tilt.toFixed(2)} 800 640)`);
+  bodyG.setAttribute("transform", `translate(0 ${(breathe * 0.6).toFixed(2)})`);
+  browsG.setAttribute("transform", `translate(0 ${(-o * 6).toFixed(2)})`);
 
-  renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
