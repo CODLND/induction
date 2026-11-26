@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111214">
+<title>Video Call</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--
+  CALL ROOM — a pretend video call with a 3D cartoon character who talks through an ElevenLabs Agent.
+
+  How it works:
+  - ElevenLabs' browser SDK handles the microphone, the agent's voice and turn-taking.
+  - The character is drawn with three.js from simple shapes (no model file needed).
+  - Every frame, the agent's output volume drives the mouth; idle motion (blinks, sways, glances) runs throughout.
+
+  Set-up: open the page, paste your Agent ID, press "Join call". The settings are remembered in this browser.
+  You can also pass them in the link: callroom.html?agent=YOUR_AGENT_ID&name=Ah%20Ma&title=Home%20visit
+  Keyboard: M = mute room mic, C = captions, F = full screen, H = hide toolbar, P = preview talking (no audio).
+-->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "@elevenlabs/client": "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.36.1/+esm"
+} }
+</script>
+<style>
+  :root {
+    --bg: #111214; --bar: #1a1b1e; --tile: #232428; --tile-2: #2c2d32;
+    --text: #f2f3f5; --muted: #a3a6ad; --line: #34363c;
+    --speak: #2fd36b; --danger: #e5484d; --danger-600: #c93b40; --accent: #3b82f6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, sans-serif; overflow: hidden; }
+  button { font: inherit; color: inherit; }
+
+  /* ---------- layout ---------- */
+  .app { display: grid; grid-template-rows: 48px 1fr 76px; height: 100vh; height: 100dvh; }
+  .app.toolbar-hidden { grid-template-rows: 48px 1fr 0; }
+  .app.toolbar-hidden .toolbar { opacity: 0; pointer-events: none; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--bg); font-size: 13px; color: var(--muted); }
+  .topbar .left, .topbar .right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .topbar .title { color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .secure { width: 16px; height: 16px; color: var(--speak); flex: none; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; background: var(--tile); border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--speak); box-shadow: 0 0 0 3px rgba(47,211,107,.2); }
+  .dot.wait { background: #f5a524; }
+
+  .stage { position: relative; padding: 8px 16px; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .tile { position: relative; background: var(--tile); border-radius: 12px; overflow: hidden; }
+  .tile::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 3px solid transparent; transition: border-color .15s; pointer-events: none; }
+  .tile.speaking::after { border-color: var(--speak); }
+  .main-tile { width: 100%; max-width: calc((100dvh - 48px - 76px - 16px) * 16 / 9); aspect-ratio: 16 / 9; max-height: 100%; }
+  .app.toolbar-hidden .main-tile { max-width: calc((100dvh - 48px - 16px) * 16 / 9); }
+  .main-tile canvas { display: block; width: 100% !important; height: 100% !important; }
+  .self-tile { position: absolute; right: 28px; top: 20px; width: clamp(140px, 18vw, 280px); aspect-ratio: 16 / 9; box-shadow: 0 8px 24px rgba(0,0,0,.45); z-index: 3; }
+  .self-tile video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  .self-tile .initials { position: absolute; inset: 0; display: grid; place-items: center; }
+  .self-tile .initials span { width: 52px; height: 52px; border-radius: 50%; background: #5b6cff; display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+  .self-tile.has-video .initials { display: none; }
+
+  .nametag { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); padding: 4px 10px 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 500; z-index: 2; }
+  .nametag svg { width: 14px; height: 14px; }
+  .nametag .mic-off { color: var(--danger); display: none; }
+  .muted .nametag .mic-on { display: none; }
+  .muted .nametag .mic-off { display: block; }
+
+  .overlay-msg { position: absolute; inset: 0; display: grid; place-items: center; z-index: 2; pointer-events: none; }
+  .overlay-msg .box { background: rgba(0,0,0,.55); padding: 10px 16px; border-radius: 10px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .overlay-msg[hidden] { display: none; }
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .captions { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); max-width: 80%; text-align: center; z-index: 2; pointer-events: none; }
+  .captions span { display: inline; background: rgba(0,0,0,.72); color: #fff; font-size: clamp(15px, 1.7vw, 24px); line-height: 1.5; padding: 3px 10px; border-radius: 6px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .captions[hidden] { display: none; }
+
+  /* fake webcam feel: soft vignette + faint grain */
+  .lens { position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.28) 100%); }
+
+  /* ---------- toolbar ---------- */
+  .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--bar); transition: opacity .2s; }
+  .tb-group { display: flex; gap: 4px; align-items: center; }
+  .tb-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 68px; padding: 6px 8px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; font-size: 11px; color: #d7d9dd; }
+  .tb-btn:hover { background: var(--tile-2); }
+  .tb-btn svg { width: 22px; height: 22px; }
+  .tb-btn.off svg { color: var(--danger); }
+  .tb-btn.on svg { color: var(--speak); }
+  .tb-btn .alt { display: none; }
+  .tb-btn.off .main { display: none; }
+  .tb-btn.off .alt { display: block; }
+  .end-btn { background: var(--danger); border: 0; color: #fff; font-weight: 600; padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .end-btn:hover { background: var(--danger-600); }
+  .end-btn.join { background: var(--speak); color: #06210f; }
+  .end-btn.join:hover { background: #26b85b; }
+
+  /* ---------- transcript side panel (facilitator) ---------- */
+  .panel { position: absolute; top: 8px; right: 16px; bottom: 8px; width: min(360px, 90vw); background: var(--bar); border: 1px solid var(--line); border-radius: 12px; z-index: 5; display: flex; flex-direction: column; }
+  .panel[hidden] { display: none; }
+  .panel header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  .panel header button { background: transparent; border: 0; cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; }
+  .panel .log { flex: 1; overflow-y: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+  .panel .msg b { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+  .panel .empty { color: var(--muted); }
+
+  /* ---------- join / settings dialog ---------- */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 20; padding: 16px; }
+  .modal[hidden] { display: none; }
+  .card { width: min(460px, 100%); background: var(--bar); border: 1px solid var(--line); border-radius: 14px; padding: 22px; max-height: 100%; overflow-y: auto; }
+  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  .card p.sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .field { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+  .field input { display: block; width: 100%; margin-top: 5px; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 14px; }
+  .field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .btn { border: 1px solid var(--line); background: var(--tile); padding: 9px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .btn:hover { background: var(--tile-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .hint code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+
+  .toast { position: fixed; left: 50%; top: 60px; transform: translateX(-50%); background: #3a1d1f; border: 1px solid var(--danger); color: #ffd7d8; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 30; max-width: 90vw; }
+  .toast[hidden] { display: none; }
+
+  @media (max-width: 640px) {
+    .tb-btn { min-width: 48px; font-size: 0; }
+    .tb-btn span { display: none; }
+    .self-tile { right: 20px; top: 14px; width: 110px; }
+    .topbar .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="left">
+      <svg class="secure" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.8-4.8 1.4 1.4-6.2 6.2Z"/></svg>
+      <span class="title" id="meetingTitle">Home visit</span>
+    </div>
+    <div class="right">
+      <span class="pill hide-sm"><span class="dot" id="statusDot"></span><span id="statusText">Not connected</span></span>
+      <span class="pill" id="timer">00:00</span>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="tile main-tile" id="agentTile">
+      <div class="lens"></div>
+      <div class="overlay-msg" id="agentOverlay" hidden><div class="box"><div class="spinner"></div><span id="agentOverlayText">Connecting…</span></div></div>
+      <div class="captions" id="captions" hidden><span id="captionText"></span></div>
+      <div class="nametag">
+        <svg class="mic-on" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2Z"/></svg>
+        <span id="agentName">Mdm Chen</span>
+      </div>
+    </div>
+
+    <div class="tile self-tile" id="selfTile">
+      <video id="selfVideo" autoplay muted playsinline></video>
+      <div class="initials"><span id="selfInitials">YOU</span></div>
+      <div class="nametag">
+        <svg class="mic-on" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2Z"/></svg>
+        <svg class="mic-off" viewBox="0 0 24 24" fill="currentColor"><path d="m19 11h-2c0 .7-.2 1.4-.5 2l1.5 1.5c.6-1 1-2.2 1-3.5ZM15 11V5a3 3 0 0 0-5.9-.8L15 10.1V11ZM4.3 3 3 4.3l6 6V11a3 3 0 0 0 4.4 2.7l1.5 1.5A5 5 0 0 1 7 11H5a7 7 0 0 0 6 6.9V21h2v-3.1c1-.1 2-.5 2.8-1L19.7 21 21 19.7 4.3 3Z"/></svg>
+        <span id="selfName">Training room</span>
+      </div>
+    </div>
+
+    <aside class="panel" id="panel" hidden>
+      <header>Transcript <button id="closePanel" aria-label="Close transcript">×</button></header>
+      <div class="log" id="log"><div class="empty">The conversation will appear here.</div></div>
+    </aside>
+  </div>
+
+  <div class="toolbar" id="toolbar">
+    <div class="tb-group">
+      <button class="tb-btn" id="muteBtn" title="Mute room mic (M)">
+        <svg class="main" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2Z"/></svg>
+        <svg class="alt" viewBox="0 0 24 24" fill="currentColor"><path d="m19 11h-2c0 .7-.2 1.4-.5 2l1.5 1.5c.6-1 1-2.2 1-3.5ZM15 11V5a3 3 0 0 0-5.9-.8L15 10.1V11ZM4.3 3 3 4.3l6 6V11a3 3 0 0 0 4.4 2.7l1.5 1.5A5 5 0 0 1 7 11H5a7 7 0 0 0 6 6.9V21h2v-3.1c1-.1 2-.5 2.8-1L19.7 21 21 19.7 4.3 3Z"/></svg>
+        <span class="lbl">Mute</span>
+      </button>
+      <button class="tb-btn off" id="videoBtn" title="Start / stop the room camera">
+        <svg class="main" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4Z"/></svg>
+        <svg class="alt" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6.5l-4 4V7a1 1 0 0 0-1-1H9.8L21 17.2V6.5ZM3.3 2 2 3.3 4.7 6H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12c.2 0 .4-.1.6-.2l3.1 3.2 1.3-1.3L3.3 2Z"/></svg>
+        <span class="lbl">Start Video</span>
+      </button>
+    </div>
+    <div class="tb-group">
+      <button class="tb-btn" id="ccBtn" title="Captions (C)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm-8 7H9.5v-.5h-2v3h2V13H11v1a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1Zm7 0h-1.5v-.5h-2v3h2V13H18v1a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1Z"/></svg>
+        <span>Captions</span>
+      </button>
+      <button class="tb-btn" id="chatBtn" title="Transcript">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-2 12H6v-2h12v2Zm0-3H6V9h12v2Zm0-3H6V6h12v2Z"/></svg>
+        <span>Transcript</span>
+      </button>
+      <button class="tb-btn" id="settingsBtn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7 7 0 0 0-1.7-1L15 3h-4l-.4 2.9a7 7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5-2.2-1.6ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" transform="translate(-1 0)"/></svg>
+        <span>Settings</span>
+      </button>
+      <button class="tb-btn" id="fsBtn" title="Full screen (F)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5h5V3H3v7h2V5Zm9-2v2h5v5h2V3h-7Zm5 16h-5v2h7v-7h-2v5ZM5 14H3v7h7v-2H5v-5Z"/></svg>
+        <span>Full screen</span>
+      </button>
+    </div>
+    <div class="tb-group">
+      <button class="end-btn join" id="callBtn">Join call</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="setup">
+  <form class="card" id="setupForm">
+    <h2>Call settings</h2>
+    <p class="sub">Connects the on-screen character to your ElevenLabs Agent. These settings are saved in this browser only.</p>
+    <label class="field">ElevenLabs Agent ID
+      <input id="fAgent" placeholder="agent_…" autocomplete="off" spellcheck="false">
+    </label>
+    <label class="field">Character name (shown on her video tile)
+      <input id="fName" placeholder="Mdm Chen">
+    </label>
+    <label class="field">Room tile name
+      <input id="fSelf" placeholder="Training room">
+    </label>
+    <label class="field">Meeting title (top-left)
+      <input id="fTitle" placeholder="Home visit">
+    </label>
+    <label class="check"><input type="checkbox" id="fCaptions"> Show captions of what she says</label>
+    <div class="row">
+      <button type="button" class="btn" id="previewBtn">Preview talking</button>
+      <button type="submit" class="btn primary">Save</button>
+    </div>
+    <div class="hint">
+      Find the Agent ID in ElevenLabs → <b>Agents</b> → your agent → it is shown under the agent's name (starts with <code>agent_</code>).
+      The agent must be <b>public</b> (authentication off), and it is worth adding this site's address to the agent's allowlist.
+      Open this page over <b>https</b> (your hosted site), not as a file, or the browser will block the microphone.
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script type="module">
+import * as THREE from "three";
+
+/* =====================================================================
+   SETTINGS
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const STORE_KEY = "callroom.settings.v1";
+const defaults = { agent: "agent_5701m8b1y8z6ebs93myj9v9dkf48", name: "Mdm Chen", self: "Training room", title: "Home visit", captions: false };
+function loadSettings() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch {}
+  const s = { ...defaults, ...saved };
+  const q = new URLSearchParams(location.search);
+  if (q.get("agent")) s.agent = q.get("agent");
+  if (q.get("name")) s.name = q.get("name");
+  if (q.get("self")) s.self = q.get("self");
+  if (q.get("title")) s.title = q.get("title");
+  if (q.get("captions")) s.captions = q.get("captions") === "1";
+  return s;
+}
+let settings = loadSettings();
+function saveSettings() { try { localStorage.setItem(STORE_KEY, JSON.stringify(settings)); } catch {} }
+function applySettings() {
+  $("agentName").textContent = settings.name || defaults.name;
+  $("selfName").textContent = settings.self || defaults.self;
+  $("meetingTitle").textContent = settings.title || defaults.title;
+  document.title = settings.title || defaults.title;
+  const initials = (settings.self || "You").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  $("selfInitials").textContent = initials;
+  $("ccBtn").classList.toggle("on", settings.captions);
+  if (!settings.captions) $("captions").hidden = true;
+}
+function openSetup() {
+  $("fAgent").value = settings.agent; $("fName").value = settings.name; $("fSelf").value = settings.self;
+  $("fTitle").value = settings.title; $("fCaptions").checked = settings.captions;
+  $("setup").hidden = false; $("fAgent").focus();
+}
+$("setupForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  settings.agent = $("fAgent").value.trim(); settings.name = $("fName").value.trim() || defaults.name;
+  settings.self = $("fSelf").value.trim() || defaults.self; settings.title = $("fTitle").value.trim() || defaults.title;
+  settings.captions = $("fCaptions").checked;
+  saveSettings(); applySettings(); $("setup").hidden = true;
+});
+$("previewBtn").addEventListener("click", () => { $("setup").hidden = true; startPreview(); });
+$("setup").addEventListener("click", (e) => { if (e.target === $("setup") && settings.agent) $("setup").hidden = true; });
+$("settingsBtn").addEventListener("click", openSetup);
+applySettings();
+$("setup").hidden = !!settings.agent;
+
+let toastTimer;
+function toast(msg) {
+  $("toast").textContent = msg; $("toast").hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").hidden = true, 7000);
+}
+
+/* =====================================================================
+   THE CHARACTER — a cute cartoon Singaporean grandmother built from shapes
+   ===================================================================== */
+const tile = $("agentTile");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+tile.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(26, 16 / 9, 0.1, 100);
+camera.position.set(0, 0.1, 8.3);
+camera.lookAt(0, -0.32, 0);
+
+// soft, friendly lighting
+scene.add(new THREE.HemisphereLight(0xfff6ea, 0x8a7a6a, 1.6));
+const key = new THREE.DirectionalLight(0xfff1de, 2.2); key.position.set(2.5, 3, 5); scene.add(key);
+const rim = new THREE.DirectionalLight(0xcfe3ff, 1.0); rim.position.set(-4, 2, -3); scene.add(rim);
+
+// 3-step toon shading ramp for the "avatar" look
+const ramp = (() => {
+  const d = new Uint8Array([90, 175, 255]);
+  const t = new THREE.DataTexture(d, 3, 1, THREE.RedFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t;
+})();
+const toon = (color, extra = {}) => new THREE.MeshToonMaterial({ color, gradientMap: ramp, ...extra });
+
+const SKIN = 0xf0c29e, SKIN_DARK = 0xe2a988, HAIR = 0xdcdbe0, HAIR_SHADE = 0xc4c3ca;
+
+/* --- blurred living-room backdrop (drawn once on a canvas) --- */
+(function backdrop() {
+  const c = document.createElement("canvas"); c.width = 1280; c.height = 720;
+  const g = c.getContext("2d");
+  const wall = g.createLinearGradient(0, 0, 0, 720); wall.addColorStop(0, "#f3e6cf"); wall.addColorStop(1, "#e4d3b5");
+  g.fillStyle = wall; g.fillRect(0, 0, 1280, 720);
+  g.filter = "blur(10px)";
+  // window with daylight + grille
+  g.fillStyle = "#fdfcf6"; g.fillRect(860, 90, 320, 330);
+  g.fillStyle = "#cfe8f5"; g.fillRect(880, 110, 280, 290);
+  g.fillStyle = "#b9d9a5"; g.fillRect(880, 300, 280, 100);
+  g.fillStyle = "#e9e2d2"; for (let i = 0; i < 5; i++) g.fillRect(880 + i * 70, 110, 8, 290);
+  // wall calendar
+  g.fillStyle = "#fff"; g.fillRect(150, 110, 130, 170); g.fillStyle = "#d63a3a"; g.fillRect(150, 110, 130, 50);
+  // altar shelf / cabinet
+  g.fillStyle = "#8a5a3b"; g.fillRect(0, 470, 420, 250); g.fillStyle = "#a46d47"; g.fillRect(20, 490, 180, 200); g.fillRect(220, 490, 180, 200);
+  // potted plant
+  g.fillStyle = "#c46a3c"; g.fillRect(1040, 560, 110, 160);
+  g.fillStyle = "#4d8a4a"; [[1095, 500, 90], [1050, 450, 60], [1140, 440, 60], [1095, 400, 55]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); });
+  // a fan
+  g.fillStyle = "#f7f7f7"; g.beginPath(); g.arc(640, 0, 70, 0, 7); g.fill();
+  g.filter = "none";
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(26, 14.6), new THREE.MeshBasicMaterial({ map: tex }));
+  plane.position.set(0, -0.6, -14); scene.add(plane);
+})();
+
+/* --- floral samfu-style blouse texture --- */
+function blouseTexture() {
+  const c = document.createElement("canvas"); c.width = c.height = 512;
+  const g = c.getContext("2d");
+  g.fillStyle = "#7fb3d5"; g.fillRect(0, 0, 512, 512);
+  const flower = (x, y, r, petal, centre) => {
+    g.fillStyle = petal;
+    for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; g.beginPath(); g.ellipse(x + Math.cos(a) * r * .55, y + Math.sin(a) * r * .55, r * .5, r * .32, a, 0, 7); g.fill(); }
+    g.fillStyle = centre; g.beginPath(); g.arc(x, y, r * .25, 0, 7); g.fill();
+  };
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 26; i++) {
+    const x = rnd() * 512, y = rnd() * 512, r = 18 + rnd() * 16;
+    g.fillStyle = "#5e9a6a"; g.beginPath(); g.ellipse(x + r * .8, y + r * .5, r * .45, r * .18, .6, 0, 7); g.fill();
+    flower(x, y, r, rnd() > .5 ? "#f7d6e0" : "#fdfdfd", "#f2c14e");
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2, 2); return t;
+}
+
+const avatar = new THREE.Group(); scene.add(avatar);
+
+/* --- body: shoulders, blouse, collar, frog buttons --- */
+const body = new THREE.Group(); avatar.add(body);
+const torso = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), toon(0xffffff, { map: blouseTexture() }));
+torso.scale.set(1.85, 1.15, 1.05); torso.position.set(0, -2.45, -0.15); body.add(torso);
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.4, 0.8, 24), toon(SKIN_DARK));
+neck.position.set(0, -1.15, -0.05); body.add(neck);
+const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.5, 0.26, 32, 1, true), toon(0x6aa0c4, { side: THREE.DoubleSide }));
+collar.position.set(0, -1.42, -0.05); body.add(collar);
+const frogMat = toon(0xf3e3b5);
+[[0.0, -1.68], [0.32, -1.86], [0.58, -2.12]].forEach(([x, y]) => {
+  const k = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.025, 8, 16), frogMat);
+  k.position.set(x, y, 0.88 - x * 0.25); body.add(k);
+  const b = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8), frogMat);
+  b.position.set(x + 0.12, y, 0.86 - x * 0.25); body.add(b);
+});
+
+/* --- head --- */
+const head = new THREE.Group(); head.position.set(0, -0.15, 0); avatar.add(head);
+const skull = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), toon(SKIN));
+skull.scale.set(0.98, 1.0, 0.94); head.add(skull);
+// soft rounded cheeks/jowls (gives an older, gentle face shape)
+[-1, 1].forEach(s => {
+  const j = new THREE.Mesh(new THREE.SphereGeometry(0.34, 32, 24), toon(SKIN));
+  j.position.set(0.46 * s, -0.4, 0.4); head.add(j);
+});
+// ears + jade stud earrings
+[-1, 1].forEach(s => {
+  const ear = new THREE.Mesh(new THREE.SphereGeometry(0.2, 20, 16), toon(SKIN_DARK));
+  ear.scale.set(0.55, 1, 0.8); ear.position.set(0.95 * s, -0.05, 0.02); head.add(ear);
+  const jade = new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), new THREE.MeshToonMaterial({ color: 0x3fae7c, gradientMap: ramp, emissive: 0x0b3a24 }));
+  jade.position.set(0.99 * s, -0.24, 0.08); head.add(jade);
+});
+
+// permed curly hair: a cloud of small spheres over the crown, sides and back
+const curls = new THREE.Group(); head.add(curls);
+const hairCap = new THREE.Mesh(new THREE.SphereGeometry(1.0, 48, 32, 0, Math.PI * 2, 0, Math.PI * 0.42), toon(HAIR_SHADE));
+hairCap.scale.set(1.03, 1.04, 1.0); hairCap.rotation.x = -0.45; curls.add(hairCap);
+{
+  const geo = new THREE.SphereGeometry(1, 16, 12);
+  const mats = [toon(HAIR), toon(0xe8e7eb), toon(HAIR_SHADE)];
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  const N = 150;
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i / (N - 1)) * 2, r = Math.sqrt(1 - y * y), th = golden * i;
+    const p = new THREE.Vector3(Math.cos(th) * r, y, Math.sin(th) * r);
+    // keep the face clear: skip the front-lower region and the underside
+    if (p.y < -0.35) continue;
+    if (p.z > 0.25 && p.y < 0.6 && Math.abs(p.x) < 0.88) continue;
+    if (p.z > 0.45 && p.y < 0.8) continue;
+    if (p.y < 0.05 && p.z > -0.2 && Math.abs(p.x) < 0.95) continue;
+    const curl = new THREE.Mesh(geo, mats[i % 3]);
+    const s = 0.19 + rnd() * 0.08;
+    curl.scale.setScalar(s);
+    curl.position.copy(p.multiplyScalar(1.02 + rnd() * 0.06));
+    curl.position.y += 0.04;
+    curls.add(curl);
+  }
+}
+
+// eyes: big glossy cartoon eyes with highlights
+const eyes = [];
+const eyeMat = new THREE.MeshBasicMaterial({ color: 0x2a1d17 });
+const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+[-1, 1].forEach(s => {
+  const g = new THREE.Group(); g.position.set(0.34 * s, 0.02, 0.86); head.add(g);
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.14, 24, 16), eyeMat);
+  eye.scale.set(0.9, 1.15, 0.5); g.add(eye);
+  const sh = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), shineMat); sh.position.set(0.035, 0.05, 0.06); g.add(sh);
+  const sh2 = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 6), shineMat); sh2.position.set(-0.03, -0.04, 0.06); g.add(sh2);
+  eyes.push(g);
+});
+// eyebrows (soft grey arcs)
+const brows = [];
+[-1, 1].forEach(s => {
+  const b = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.028, 8, 20, Math.PI * 0.75), toon(0xa9a7ae));
+  b.rotation.z = Math.PI * 0.125; b.position.set(0.34 * s, 0.27, 0.9); head.add(b); brows.push(b);
+});
+// gentle smile wrinkles at the eye corners
+[-1, 1].forEach(s => {
+  for (let k = 0; k < 2; k++) {
+    const w = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.008, 6, 12, Math.PI * 0.5), toon(SKIN_DARK));
+    w.position.set(0.6 * s, -0.02 - k * 0.06, 0.74); w.rotation.z = s > 0 ? -Math.PI * 0.25 : Math.PI * 0.75; w.rotation.y = 0.6 * s;
+    head.add(w);
+  }
+});
+// round gold-rimmed glasses
+const glasses = new THREE.Group(); head.add(glasses);
+const rimMat = toon(0xb98a45);
+[-1, 1].forEach(s => {
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 10, 40), rimMat);
+  ring.position.set(0.35 * s, 0.02, 0.97); glasses.add(ring);
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.21, 32), new THREE.MeshBasicMaterial({ color: 0xdff1ff, transparent: true, opacity: 0.16 }));
+  lens.position.set(0.35 * s, 0.02, 0.975); glasses.add(lens);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.85, 8), rimMat);
+  arm.rotation.x = Math.PI / 2; arm.position.set(0.58 * s, 0.05, 0.55); arm.rotation.z = 0.12 * s; glasses.add(arm);
+});
+const bridge = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.02, 8, 16, Math.PI), rimMat);
+bridge.position.set(0, 0.06, 1.0); glasses.add(bridge);
+
+// nose + rosy cheeks
+const nose = new THREE.Mesh(new THREE.SphereGeometry(0.1, 20, 14), toon(SKIN_DARK));
+nose.scale.set(1.1, 0.85, 0.9); nose.position.set(0, -0.17, 0.97); head.add(nose);
+[-1, 1].forEach(s => {
+  const blush = new THREE.Mesh(new THREE.CircleGeometry(0.15, 28), new THREE.MeshBasicMaterial({ color: 0xff8f8f, transparent: true, opacity: 0.38 }));
+  blush.scale.set(1.25, 0.8, 1); blush.position.set(0.55 * s, -0.25, 0.86); blush.rotation.y = 0.55 * s; head.add(blush);
+});
+
+// mouth: a smiling line when closed, opens into a rounded mouth when she talks
+const mouth = new THREE.Group(); mouth.position.set(0, -0.47, 0.93); head.add(mouth);
+const mouthInner = new THREE.Mesh(new THREE.SphereGeometry(0.16, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x7b2d33 }));
+mouthInner.rotation.x = Math.PI; mouthInner.scale.set(1, 0.05, 0.25); mouth.add(mouthInner);
+const tongue = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10), new THREE.MeshBasicMaterial({ color: 0xe0707a }));
+tongue.scale.set(1.2, 0.5, 0.3); tongue.position.set(0, -0.06, 0.02); mouth.add(tongue);
+const smile = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.018, 8, 24, Math.PI * 0.8), new THREE.MeshBasicMaterial({ color: 0x8c4038 }));
+smile.rotation.z = Math.PI + Math.PI * 0.1; smile.position.set(0, 0.07, 0.01); mouth.add(smile);
+const upperLip = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.016, 8, 24, Math.PI), new THREE.MeshBasicMaterial({ color: 0xc96a68 }));
+upperLip.scale.set(1, 0.18, 1); upperLip.position.set(0, 0.005, 0.03); upperLip.visible = false; mouth.add(upperLip);
+
+/* =====================================================================
+   ANIMATION: idle life + volume-driven talking
+   ===================================================================== */
+const state = { mode: "idle", level: 0, talk: 0, blinkT: 2, blink: 0, lookT: 1.5, look: new THREE.Vector2(), lookTarget: new THREE.Vector2() };
+let getAgentVolume = () => 0; // replaced when connected or previewing
+
+function resize() {
+  const w = tile.clientWidth, h = tile.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(tile); resize();
+
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+
+  // speech level → smoothed mouth opening (fast open, slower close), with a little "syllable" flutter
+  const raw = Math.min(1, Math.max(0, getAgentVolume()) * 2.4);
+  state.level += (raw - state.level) * (raw > state.level ? 0.55 : 0.25);
+  const target = state.level > 0.04 ? Math.min(1, state.level * (0.85 + 0.25 * Math.sin(t * 22))) : 0;
+  state.talk += (target - state.talk) * Math.min(1, dt * 18);
+  const o = state.talk;
+  mouthInner.scale.set(1 - o * 0.25, 0.05 + o * 0.95, 0.25);
+  tongue.visible = o > 0.25; tongue.scale.y = 0.5 * Math.min(1, o * 1.2);
+  smile.visible = o < 0.12; upperLip.visible = o >= 0.12;
+  mouth.position.y = -0.47 - o * 0.04;
+
+  // blinking
+  state.blinkT -= dt;
+  if (state.blinkT <= 0) { state.blink = 1; state.blinkT = 2 + Math.random() * 3.5; if (Math.random() < 0.15) state.blinkT = 0.25; }
+  const lid = state.blink > 0 ? Math.abs(Math.cos(state.blink * Math.PI)) : 1;
+  if (state.blink > 0) state.blink = Math.max(0, state.blink - dt * 7);
+  eyes.forEach(e => e.scale.y = Math.max(0.08, lid));
+
+  // glances: mostly at the room, occasionally away (as if thinking)
+  state.lookT -= dt;
+  if (state.lookT <= 0) {
+    const away = Math.random() < (state.mode === "speaking" ? 0.35 : 0.2);
+    state.lookTarget.set(away ? (Math.random() - 0.5) * 0.06 : 0, away ? Math.random() * 0.03 : 0);
+    state.lookT = 1 + Math.random() * 2.5;
+  }
+  state.look.lerp(state.lookTarget, Math.min(1, dt * 8));
+  eyes.forEach((e, i) => { e.position.x = 0.34 * (i ? 1 : -1) + state.look.x; e.position.y = 0.02 + state.look.y; });
+
+  // head motion: gentle sway; nods along when talking; attentive tilt when listening
+  const talking = o > 0.05 ? 1 : 0;
+  const listenTilt = state.mode === "listening" ? 0.08 : 0;
+  head.rotation.x = Math.sin(t * 0.9) * 0.03 + o * 0.06 * Math.sin(t * 7) + 0.02;
+  head.rotation.y = Math.sin(t * 0.45) * 0.08 + state.look.x * 2;
+  head.rotation.z += ((Math.sin(t * 0.6) * 0.03 + listenTilt) - head.rotation.z) * Math.min(1, dt * 2);
+  brows.forEach(b => b.position.y = 0.27 + o * 0.04 + talking * 0.01);
+  avatar.position.y = Math.sin(t * 1.4) * 0.015;  // breathing
+  body.scale.y = 1 + Math.sin(t * 1.4) * 0.006;
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* =====================================================================
+   CALL CONTROL (ElevenLabs Agent)
+   ===================================================================== */
+let conversation = null, connecting = false, micMuted = false, startedAt = 0, timerId = null, previewId = null;
+
+function setStatus(text, kind) {
+  $("statusText").textContent = text;
+  $("statusDot").className = "dot" + (kind ? " " + kind : "");
+}
+function setCallButton(inCall) {
+  const b = $("callBtn");
+  b.textContent = inCall ? "End" : "Join call";
+  b.classList.toggle("join", !inCall);
+}
+function startTimer() {
+  startedAt = Date.now(); clearInterval(timerId);
+  timerId = setInterval(() => {
+    const s = Math.floor((Date.now() - startedAt) / 1000);
+    $("timer").textContent = (s >= 3600 ? Math.floor(s / 3600) + ":" : "") + String(Math.floor(s / 60) % 60).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  }, 500);
+}
+function stopTimer() { clearInterval(timerId); $("timer").textContent = "00:00"; }
+function overlay(text) { $("agentOverlay").hidden = !text; if (text) $("agentOverlayText").textContent = text; }
+
+function addLog(who, text) {
+  const log = $("log"); log.querySelector(".empty")?.remove();
+  const d = document.createElement("div"); d.className = "msg";
+  const b = document.createElement("b"); b.textContent = who; d.append(b, document.createTextNode(text));
+  log.append(d); log.scrollTop = log.scrollHeight;
+}
+function showCaption(text) {
+  if (!settings.captions) return;
+  $("captionText").textContent = text; $("captions").hidden = false;
+}
+
+// highlight whoever is talking (agent tile when she speaks, room tile when the mic hears voices)
+let roomLevel = 0;
+setInterval(() => {
+  $("agentTile").classList.toggle("speaking", state.talk > 0.06);
+  if (conversation && !micMuted) {
+    let v = 0; try { v = conversation.getInputVolume(); } catch {}
+    roomLevel = roomLevel * 0.6 + v * 0.4;
+    $("selfTile").classList.toggle("speaking", roomLevel > 0.08 && state.talk < 0.06);
+  } else $("selfTile").classList.remove("speaking");
+  if (state.talk < 0.02 && state.mode !== "speaking" && !$("captions").hidden && Date.now() - lastCaptionAt > 2500) $("captions").hidden = true;
+}, 100);
+let lastCaptionAt = 0;
+
+async function joinCall() {
+  if (connecting || conversation) return;
+  if (!settings.agent) { openSetup(); toast("Add your ElevenLabs Agent ID first."); return; }
+  stopPreview();
+  connecting = true; setCallButton(true); overlay("Connecting…"); setStatus("Connecting…", "wait");
+  try {
+    const { Conversation } = await import("@elevenlabs/client");
+    conversation = await Conversation.startSession({
+      agentId: settings.agent,
+      connectionType: "webrtc",
+      onConnect: () => { overlay(""); setStatus("Connected", "live"); startTimer(); },
+      onDisconnect: () => endCall(true),
+      onError: (msg) => { console.error(msg); toast("Call error: " + msg); },
+      onModeChange: ({ mode }) => { state.mode = mode; },
+      onMessage: (m) => {
+        const isAgent = m.role ? m.role === "agent" : m.source === "ai";
+        addLog(isAgent ? settings.name : settings.self, m.message);
+        if (isAgent) { showCaption(m.message); lastCaptionAt = Date.now(); }
+      },
+    });
+    getAgentVolume = () => { try { return conversation ? conversation.getOutputVolume() : 0; } catch { return 0; } };
+    if (micMuted) conversation.setMicMuted(true);
+  } catch (err) {
+    console.error(err);
+    conversation = null; setCallButton(false); overlay(""); setStatus("Not connected");
+    const msg = String(err && err.message || err);
+    toast(/permission|NotAllowed/i.test(msg) ? "The browser blocked the microphone. Allow mic access (and open the page over https)." : "Couldn't start the call: " + msg);
+  } finally { connecting = false; }
+}
+async function endCall(fromRemote) {
+  const c = conversation; conversation = null;
+  getAgentVolume = () => 0; state.mode = "idle";
+  if (c && !fromRemote) { try { await c.endSession(); } catch {} }
+  setCallButton(false); overlay(""); setStatus("Call ended"); stopTimer();
+  $("captions").hidden = true;
+}
+$("callBtn").addEventListener("click", () => (conversation || connecting) ? endCall(false) : joinCall());
+
+function toggleMute() {
+  micMuted = !micMuted;
+  $("muteBtn").classList.toggle("off", micMuted);
+  $("muteBtn").querySelector(".lbl").textContent = micMuted ? "Unmute" : "Mute";
+  $("selfTile").classList.toggle("muted", micMuted);
+  if (conversation) conversation.setMicMuted(micMuted);
+}
+$("muteBtn").addEventListener("click", toggleMute);
+
+// optional room camera for the small self-view tile
+let camStream = null;
+async function toggleVideo() {
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop()); camStream = null;
+    $("selfVideo").srcObject = null; $("selfTile").classList.remove("has-video");
+  } else {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+      $("selfVideo").srcObject = camStream; $("selfTile").classList.add("has-video");
+    } catch { toast("Couldn't open the camera."); }
+  }
+  const on = !!camStream;
+  $("videoBtn").classList.toggle("off", !on);
+  $("videoBtn").querySelector(".lbl").textContent = on ? "Stop Video" : "Start Video";
+}
+$("videoBtn").addEventListener("click", toggleVideo);
+
+function toggleCaptions() {
+  settings.captions = !settings.captions; saveSettings(); applySettings();
+}
+$("ccBtn").addEventListener("click", toggleCaptions);
+$("chatBtn").addEventListener("click", () => $("panel").hidden = !$("panel").hidden);
+$("closePanel").addEventListener("click", () => $("panel").hidden = true);
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.();
+}
+$("fsBtn").addEventListener("click", toggleFullscreen);
+
+/* --- preview: fake speech so you can check her look without a call --- */
+function startPreview() {
+  if (conversation) return;
+  stopPreview();
+  const t0 = performance.now();
+  getAgentVolume = () => {
+    const t = (performance.now() - t0) / 1000;
+    if (t > 6) { stopPreview(); return 0; }
+    const syll = Math.max(0, Math.sin(t * 9.5) * 0.6 + Math.sin(t * 3.1) * 0.4);
+    const phrase = (t % 2.4) < 1.9 ? 1 : 0;
+    return syll * phrase * 0.38;
+  };
+  state.mode = "speaking";
+  showCaption("Hello ah, can hear me or not? Come, come, sit down first.");
+  lastCaptionAt = Date.now() + 4000;
+  previewId = setTimeout(stopPreview, 6200);
+}
+function stopPreview() {
+  clearTimeout(previewId); previewId = null;
+  if (!conversation) { getAgentVolume = () => 0; state.mode = "idle"; }
+}
+
+// keyboard shortcuts (ignored while typing in the settings form)
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === "m") toggleMute();
+  else if (k === "c") toggleCaptions();
+  else if (k === "f") toggleFullscreen();
+  else if (k === "h") $("app").classList.toggle("toolbar-hidden");
+  else if (k === "p") startPreview();
+  else if (k === "escape") $("panel").hidden = true;
+});
+
+window.__callroom = { state, startPreview }; // handy for debugging in the console
+</script>
+</body>
+</html>
