@@ -83,6 +83,12 @@
   .captions span { display: inline; background: rgba(0,0,0,.72); color: #fff; font-size: clamp(15px, 1.7vw, 24px); line-height: 1.5; padding: 3px 10px; border-radius: 6px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
   .captions[hidden] { display: none; }
 
+  /* her "camera" is off until the call connects: show initials instead of the picture */
+  .main-tile.cam-off > svg, .main-tile.cam-off .lens { visibility: hidden; }
+  .camoff { position: absolute; inset: 0; display: none; place-items: center; }
+  .main-tile.cam-off .camoff { display: grid; }
+  .camoff span { width: clamp(80px, 12vw, 150px); aspect-ratio: 1; border-radius: 50%; background: #8b5cf6; display: grid; place-items: center; font-weight: 700; font-size: clamp(28px, 4vw, 52px); color: #fff; }
+
   /* fake webcam feel: soft vignette + faint grain */
   .lens { position: absolute; inset: 0; pointer-events: none; z-index: 1;
     background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.28) 100%); }
@@ -167,7 +173,7 @@
   </div>
 
   <div class="stage" id="stage">
-    <div class="tile main-tile" id="agentTile">
+    <div class="tile main-tile cam-off" id="agentTile">
       <svg id="avatarSvg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-label="Video of the character">
         <defs>
           <filter id="soften" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="5"/></filter>
@@ -267,6 +273,7 @@
         </g>
       </svg>
       <div class="lens"></div>
+      <div class="camoff" aria-hidden="true"><span id="agentInitials">MC</span></div>
       <div class="overlay-msg" id="agentOverlay" hidden><div class="box"><div class="spinner"></div><span id="agentOverlayText">Connecting…</span></div></div>
       <div class="captions" id="captions" hidden><span id="captionText"></span></div>
       <div class="nametag">
@@ -399,6 +406,7 @@ function saveSettings() { try { const { agent, ...rest } = settings; localStorag
 saveSettings(); // rewrites any older saved settings without the ID
 function applySettings() {
   $("agentName").textContent = settings.name || defaults.name;
+  $("agentInitials").textContent = (settings.name || defaults.name).split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
   $("selfName").textContent = settings.self || defaults.self;
   $("meetingTitle").textContent = settings.title || defaults.title;
   document.title = settings.title || defaults.title;
@@ -594,7 +602,7 @@ async function joinCall() {
     conversation = await Conversation.startSession({
       agentId: settings.agent,
       connectionType: "webrtc",
-      onConnect: () => { overlay(""); setStatus("Connected", "live"); startTimer(); },
+      onConnect: () => { overlay(""); showAgentVideo(true); setStatus("Connected", "live"); startTimer(); },
       onDisconnect: () => endCall(true),
       onError: (msg) => { console.error(msg); toast("Call error: " + msg); },
       onModeChange: ({ mode }) => { state.mode = mode; },
@@ -619,7 +627,11 @@ async function endCall(fromRemote) {
   if (c && !fromRemote) { try { await c.endSession(); } catch {} }
   setCallButton(false); overlay(""); setStatus("Call ended"); stopTimer();
   $("captions").hidden = true;
+  showAgentVideo(false);
+  if (camStream) toggleVideo(); // leaving the call turns the room camera off too
 }
+// her picture only shows while connected (or during a presenter preview)
+function showAgentVideo(on) { $("agentTile").classList.toggle("cam-off", !on); }
 $("callBtn").addEventListener("click", () => (conversation || connecting) ? endCall(false) : joinCall());
 
 function toggleMute() {
@@ -664,6 +676,7 @@ $("fsBtn").addEventListener("click", toggleFullscreen);
 function startPreview() {
   if (conversation) return;
   stopPreview();
+  showAgentVideo(true);
   const t0 = performance.now();
   getAgentVolume = () => {
     const t = (performance.now() - t0) / 1000;
@@ -679,7 +692,7 @@ function startPreview() {
 }
 function stopPreview() {
   clearTimeout(previewId); previewId = null;
-  if (!conversation) { getAgentVolume = () => 0; state.mode = "idle"; }
+  if (!conversation) { getAgentVolume = () => 0; state.mode = "idle"; showAgentVideo(false); }
 }
 
 // keyboard shortcuts (ignored while typing in the settings form)
