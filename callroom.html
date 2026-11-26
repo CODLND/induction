@@ -350,7 +350,7 @@
    ===================================================================== */
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "callroom.settings.v1";
-const defaults = { agent: "agent_5701m8b1y8z6ebs93myj9v9dkf48", name: "Mdm Chen", self: "Training room", title: "Home visit", captions: false };
+const defaults = { agent: "", name: "Mdm Chen", self: "Training room", title: "Home visit", captions: false };
 function loadSettings() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch {}
