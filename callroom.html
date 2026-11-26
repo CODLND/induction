@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111214">
+<title>Video Call</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!--
+  CALL ROOM — a pretend video call with a cartoon character who talks through an ElevenLabs Agent.
+
+  How it works:
+  - ElevenLabs' browser SDK handles the microphone, the agent's voice and turn-taking.
+  - The character is a flat-style illustration drawn in SVG (no image files needed).
+  - Every frame, the agent's output volume drives the mouth; idle motion (blinks, sways, glances) runs throughout.
+
+  Set-up: open the page, paste your Agent ID, press "Join call". The settings are remembered in this browser.
+  You can also pass them in the link: callroom.html?agent=YOUR_AGENT_ID&name=Ah%20Ma&title=Home%20visit
+  Keyboard: M = mute room mic, C = captions, F = full screen, H = hide toolbar, P = preview talking (no audio).
+-->
+<script type="importmap">
+{ "imports": {
+  "@elevenlabs/client": "https://cdn.jsdelivr.net/npm/@elevenlabs/client@1.36.1/+esm"
+} }
+</script>
+<style>
+  :root {
+    --bg: #111214; --bar: #1a1b1e; --tile: #232428; --tile-2: #2c2d32;
+    --text: #f2f3f5; --muted: #a3a6ad; --line: #34363c;
+    --speak: #2fd36b; --danger: #e5484d; --danger-600: #c93b40; --accent: #3b82f6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, sans-serif; overflow: hidden; }
+  button { font: inherit; color: inherit; }
+
+  /* ---------- layout ---------- */
+  .app { display: grid; grid-template-rows: 48px 1fr 76px; height: 100vh; height: 100dvh; }
+  .app.toolbar-hidden { grid-template-rows: 48px 1fr 0; }
+  .app.toolbar-hidden .toolbar { opacity: 0; pointer-events: none; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--bg); font-size: 13px; color: var(--muted); }
+  .topbar .left, .topbar .right { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .topbar .title { color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .secure { width: 16px; height: 16px; color: var(--speak); flex: none; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; background: var(--tile); border: 1px solid var(--line); padding: 4px 10px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--speak); box-shadow: 0 0 0 3px rgba(47,211,107,.2); }
+  .dot.wait { background: #f5a524; }
+
+  .stage { position: relative; padding: 8px 16px; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .tile { position: relative; background: var(--tile); border-radius: 12px; overflow: hidden; }
+  .tile::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 3px solid transparent; transition: border-color .15s; pointer-events: none; }
+  .tile.speaking::after { border-color: var(--speak); }
+  .main-tile { width: 100%; max-width: calc((100dvh - 48px - 76px - 16px) * 16 / 9); aspect-ratio: 16 / 9; max-height: 100%; }
+  .app.toolbar-hidden .main-tile { max-width: calc((100dvh - 48px - 16px) * 16 / 9); }
+  .main-tile > svg { display: block; width: 100%; height: 100%; }
+  #eyeL, #eyeR { transform-box: fill-box; transform-origin: center; }
+  .self-tile { position: absolute; right: 28px; top: 20px; width: clamp(140px, 18vw, 280px); aspect-ratio: 16 / 9; box-shadow: 0 8px 24px rgba(0,0,0,.45); z-index: 3; }
+  .self-tile video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; }
+  .self-tile .initials { position: absolute; inset: 0; display: grid; place-items: center; }
+  .self-tile .initials span { width: 52px; height: 52px; border-radius: 50%; background: #5b6cff; display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+  .self-tile.has-video .initials { display: none; }
+
+  .nametag { position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.55); padding: 4px 10px 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 500; z-index: 2; }
+  .nametag svg { width: 14px; height: 14px; }
+  .nametag .mic-off { color: var(--danger); display: none; }
+  .muted .nametag .mic-on { display: none; }
+  .muted .nametag .mic-off { display: block; }
+
+  .overlay-msg { position: absolute; inset: 0; display: grid; place-items: center; z-index: 2; pointer-events: none; }
+  .overlay-msg .box { background: rgba(0,0,0,.55); padding: 10px 16px; border-radius: 10px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .overlay-msg[hidden] { display: none; }
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .captions { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); max-width: 80%; text-align: center; z-index: 2; pointer-events: none; }
+  .captions span { display: inline; background: rgba(0,0,0,.72); color: #fff; font-size: clamp(15px, 1.7vw, 24px); line-height: 1.5; padding: 3px 10px; border-radius: 6px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .captions[hidden] { display: none; }
+
+  /* fake webcam feel: soft vignette + faint grain */
+  .lens { position: absolute; inset: 0; pointer-events: none; z-index: 1;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.28) 100%); }
+
+  /* ---------- toolbar ---------- */
+  .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: var(--bar); transition: opacity .2s; }
+  .tb-group { display: flex; gap: 4px; align-items: center; }
+  .tb-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 68px; padding: 6px 8px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; font-size: 11px; color: #d7d9dd; }
+  .tb-btn:hover { background: var(--tile-2); }
+  .tb-btn svg { width: 22px; height: 22px; }
+  .tb-btn.off svg { color: var(--danger); }
+  .tb-btn.on svg { color: var(--speak); }
+  .tb-btn .alt { display: none; }
+  .tb-btn.off .main { display: none; }
+  .tb-btn.off .alt { display: block; }
+  .end-btn { background: var(--danger); border: 0; color: #fff; font-weight: 600; padding: 9px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .end-btn:hover { background: var(--danger-600); }
+  .end-btn.join { background: var(--speak); color: #06210f; }
+  .end-btn.join:hover { background: #26b85b; }
+
+  /* ---------- transcript side panel (facilitator) ---------- */
+  .panel { position: absolute; top: 8px; right: 16px; bottom: 8px; width: min(360px, 90vw); background: var(--bar); border: 1px solid var(--line); border-radius: 12px; z-index: 5; display: flex; flex-direction: column; }
+  .panel[hidden] { display: none; }
+  .panel header { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  .panel header button { background: transparent; border: 0; cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; }
+  .panel .log { flex: 1; overflow-y: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+  .panel .msg b { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+  .panel .empty { color: var(--muted); }
+
+  /* ---------- join / settings dialog ---------- */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 20; padding: 16px; }
+  .modal[hidden] { display: none; }
+  .card { width: min(460px, 100%); background: var(--bar); border: 1px solid var(--line); border-radius: 14px; padding: 22px; max-height: 100%; overflow-y: auto; }
+  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  .card p.sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .field { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
+  .field input { display: block; width: 100%; margin-top: 5px; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 14px; }
+  .field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .btn { border: 1px solid var(--line); background: var(--tile); padding: 9px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .btn:hover { background: var(--tile-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .hint { font-size: 12px; color: var(--muted); line-height: 1.5; margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .hint code { background: var(--bg); padding: 1px 5px; border-radius: 4px; }
+
+  .toast { position: fixed; left: 50%; top: 60px; transform: translateX(-50%); background: #3a1d1f; border: 1px solid var(--danger); color: #ffd7d8; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 30; max-width: 90vw; }
+  .toast[hidden] { display: none; }
+
+  @media (max-width: 640px) {
+    .tb-btn { min-width: 48px; font-size: 0; }
+    .tb-btn span { display: none; }
+    .self-tile { right: 20px; top: 14px; width: 110px; }
+    .topbar .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="left">
+      <svg class="secure" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.8-4.8 1.4 1.4-6.2 6.2Z"/></svg>
+      <span class="title" id="meetingTitle">Home visit</span>
+    </div>
+    <div class="right">
+      <span class="pill hide-sm"><span class="dot" id="statusDot"></span><span id="statusText">Not connected</span></span>
+      <span class="pill" id="timer">00:00</span>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="tile main-tile" id="agentTile">
+      <svg id="avatarSvg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-label="Video of the character">
+        <defs>
+          <filter id="soften" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="5"/></filter>
+          <clipPath id="faceClip"><ellipse cx="800" cy="415" rx="172" ry="192"/></clipPath>
+          <clipPath id="bodyClip"><path d="M440 920 C440 770 540 690 690 668 L910 668 C1060 690 1160 770 1160 920 Z"/></clipPath>
+          <clipPath id="mouthClip"><use href="#mouthCavity"/></clipPath>
+        </defs>
+
+        <!-- room behind her, softly out of focus -->
+        <g filter="url(#soften)">
+          <rect width="1600" height="900" fill="#f3e7d3"/>
+          <rect y="640" width="1600" height="260" fill="#ead9bf"/>
+          <rect x="1170" y="100" width="320" height="350" rx="10" fill="#fffaf0"/>
+          <rect x="1190" y="120" width="280" height="310" fill="#cfe7f1"/>
+          <rect x="1190" y="330" width="280" height="100" fill="#b7d7a8"/>
+          <g fill="#efe5d2"><rect x="1240" y="120" width="7" height="310"/><rect x="1300" y="120" width="7" height="310"/><rect x="1360" y="120" width="7" height="310"/><rect x="1420" y="120" width="7" height="310"/></g>
+          <rect x="150" y="110" width="140" height="180" rx="6" fill="#ffffff"/>
+          <rect x="150" y="110" width="140" height="52" rx="6" fill="#e04b4b"/>
+          <g fill="#d9d2c4"><rect x="170" y="185" width="100" height="10" rx="5"/><rect x="170" y="215" width="100" height="10" rx="5"/><rect x="170" y="245" width="70" height="10" rx="5"/></g>
+          <rect x="0" y="560" width="380" height="340" fill="#b7835a"/>
+          <rect x="20" y="585" width="160" height="300" rx="6" fill="#c4916a"/>
+          <rect x="200" y="585" width="160" height="300" rx="6" fill="#c4916a"/>
+          <rect x="250" y="470" width="70" height="90" rx="18" fill="#7aa7c7"/>
+          <rect x="1340" y="700" width="130" height="200" rx="10" fill="#d17a4a"/>
+          <g fill="#5f9e5c"><ellipse cx="1405" cy="640" rx="70" ry="80"/><ellipse cx="1340" cy="600" rx="45" ry="70" transform="rotate(-25 1340 600)"/><ellipse cx="1470" cy="600" rx="45" ry="70" transform="rotate(25 1470 600)"/></g>
+        </g>
+
+        <!-- body: samfu-style floral blouse with a mandarin collar -->
+        <g id="body">
+          <rect x="758" y="540" width="84" height="150" fill="#f4bea6"/>
+          <g clip-path="url(#bodyClip)">
+            <rect x="400" y="650" width="800" height="300" fill="#8ec0de"/>
+            <path d="M880 650 C960 720 990 820 1000 950 L1220 950 L1220 650 Z" fill="#7db2d3"/>
+            <g id="flowers"></g>
+          </g>
+          <path d="M742 652 Q800 690 858 652 L862 690 Q800 722 738 690 Z" fill="#6a9fc4"/>
+          <g fill="none" stroke="#f6e7bd" stroke-width="5" stroke-linecap="round">
+            <path d="M846 718 h22"/><path d="M880 752 h22"/><path d="M910 790 h22"/>
+          </g>
+          <g fill="#f6e7bd"><circle cx="872" cy="718" r="6"/><circle cx="906" cy="752" r="6"/><circle cx="936" cy="790" r="6"/></g>
+        </g>
+
+        <g id="head">
+          <!-- permed hair, back layer -->
+          <g fill="#c9c4d2">
+            <circle cx="800" cy="390" r="215"/>
+            <circle cx="612" cy="470" r="58"/><circle cx="988" cy="470" r="58"/>
+            <circle cx="596" cy="390" r="64"/><circle cx="1004" cy="390" r="64"/>
+            <circle cx="616" cy="300" r="66"/><circle cx="984" cy="300" r="66"/>
+            <circle cx="670" cy="225" r="68"/><circle cx="930" cy="225" r="68"/>
+            <circle cx="745" cy="185" r="70"/><circle cx="855" cy="185" r="70"/>
+          </g>
+          <!-- ears + jade earrings -->
+          <g fill="#f9c8b2"><circle cx="626" cy="438" r="32"/><circle cx="974" cy="438" r="32"/></g>
+          <g fill="#3fae7c"><circle cx="624" cy="482" r="13"/><circle cx="976" cy="482" r="13"/></g>
+          <g fill="#bfeedb"><circle cx="620" cy="478" r="4"/><circle cx="972" cy="478" r="4"/></g>
+          <!-- face with flat two-tone shading -->
+          <ellipse cx="800" cy="415" rx="172" ry="192" fill="#ffdccb"/>
+          <path clip-path="url(#faceClip)" d="M870 180 C960 320 960 520 860 640 L1000 640 L1000 180 Z" fill="#fbcab5"/>
+          <!-- curly fringe -->
+          <g fill="#d8d4de">
+            <circle cx="668" cy="300" r="50"/><circle cx="712" cy="258" r="52"/><circle cx="772" cy="238" r="54"/>
+            <circle cx="834" cy="236" r="54"/><circle cx="892" cy="256" r="52"/><circle cx="936" cy="298" r="50"/>
+          </g>
+          <g fill="#e6e3ea"><circle cx="760" cy="226" r="18"/><circle cx="700" cy="250" r="14"/></g>
+          <!-- brows -->
+          <g id="brows" fill="none" stroke="#a7a1b0" stroke-width="8" stroke-linecap="round">
+            <path d="M705 362 Q735 346 765 360"/><path d="M835 360 Q865 346 895 362"/>
+          </g>
+          <!-- eyes -->
+          <g id="eyes">
+            <g id="eyeL"><ellipse cx="735" cy="425" rx="14" ry="18" fill="#3a3140"/><circle cx="740" cy="418" r="5" fill="#fff"/></g>
+            <g id="eyeR"><ellipse cx="865" cy="425" rx="14" ry="18" fill="#3a3140"/><circle cx="870" cy="418" r="5" fill="#fff"/></g>
+          </g>
+          <!-- round gold glasses -->
+          <g fill="#ffffff" fill-opacity=".18" stroke="#c48f4a" stroke-width="7">
+            <circle cx="735" cy="425" r="54"/><circle cx="865" cy="425" r="54"/>
+          </g>
+          <g fill="none" stroke="#c48f4a" stroke-width="7" stroke-linecap="round">
+            <path d="M789 420 Q800 406 811 420"/><path d="M681 418 L636 410"/><path d="M919 418 L964 410"/>
+          </g>
+          <!-- nose, rosy cheeks and smile wrinkles -->
+          <ellipse cx="800" cy="474" rx="15" ry="11" fill="#f4b59d"/>
+          <g fill="#ff9c9c" opacity=".45"><ellipse cx="700" cy="505" rx="36" ry="21"/><ellipse cx="900" cy="505" rx="36" ry="21"/></g>
+          <g fill="none" stroke="#ee9f8b" stroke-width="5" stroke-linecap="round">
+            <path d="M680 496 q14 8 30 4"/><path d="M684 514 q14 8 30 4"/>
+            <path d="M920 496 q-14 8 -30 4"/><path d="M916 514 q-14 8 -30 4"/>
+          </g>
+          <!-- mouth -->
+          <g transform="translate(800 538)">
+            <path id="smile" d="M-34 -4 Q0 26 34 -4" fill="none" stroke="#d9645f" stroke-width="8" stroke-linecap="round"/>
+            <g id="mouthOpen" style="display:none">
+              <ellipse id="mouthCavity" cx="0" cy="0" rx="34" ry="10" fill="#8a3440"/>
+              <ellipse id="tongue" clip-path="url(#mouthClip)" cx="0" cy="6" rx="20" ry="14" fill="#ee8590"/>
+            </g>
+          </g>
+        </g>
+      </svg>
+      <div class="lens"></div>
+      <div class="overlay-msg" id="agentOverlay" hidden><div class="box"><div class="spinner"></div><span id="agentOverlayText">Connecting…</span></div></div>
+      <div class="captions" id="captions" hidden><span id="captionText"></span></div>
+      <div class="nametag">
+        <svg class="mic-on" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2Z"/></svg>
+        <span id="agentName">Mdm Chen</span>
+      </div>
+    </div>
+
+    <div class="tile self-tile" id="selfTile">
+      <video id="selfVideo" autoplay muted playsinline></video>
+      <div class="initials"><span id="selfInitials">YOU</span></div>
+      <div class="nametag">
+        <svg class="mic-on" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2Z"/></svg>
+        <svg class="mic-off" viewBox="0 0 24 24" fill="currentColor"><path d="m19 11h-2c0 .7-.2 1.4-.5 2l1.5 1.5c.6-1 1-2.2 1-3.5ZM15 11V5a3 3 0 0 0-5.9-.8L15 10.1V11ZM4.3 3 3 4.3l6 6V11a3 3 0 0 0 4.4 2.7l1.5 1.5A5 5 0 0 1 7 11H5a7 7 0 0 0 6 6.9V21h2v-3.1c1-.1 2-.5 2.8-1L19.7 21 21 19.7 4.3 3Z"/></svg>
+        <span id="selfName">Training room</span>
+      </div>
+    </div>
+
+    <aside class="panel" id="panel" hidden>
+      <header>Transcript <button id="closePanel" aria-label="Close transcript">×</button></header>
+      <div class="log" id="log"><div class="empty">The conversation will appear here.</div></div>
+    </aside>
+  </div>
+
+  <div class="toolbar" id="toolbar">
+    <div class="tb-group">
+      <button class="tb-btn" id="muteBtn" title="Mute room mic (M)">
+        <svg class="main" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.9V21h2v-3.1A7 7 0 0 0 19 11h-2Z"/></svg>
+        <svg class="alt" viewBox="0 0 24 24" fill="currentColor"><path d="m19 11h-2c0 .7-.2 1.4-.5 2l1.5 1.5c.6-1 1-2.2 1-3.5ZM15 11V5a3 3 0 0 0-5.9-.8L15 10.1V11ZM4.3 3 3 4.3l6 6V11a3 3 0 0 0 4.4 2.7l1.5 1.5A5 5 0 0 1 7 11H5a7 7 0 0 0 6 6.9V21h2v-3.1c1-.1 2-.5 2.8-1L19.7 21 21 19.7 4.3 3Z"/></svg>
+        <span class="lbl">Mute</span>
+      </button>
+      <button class="tb-btn off" id="videoBtn" title="Start / stop the room camera">
+        <svg class="main" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4Z"/></svg>
+        <svg class="alt" viewBox="0 0 24 24" fill="currentColor"><path d="M21 6.5l-4 4V7a1 1 0 0 0-1-1H9.8L21 17.2V6.5ZM3.3 2 2 3.3 4.7 6H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12c.2 0 .4-.1.6-.2l3.1 3.2 1.3-1.3L3.3 2Z"/></svg>
+        <span class="lbl">Start Video</span>
+      </button>
+    </div>
+    <div class="tb-group">
+      <button class="tb-btn" id="ccBtn" title="Captions (C)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm-8 7H9.5v-.5h-2v3h2V13H11v1a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1Zm7 0h-1.5v-.5h-2v3h2V13H18v1a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1Z"/></svg>
+        <span>Captions</span>
+      </button>
+      <button class="tb-btn" id="chatBtn" title="Transcript">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Zm-2 12H6v-2h12v2Zm0-3H6V9h12v2Zm0-3H6V6h12v2Z"/></svg>
+        <span>Transcript</span>
+      </button>
+      <button class="tb-btn" id="settingsBtn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7 7 0 0 0-1.7-1L15 3h-4l-.4 2.9a7 7 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5-2.2-1.6ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" transform="translate(-1 0)"/></svg>
+        <span>Settings</span>
+      </button>
+      <button class="tb-btn" id="fsBtn" title="Full screen (F)">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 5h5V3H3v7h2V5Zm9-2v2h5v5h2V3h-7Zm5 16h-5v2h7v-7h-2v5ZM5 14H3v7h7v-2H5v-5Z"/></svg>
+        <span>Full screen</span>
+      </button>
+    </div>
+    <div class="tb-group">
+      <button class="end-btn join" id="callBtn">Join call</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="setup">
+  <form class="card" id="setupForm">
+    <h2>Call settings</h2>
+    <p class="sub">Connects the on-screen character to your ElevenLabs Agent. These settings are saved in this browser only.</p>
+    <label class="field">ElevenLabs Agent ID
+      <input id="fAgent" placeholder="agent_…" autocomplete="off" spellcheck="false">
+    </label>
+    <label class="field">Character name (shown on her video tile)
+      <input id="fName" placeholder="Mdm Chen">
+    </label>
+    <label class="field">Room tile name
+      <input id="fSelf" placeholder="Training room">
+    </label>
+    <label class="field">Meeting title (top-left)
+      <input id="fTitle" placeholder="Home visit">
+    </label>
+    <label class="check"><input type="checkbox" id="fCaptions"> Show captions of what she says</label>
+    <div class="row">
+      <button type="button" class="btn" id="previewBtn">Preview talking</button>
+      <button type="submit" class="btn primary">Save</button>
+    </div>
+    <div class="hint">
+      Find the Agent ID in ElevenLabs → <b>Agents</b> → your agent → it is shown under the agent's name (starts with <code>agent_</code>).
+      The agent must be <b>public</b> (authentication off), and it is worth adding this site's address to the agent's allowlist.
+      Open this page over <b>https</b> (your hosted site), not as a file, or the browser will block the microphone.
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script type="module">
+
+/* =====================================================================
+   SETTINGS
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const STORE_KEY = "callroom.settings.v1";
+const defaults = { agent: "agent_5701m8b1y8z6ebs93myj9v9dkf48", name: "Mdm Chen", self: "Training room", title: "Home visit", captions: false };
+function loadSettings() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch {}
+  const s = { ...defaults, ...saved };
+  const q = new URLSearchParams(location.search);
+  if (q.get("agent")) s.agent = q.get("agent");
+  if (q.get("name")) s.name = q.get("name");
+  if (q.get("self")) s.self = q.get("self");
+  if (q.get("title")) s.title = q.get("title");
+  if (q.get("captions")) s.captions = q.get("captions") === "1";
+  return s;
+}
+let settings = loadSettings();
+function saveSettings() { try { localStorage.setItem(STORE_KEY, JSON.stringify(settings)); } catch {} }
+function applySettings() {
+  $("agentName").textContent = settings.name || defaults.name;
+  $("selfName").textContent = settings.self || defaults.self;
+  $("meetingTitle").textContent = settings.title || defaults.title;
+  document.title = settings.title || defaults.title;
+  const initials = (settings.self || "You").split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  $("selfInitials").textContent = initials;
+  $("ccBtn").classList.toggle("on", settings.captions);
+  if (!settings.captions) $("captions").hidden = true;
+}
+function openSetup() {
+  $("fAgent").value = settings.agent; $("fName").value = settings.name; $("fSelf").value = settings.self;
+  $("fTitle").value = settings.title; $("fCaptions").checked = settings.captions;
+  $("setup").hidden = false; $("fAgent").focus();
+}
+$("setupForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  settings.agent = $("fAgent").value.trim(); settings.name = $("fName").value.trim() || defaults.name;
+  settings.self = $("fSelf").value.trim() || defaults.self; settings.title = $("fTitle").value.trim() || defaults.title;
+  settings.captions = $("fCaptions").checked;
+  saveSettings(); applySettings(); $("setup").hidden = true;
+});
+$("previewBtn").addEventListener("click", () => { $("setup").hidden = true; startPreview(); });
+$("setup").addEventListener("click", (e) => { if (e.target === $("setup") && settings.agent) $("setup").hidden = true; });
+$("settingsBtn").addEventListener("click", openSetup);
+applySettings();
+$("setup").hidden = !!settings.agent;
+
+let toastTimer;
+function toast(msg) {
+  $("toast").textContent = msg; $("toast").hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").hidden = true, 7000);
+}
+
+/* =====================================================================
+   THE CHARACTER — flat-style cartoon grandmother drawn in SVG (#avatarSvg above)
+   ===================================================================== */
+const svg = $("avatarSvg");
+const el = (id) => svg.getElementById(id);
+const headG = el("head"), bodyG = el("body"), eyesG = el("eyes"), eyeL = el("eyeL"), eyeR = el("eyeR");
+const mouthOpen = el("mouthOpen"), mouthCavity = el("mouthCavity"), tongueEl = el("tongue"), smileEl = el("smile"), browsG = el("brows");
+
+// scatter little flat flowers on the blouse (seeded so they look the same each time)
+(function flowers() {
+  const g = el("flowers"); let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const NS = "http://www.w3.org/2000/svg";
+  for (let i = 0; i < 34; i++) {
+    const x = 470 + rnd() * 660, y = 690 + rnd() * 220, r = 9 + rnd() * 7;
+    const f = document.createElementNS(NS, "g"); f.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+    const petal = rnd() > 0.5 ? "#fbe3ea" : "#ffffff";
+    for (let k = 0; k < 5; k++) {
+      const a = k / 5 * Math.PI * 2, c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", (Math.cos(a) * r * 0.6).toFixed(1)); c.setAttribute("cy", (Math.sin(a) * r * 0.6).toFixed(1));
+      c.setAttribute("r", (r * 0.45).toFixed(1)); c.setAttribute("fill", petal); f.append(c);
+    }
+    const ctr = document.createElementNS(NS, "circle"); ctr.setAttribute("r", (r * 0.28).toFixed(1)); ctr.setAttribute("fill", "#f2c14e"); f.append(ctr);
+    g.append(f);
+  }
+})();
+
+/* =====================================================================
+   ANIMATION: idle life + volume-driven talking
+   ===================================================================== */
+const state = { mode: "idle", level: 0, talk: 0, blinkT: 2, blink: 0, lookT: 1.5, lx: 0, ly: 0, tx: 0, ty: 0, tilt: 0 };
+let getAgentVolume = () => 0; // replaced when connected or previewing
+
+let last = performance.now(), t = 0;
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05); last = now; t += dt;
+
+  // speech level → smoothed mouth opening (fast open, slower close), with a little "syllable" flutter
+  const raw = Math.min(1, Math.max(0, getAgentVolume()) * 2.4);
+  state.level += (raw - state.level) * (raw > state.level ? 0.55 : 0.25);
+  const target = state.level > 0.04 ? Math.min(1, state.level * (0.85 + 0.25 * Math.sin(t * 22))) : 0;
+  state.talk += (target - state.talk) * Math.min(1, dt * 18);
+  const o = state.talk;
+  const open = o >= 0.1;
+  smileEl.style.display = open ? "none" : "";
+  mouthOpen.style.display = open ? "" : "none";
+  if (open) {
+    const ry = 6 + o * 30, rx = 36 - o * 8;
+    mouthCavity.setAttribute("rx", rx.toFixed(1)); mouthCavity.setAttribute("ry", ry.toFixed(1));
+    tongueEl.setAttribute("cy", (ry * 0.55).toFixed(1)); tongueEl.setAttribute("rx", (rx * 0.6).toFixed(1));
+    tongueEl.style.display = o > 0.3 ? "" : "none";
+  }
+
+  // blinking
+  state.blinkT -= dt;
+  if (state.blinkT <= 0) { state.blink = 1; state.blinkT = 2 + Math.random() * 3.5; if (Math.random() < 0.15) state.blinkT = 0.25; }
+  const lid = state.blink > 0 ? Math.abs(Math.cos(state.blink * Math.PI)) : 1;
+  if (state.blink > 0) state.blink = Math.max(0, state.blink - dt * 7);
+  const sy = Math.max(0.1, lid).toFixed(3);
+  eyeL.style.transform = eyeR.style.transform = `scaleY(${sy})`;
+
+  // glances: mostly at the room, occasionally away (as if thinking)
+  state.lookT -= dt;
+  if (state.lookT <= 0) {
+    const away = Math.random() < (state.mode === "speaking" ? 0.35 : 0.2);
+    state.tx = away ? (Math.random() - 0.5) * 14 : 0; state.ty = away ? -Math.random() * 6 : 0;
+    state.lookT = 1 + Math.random() * 2.5;
+  }
+  const k = Math.min(1, dt * 8); state.lx += (state.tx - state.lx) * k; state.ly += (state.ty - state.ly) * k;
+  eyesG.setAttribute("transform", `translate(${state.lx.toFixed(2)} ${state.ly.toFixed(2)})`);
+
+  // head motion: gentle sway; nods along when talking; attentive tilt when listening
+  const tiltTarget = Math.sin(t * 0.6) * 2 + (state.mode === "listening" ? 4 : 0);
+  state.tilt += (tiltTarget - state.tilt) * Math.min(1, dt * 2);
+  const nod = Math.sin(t * 0.9) * 2 + o * 5 * Math.sin(t * 7);
+  const sway = Math.sin(t * 0.45) * 6 + state.lx * 0.6;
+  const breathe = Math.sin(t * 1.4) * 2;
+  headG.setAttribute("transform", `translate(${sway.toFixed(2)} ${(nod + breathe).toFixed(2)}) rotate(${state.tilt.toFixed(2)} 800 640)`);
+  bodyG.setAttribute("transform", `translate(0 ${(breathe * 0.6).toFixed(2)})`);
+  browsG.setAttribute("transform", `translate(0 ${(-o * 6).toFixed(2)})`);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* =====================================================================
+   CALL CONTROL (ElevenLabs Agent)
+   ===================================================================== */
+let conversation = null, connecting = false, micMuted = false, startedAt = 0, timerId = null, previewId = null;
+
+function setStatus(text, kind) {
+  $("statusText").textContent = text;
+  $("statusDot").className = "dot" + (kind ? " " + kind : "");
+}
+function setCallButton(inCall) {
+  const b = $("callBtn");
+  b.textContent = inCall ? "End" : "Join call";
+  b.classList.toggle("join", !inCall);
+}
+function startTimer() {
+  startedAt = Date.now(); clearInterval(timerId);
+  timerId = setInterval(() => {
+    const s = Math.floor((Date.now() - startedAt) / 1000);
+    $("timer").textContent = (s >= 3600 ? Math.floor(s / 3600) + ":" : "") + String(Math.floor(s / 60) % 60).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+  }, 500);
+}
+function stopTimer() { clearInterval(timerId); $("timer").textContent = "00:00"; }
+function overlay(text) { $("agentOverlay").hidden = !text; if (text) $("agentOverlayText").textContent = text; }
+
+function addLog(who, text) {
+  const log = $("log"); log.querySelector(".empty")?.remove();
+  const d = document.createElement("div"); d.className = "msg";
+  const b = document.createElement("b"); b.textContent = who; d.append(b, document.createTextNode(text));
+  log.append(d); log.scrollTop = log.scrollHeight;
+}
+function showCaption(text) {
+  if (!settings.captions) return;
+  $("captionText").textContent = text; $("captions").hidden = false;
+}
+
+// highlight whoever is talking (agent tile when she speaks, room tile when the mic hears voices)
+let roomLevel = 0;
+setInterval(() => {
+  $("agentTile").classList.toggle("speaking", state.talk > 0.06);
+  if (conversation && !micMuted) {
+    let v = 0; try { v = conversation.getInputVolume(); } catch {}
+    roomLevel = roomLevel * 0.6 + v * 0.4;
+    $("selfTile").classList.toggle("speaking", roomLevel > 0.08 && state.talk < 0.06);
+  } else $("selfTile").classList.remove("speaking");
+  if (state.talk < 0.02 && state.mode !== "speaking" && !$("captions").hidden && Date.now() - lastCaptionAt > 2500) $("captions").hidden = true;
+}, 100);
+let lastCaptionAt = 0;
+
+async function joinCall() {
+  if (connecting || conversation) return;
+  if (!settings.agent) { openSetup(); toast("Add your ElevenLabs Agent ID first."); return; }
+  stopPreview();
+  connecting = true; setCallButton(true); overlay("Connecting…"); setStatus("Connecting…", "wait");
+  try {
+    const { Conversation } = await import("@elevenlabs/client");
+    conversation = await Conversation.startSession({
+      agentId: settings.agent,
+      connectionType: "webrtc",
+      onConnect: () => { overlay(""); setStatus("Connected", "live"); startTimer(); },
+      onDisconnect: () => endCall(true),
+      onError: (msg) => { console.error(msg); toast("Call error: " + msg); },
+      onModeChange: ({ mode }) => { state.mode = mode; },
+      onMessage: (m) => {
+        const isAgent = m.role ? m.role === "agent" : m.source === "ai";
+        addLog(isAgent ? settings.name : settings.self, m.message);
+        if (isAgent) { showCaption(m.message); lastCaptionAt = Date.now(); }
+      },
+    });
+    getAgentVolume = () => { try { return conversation ? conversation.getOutputVolume() : 0; } catch { return 0; } };
+    if (micMuted) conversation.setMicMuted(true);
+  } catch (err) {
+    console.error(err);
+    conversation = null; setCallButton(false); overlay(""); setStatus("Not connected");
+    const msg = String(err && err.message || err);
+    toast(/permission|NotAllowed/i.test(msg) ? "The browser blocked the microphone. Allow mic access (and open the page over https)." : "Couldn't start the call: " + msg);
+  } finally { connecting = false; }
+}
+async function endCall(fromRemote) {
+  const c = conversation; conversation = null;
+  getAgentVolume = () => 0; state.mode = "idle";
+  if (c && !fromRemote) { try { await c.endSession(); } catch {} }
+  setCallButton(false); overlay(""); setStatus("Call ended"); stopTimer();
+  $("captions").hidden = true;
+}
+$("callBtn").addEventListener("click", () => (conversation || connecting) ? endCall(false) : joinCall());
+
+function toggleMute() {
+  micMuted = !micMuted;
+  $("muteBtn").classList.toggle("off", micMuted);
+  $("muteBtn").querySelector(".lbl").textContent = micMuted ? "Unmute" : "Mute";
+  $("selfTile").classList.toggle("muted", micMuted);
+  if (conversation) conversation.setMicMuted(micMuted);
+}
+$("muteBtn").addEventListener("click", toggleMute);
+
+// optional room camera for the small self-view tile
+let camStream = null;
+async function toggleVideo() {
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop()); camStream = null;
+    $("selfVideo").srcObject = null; $("selfTile").classList.remove("has-video");
+  } else {
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 }, audio: false });
+      $("selfVideo").srcObject = camStream; $("selfTile").classList.add("has-video");
+    } catch { toast("Couldn't open the camera."); }
+  }
+  const on = !!camStream;
+  $("videoBtn").classList.toggle("off", !on);
+  $("videoBtn").querySelector(".lbl").textContent = on ? "Stop Video" : "Start Video";
+}
+$("videoBtn").addEventListener("click", toggleVideo);
+
+function toggleCaptions() {
+  settings.captions = !settings.captions; saveSettings(); applySettings();
+}
+$("ccBtn").addEventListener("click", toggleCaptions);
+$("chatBtn").addEventListener("click", () => $("panel").hidden = !$("panel").hidden);
+$("closePanel").addEventListener("click", () => $("panel").hidden = true);
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.();
+}
+$("fsBtn").addEventListener("click", toggleFullscreen);
+
+/* --- preview: fake speech so you can check her look without a call --- */
+function startPreview() {
+  if (conversation) return;
+  stopPreview();
+  const t0 = performance.now();
+  getAgentVolume = () => {
+    const t = (performance.now() - t0) / 1000;
+    if (t > 6) { stopPreview(); return 0; }
+    const syll = Math.max(0, Math.sin(t * 9.5) * 0.6 + Math.sin(t * 3.1) * 0.4);
+    const phrase = (t % 2.4) < 1.9 ? 1 : 0;
+    return syll * phrase * 0.38;
+  };
+  state.mode = "speaking";
+  showCaption("Hello ah, can hear me or not? Come, come, sit down first.");
+  lastCaptionAt = Date.now() + 4000;
+  previewId = setTimeout(stopPreview, 6200);
+}
+function stopPreview() {
+  clearTimeout(previewId); previewId = null;
+  if (!conversation) { getAgentVolume = () => 0; state.mode = "idle"; }
+}
+
+// keyboard shortcuts (ignored while typing in the settings form)
+document.addEventListener("keydown", (e) => {
+  if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === "m") toggleMute();
+  else if (k === "c") toggleCaptions();
+  else if (k === "f") toggleFullscreen();
+  else if (k === "h") $("app").classList.toggle("toolbar-hidden");
+  else if (k === "p") startPreview();
+  else if (k === "escape") $("panel").hidden = true;
+});
+
+window.__callroom = { state, startPreview }; // handy for debugging in the console
+</script>
+</body>
+</html>
