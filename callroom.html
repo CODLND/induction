@@ -16,8 +16,10 @@
   - The character is a flat-style illustration drawn in SVG (no image files needed).
   - Every frame, the agent's output volume drives the mouth; idle motion (blinks, sways, glances) runs throughout.
 
-  Set-up: open the page, paste your Agent ID, press "Join call". The settings are remembered in this browser.
-  You can also pass them in the link: callroom.html?agent=YOUR_AGENT_ID&name=Ah%20Ma&title=Home%20visit
+  Set-up: open the page, paste your Agent ID, press "Join call".
+  The Agent ID is never saved: not in the page, the link, or the browser. It lives only in this open tab and is
+  forgotten when the tab is closed or refreshed. Names, title and captions are remembered in this browser.
+  Names can also go in the link: callroom.html?name=Mdm%20Chen&title=Home%20visit
   Keyboard: M = mute room mic, C = captions, F = full screen, H = hide toolbar, P = preview talking (no audio).
 -->
 <script type="importmap">
@@ -317,7 +319,7 @@
     <h2>Call settings</h2>
     <p class="sub">Connects the on-screen character to your ElevenLabs Agent. These settings are saved in this browser only.</p>
     <label class="field">ElevenLabs Agent ID
-      <input id="fAgent" placeholder="agent_…" autocomplete="off" spellcheck="false">
+      <input id="fAgent" type="password" placeholder="agent_…" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore>
     </label>
     <label class="field">Character name (shown on her video tile)
       <input id="fName" placeholder="Mdm Chen">
@@ -334,6 +336,7 @@
       <button type="submit" class="btn primary">Save</button>
     </div>
     <div class="hint">
+      The Agent ID is <b>not saved anywhere</b>: it is forgotten when you close or refresh this tab, so paste it again before each session.<br>
       Find the Agent ID in ElevenLabs → <b>Agents</b> → your agent → it is shown under the agent's name (starts with <code>agent_</code>).
       The agent must be <b>public</b> (authentication off), and it is worth adding this site's address to the agent's allowlist.
       Open this page over <b>https</b> (your hosted site), not as a file, or the browser will block the microphone.
@@ -354,9 +357,10 @@ const defaults = { agent: "", name: "Mdm Chen", self: "Training room", title: "H
 function loadSettings() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch {}
-  const s = { ...defaults, ...saved };
+  delete saved.agent; // older versions saved the ID; never read it back
+  const s = { ...defaults, ...saved, agent: "" };
   const q = new URLSearchParams(location.search);
-  if (q.get("agent")) s.agent = q.get("agent");
+  if (q.has("agent")) { q.delete("agent"); history.replaceState(null, "", location.pathname + (q.size ? "?" + q : "") + location.hash); }
   if (q.get("name")) s.name = q.get("name");
   if (q.get("self")) s.self = q.get("self");
   if (q.get("title")) s.title = q.get("title");
@@ -364,7 +368,9 @@ function loadSettings() {
   return s;
 }
 let settings = loadSettings();
-function saveSettings() { try { localStorage.setItem(STORE_KEY, JSON.stringify(settings)); } catch {} }
+// saves names/title/captions only; the Agent ID is deliberately left out and kept in memory
+function saveSettings() { try { const { agent, ...rest } = settings; localStorage.setItem(STORE_KEY, JSON.stringify(rest)); } catch {} }
+saveSettings(); // rewrites any older saved settings without the ID
 function applySettings() {
   $("agentName").textContent = settings.name || defaults.name;
   $("selfName").textContent = settings.self || defaults.self;
@@ -376,13 +382,17 @@ function applySettings() {
   if (!settings.captions) $("captions").hidden = true;
 }
 function openSetup() {
-  $("fAgent").value = settings.agent; $("fName").value = settings.name; $("fSelf").value = settings.self;
+  $("fAgent").value = ""; $("fAgent").placeholder = settings.agent ? "Agent ID entered (paste to replace)" : "agent_…"; $("fName").value = settings.name; $("fSelf").value = settings.self;
   $("fTitle").value = settings.title; $("fCaptions").checked = settings.captions;
   $("setup").hidden = false; $("fAgent").focus();
 }
 $("setupForm").addEventListener("submit", (e) => {
   e.preventDefault();
-  settings.agent = $("fAgent").value.trim(); settings.name = $("fName").value.trim() || defaults.name;
+  const newId = $("fAgent").value.trim();
+  if (newId && !/^agent_[A-Za-z0-9]+$/.test(newId)) { toast("That doesn't look like an Agent ID (it should start with agent_)."); return; }
+  if (newId) settings.agent = newId;
+  $("fAgent").value = "";
+  settings.name = $("fName").value.trim() || defaults.name;
   settings.self = $("fSelf").value.trim() || defaults.self; settings.title = $("fTitle").value.trim() || defaults.title;
   settings.captions = $("fCaptions").checked;
   saveSettings(); applySettings(); $("setup").hidden = true;
@@ -391,7 +401,7 @@ $("previewBtn").addEventListener("click", () => { $("setup").hidden = true; star
 $("setup").addEventListener("click", (e) => { if (e.target === $("setup") && settings.agent) $("setup").hidden = true; });
 $("settingsBtn").addEventListener("click", openSetup);
 applySettings();
-$("setup").hidden = !!settings.agent;
+openSetup(); // the Agent ID is never remembered, so always ask for it on load
 
 let toastTimer;
 function toast(msg) {
