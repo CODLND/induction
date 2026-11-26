@@ -16,7 +16,8 @@
   - The character is a flat-style illustration drawn in SVG (no image files needed).
   - Every frame, the agent's output volume drives the mouth; idle motion (blinks, sways, glances) runs throughout.
 
-  Set-up: open the page, paste your Agent ID, press "Join call".
+  Set-up: the page opens on a presenter screen that asks for the Agent ID; "Ready the call screen" then shows the call,
+  and "Join call" connects. Settings (toolbar) returns to the presenter screen.
   The Agent ID is never saved: not in the page, the link, or the browser. It lives only in this open tab and is
   forgotten when the tab is closed or refreshed. Names, title and captions are remembered in this browser.
   Names can also go in the link: callroom.html?name=Mdm%20Chen&title=Home%20visit
@@ -111,11 +112,24 @@
   .panel .msg b { display: block; font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
   .panel .empty { color: var(--muted); }
 
-  /* ---------- join / settings dialog ---------- */
-  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 20; padding: 16px; }
-  .modal[hidden] { display: none; }
-  .card { width: min(460px, 100%); background: var(--bar); border: 1px solid var(--line); border-radius: 14px; padding: 22px; max-height: 100%; overflow-y: auto; }
-  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  /* ---------- presenter (admin) screen: covers the call screen until it is ready ---------- */
+  .admin { position: fixed; inset: 0; z-index: 20; padding: 16px; display: grid; place-items: center; overflow-y: auto;
+    background: radial-gradient(ellipse at top, #1d2230 0%, var(--bg) 60%); }
+  .admin[hidden] { display: none; }
+  .card { width: min(520px, 100%); background: var(--bar); border: 1px solid var(--line); border-radius: 16px; padding: 26px; }
+  .card .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #f5a524; background: rgba(245,165,36,.12); border: 1px solid rgba(245,165,36,.3); padding: 3px 10px; border-radius: 999px; margin-bottom: 12px; }
+  .card .badge svg { width: 13px; height: 13px; }
+  .card h2 { margin: 0 0 4px; font-size: 20px; }
+  .card h3 { margin: 18px 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  .id-row { display: flex; gap: 6px; margin-top: 5px; }
+  .id-row input { margin-top: 0 !important; flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; }
+  .id-row .btn { padding: 9px 12px; font-size: 13px; }
+  .err { color: #ff8b8f; font-size: 12.5px; margin-top: 6px; min-height: 1em; }
+  .err:empty { display: none; }
+  .field.invalid input { border-color: var(--danger); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  @media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
   .card p.sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
   .field { display: block; margin-bottom: 12px; font-size: 13px; color: var(--muted); }
   .field input { display: block; width: 100%; margin-top: 5px; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 14px; }
@@ -314,32 +328,44 @@
   </div>
 </div>
 
-<div class="modal" id="setup">
-  <form class="card" id="setupForm">
-    <h2>Call settings</h2>
-    <p class="sub">Connects the on-screen character to your ElevenLabs Agent. These settings are saved in this browser only.</p>
-    <label class="field">ElevenLabs Agent ID
-      <input id="fAgent" type="password" placeholder="agent_…" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore>
+<div class="admin" id="setup">
+  <form class="card" id="setupForm" autocomplete="off">
+    <span class="badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 9V7A5 5 0 0 0 7 7v2H5v13h14V9h-2Zm-8-2a3 3 0 0 1 6 0v2H9V7Zm4 10.7V19h-2v-1.3a2 2 0 1 1 2 0Z"/></svg>Presenter only</span>
+    <h2>Set up the call screen</h2>
+    <p class="sub">Enter the ElevenLabs Agent ID to get the call screen ready. Do this before you put the screen on the projector.</p>
+
+    <label class="field" id="agentField">ElevenLabs Agent ID
+      <span class="id-row">
+        <input id="fAgent" type="password" placeholder="agent_…" autocomplete="off" spellcheck="false" data-lpignore="true" data-1p-ignore>
+        <button type="button" class="btn" id="showIdBtn" aria-label="Show or hide the Agent ID">Show</button>
+      </span>
+      <span class="err" id="agentErr"></span>
     </label>
-    <label class="field">Character name (shown on her video tile)
-      <input id="fName" placeholder="Mdm Chen">
-    </label>
-    <label class="field">Room tile name
-      <input id="fSelf" placeholder="Training room">
-    </label>
+
+    <h3>On screen</h3>
+    <div class="two">
+      <label class="field">Character name
+        <input id="fName" placeholder="Mdm Chen">
+      </label>
+      <label class="field">Room tile name
+        <input id="fSelf" placeholder="Training room">
+      </label>
+    </div>
     <label class="field">Meeting title (top-left)
       <input id="fTitle" placeholder="Home visit">
     </label>
     <label class="check"><input type="checkbox" id="fCaptions"> Show captions of what she says</label>
+
     <div class="row">
-      <button type="button" class="btn" id="previewBtn">Preview talking</button>
-      <button type="submit" class="btn primary">Save</button>
+      <button type="button" class="btn" id="backBtn" hidden>Back to call screen</button>
+      <button type="submit" class="btn primary" id="readyBtn">Ready the call screen</button>
     </div>
     <div class="hint">
-      The Agent ID is <b>not saved anywhere</b>: it is forgotten when you close or refresh this tab, so paste it again before each session.<br>
-      Find the Agent ID in ElevenLabs → <b>Agents</b> → your agent → it is shown under the agent's name (starts with <code>agent_</code>).
-      The agent must be <b>public</b> (authentication off), and it is worth adding this site's address to the agent's allowlist.
-      Open this page over <b>https</b> (your hosted site), not as a file, or the browser will block the microphone.
+      The Agent ID is <b>not saved anywhere</b>. It is forgotten when you close or refresh this tab, so enter it again before each session.<br>
+      Find it in ElevenLabs → <b>Agents</b> → your agent, under the agent's name (starts with <code>agent_</code>).
+      The agent must be <b>public</b> (authentication off), with this site's address on its allowlist.
+      Open this page from your hosted <b>https</b> site, not as a file, or the browser will block the microphone.<br>
+      On the call screen: <b>P</b> preview talking · <b>M</b> mute · <b>C</b> captions · <b>F</b> full screen · <b>H</b> hide toolbar.
     </div>
   </form>
 </div>
@@ -381,27 +407,44 @@ function applySettings() {
   $("ccBtn").classList.toggle("on", settings.captions);
   if (!settings.captions) $("captions").hidden = true;
 }
+const ID_PATTERN = /^agent_[A-Za-z0-9]+$/;
+function adminOpen() { return !$("setup").hidden; }
 function openSetup() {
-  $("fAgent").value = ""; $("fAgent").placeholder = settings.agent ? "Agent ID entered (paste to replace)" : "agent_…"; $("fName").value = settings.name; $("fSelf").value = settings.self;
+  $("fAgent").value = ""; $("fAgent").type = "password"; $("showIdBtn").textContent = "Show";
+  $("fAgent").placeholder = settings.agent ? "Already entered (paste a new one to replace)" : "agent_…";
+  $("fName").value = settings.name; $("fSelf").value = settings.self;
   $("fTitle").value = settings.title; $("fCaptions").checked = settings.captions;
+  $("backBtn").hidden = !settings.agent;
+  setAgentError("");
   $("setup").hidden = false; $("fAgent").focus();
 }
+function closeSetup() {
+  $("setup").hidden = true;
+  if (!conversation && !connecting) setStatus("Ready to join", "wait");
+  $("callBtn").focus();
+}
+function setAgentError(msg) { $("agentErr").textContent = msg; $("agentField").classList.toggle("invalid", !!msg); }
+$("fAgent").addEventListener("input", () => setAgentError(""));
+$("showIdBtn").addEventListener("click", () => {
+  const show = $("fAgent").type === "password";
+  $("fAgent").type = show ? "text" : "password"; $("showIdBtn").textContent = show ? "Hide" : "Show";
+});
 $("setupForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const newId = $("fAgent").value.trim();
-  if (newId && !/^agent_[A-Za-z0-9]+$/.test(newId)) { toast("That doesn't look like an Agent ID (it should start with agent_)."); return; }
+  if (!newId && !settings.agent) { setAgentError("Enter the Agent ID to continue."); $("fAgent").focus(); return; }
+  if (newId && !ID_PATTERN.test(newId)) { setAgentError("That doesn't look like an Agent ID. It should start with agent_"); $("fAgent").focus(); return; }
   if (newId) settings.agent = newId;
   $("fAgent").value = "";
   settings.name = $("fName").value.trim() || defaults.name;
   settings.self = $("fSelf").value.trim() || defaults.self; settings.title = $("fTitle").value.trim() || defaults.title;
   settings.captions = $("fCaptions").checked;
-  saveSettings(); applySettings(); $("setup").hidden = true;
+  saveSettings(); applySettings(); closeSetup();
 });
-$("previewBtn").addEventListener("click", () => { $("setup").hidden = true; startPreview(); });
-$("setup").addEventListener("click", (e) => { if (e.target === $("setup") && settings.agent) $("setup").hidden = true; });
+$("backBtn").addEventListener("click", () => { $("fAgent").value = ""; closeSetup(); });
 $("settingsBtn").addEventListener("click", openSetup);
 applySettings();
-openSetup(); // the Agent ID is never remembered, so always ask for it on load
+openSetup(); // the Agent ID is never remembered, so the presenter screen always comes first
 
 let toastTimer;
 function toast(msg) {
@@ -543,7 +586,7 @@ let lastCaptionAt = 0;
 
 async function joinCall() {
   if (connecting || conversation) return;
-  if (!settings.agent) { openSetup(); toast("Add your ElevenLabs Agent ID first."); return; }
+  if (!settings.agent) { openSetup(); return; }
   stopPreview();
   connecting = true; setCallButton(true); overlay("Connecting…"); setStatus("Connecting…", "wait");
   try {
@@ -641,6 +684,7 @@ function stopPreview() {
 
 // keyboard shortcuts (ignored while typing in the settings form)
 document.addEventListener("keydown", (e) => {
+  if (adminOpen()) { if (e.key === "Escape" && settings.agent) closeSetup(); return; }
   if (e.target.closest("input, textarea") || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k === "m") toggleMute();
